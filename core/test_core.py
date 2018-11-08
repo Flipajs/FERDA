@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 import unittest
 
 class TestStringMethods2(unittest.TestCase):

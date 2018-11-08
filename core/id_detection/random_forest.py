@@ -1,4 +1,10 @@
 from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
+from future import standard_library
+standard_library.install_aliases()
+from builtins import range
+from past.utils import old_div
 from sklearn.ensemble import RandomForestClassifier
 from core.project.project import Project
 from core.graph.region_chunk import RegionChunk
@@ -6,7 +12,7 @@ from skimage.measure import moments_central, moments_hu, moments_normalized, mom
 from utils.img_manager import ImgManager
 import cv2
 from utils.img import get_img_around_pts, replace_everything_but_pts
-import cPickle as pickle
+import pickle as pickle
 import numpy as np
 
 # from libs.mondrianforest.mondrianforest import MondrianForest, parser_add_common_options, parser_add_mf_options, process_command_line
@@ -28,7 +34,7 @@ def get_training_data(p, get_features, first_n=-1, offset=0):
     for ch in chunks:
         r_ch = RegionChunk(ch, p.gm, p.rm)
         i = 0
-        for t in xrange(offset, p.gm.end_t):
+        for t in range(offset, p.gm.end_t):
             if first_n > -1 and i == first_n:
                 break
 
@@ -47,8 +53,8 @@ def get_training_data(p, get_features, first_n=-1, offset=0):
 
 def get_hu_moments(img):
     m = moments(img)
-    cr = m[0, 1] / m[0, 0]
-    cc = m[1, 0] / m[0, 0]
+    cr = old_div(m[0, 1], m[0, 0])
+    cc = old_div(m[1, 0], m[0, 0])
 
     mu = moments_central(img, cr, cc)
     nu = moments_normalized(mu)
@@ -71,13 +77,13 @@ def get_features1(r, p):
     f.append(r.ellipse_minor_axis_length())
 
     # axis ratio
-    f.append(r.ellipse_major_axis_length() / r.ellipse_minor_axis_length())
+    f.append(old_div(r.ellipse_major_axis_length(), r.ellipse_minor_axis_length()))
 
     # axis ratio sqrt
-    f.append((r.ellipse_major_axis_length() / r.ellipse_minor_axis_length())**0.5)
+    f.append((old_div(r.ellipse_major_axis_length(), r.ellipse_minor_axis_length()))**0.5)
 
     # axis ratio to power of 2
-    f.append((r.ellipse_major_axis_length() / r.ellipse_minor_axis_length())**2.0)
+    f.append((old_div(r.ellipse_major_axis_length(), r.ellipse_minor_axis_length()))**2.0)
 
     img = p.img_manager.get_whole_img(r.frame_)
     crop, offset = get_img_around_pts(img, r.pts())
@@ -166,7 +172,7 @@ if __name__ == '__main__':
             p_.dump(test_length)
 
 
-    ids = range(6)
+    ids = list(range(6))
     chunk_length = test_length
     sample_size = 50
     offset = 50
@@ -174,7 +180,7 @@ if __name__ == '__main__':
         best = []
         second = []
 
-        idx_ = range(id_*chunk_length + offset, min(id_*chunk_length + offset + sample_size, (id_+1)*(chunk_length)))
+        idx_ = list(range(id_*chunk_length + offset, min(id_*chunk_length + offset + sample_size, (id_+1)*(chunk_length))))
 
         for r_ in results[idx_, :]:
             best_ = r_[id_]
@@ -199,7 +205,7 @@ if __name__ == '__main__':
             second = np.array(second)
             print((" VS %d #TP: %d/%d (%.1f%%), vs med: %.3f") % (second_id_, num_better_,
                                                                   sample_size,
-                                                                  100*(num_better_/float(sample_size)),
+                                                                  100*(old_div(num_better_,float(sample_size))),
                                                                   np.median(second)))
 
     y_results = rfc.predict(X2)

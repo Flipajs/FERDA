@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 from core.project.project import Project
 
 WD = '/Users/flipajs/Documents/wd/FERDA/'

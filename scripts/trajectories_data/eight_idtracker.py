@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+from builtins import range
 from numpy import *
 
 _old_vals = {0: [[387, 271], [395, 420], [415, 461], [594, 143], [742, 719], [773, 253], [872, 309], [555, 726], ],

@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 from PyQt4 import QtCore
 from copy import deepcopy
 from core.region.fitting import Fitting

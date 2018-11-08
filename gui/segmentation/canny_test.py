@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+from __future__ import unicode_literals
 from PyQt4 import QtGui, QtCore
 import cv2, sys
 import numpy as np

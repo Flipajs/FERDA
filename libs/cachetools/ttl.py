@@ -1,5 +1,8 @@
 from __future__ import absolute_import
+from __future__ import unicode_literals
 
+from builtins import next
+from builtins import object
 import collections
 import time
 
@@ -18,7 +21,7 @@ class _Link(object):
         return _Link, (self.key, self.expire)
 
     def unlink(self):
-        next = self.next
+        next = self.__next__
         prev = self.prev
         prev.next = next
         next.prev = prev
@@ -61,7 +64,7 @@ class TTLCache(Cache):
                  getsizeof=None):
         Cache.__init__(self, maxsize, missing, getsizeof)
         self.__root = root = _Link()
-        root.prev = root.next = root
+        root.prev = root.__next__ = root
         self.__links = collections.OrderedDict()
         self.__timer = _Timer(timer)
         self.__ttl = ttl
@@ -110,29 +113,29 @@ class TTLCache(Cache):
 
     def __iter__(self):
         root = self.__root
-        curr = root.next
+        curr = root.__next__
         while curr is not root:
             # "freeze" time for iterator access
             with self.__timer as time:
                 if not (curr.expire < time):
                     yield curr.key
-            curr = curr.next
+            curr = curr.__next__
 
     def __len__(self):
         root = self.__root
-        curr = root.next
+        curr = root.__next__
         time = self.__timer()
         count = len(self.__links)
         while curr is not root and curr.expire < time:
             count -= 1
-            curr = curr.next
+            curr = curr.__next__
         return count
 
     def __setstate__(self, state):
         self.__dict__.update(state)
         root = self.__root
-        root.prev = root.next = root
-        for link in sorted(self.__links.values(), key=lambda obj: obj.expire):
+        root.prev = root.__next__ = root
+        for link in sorted(list(self.__links.values()), key=lambda obj: obj.expire):
             link.next = root
             link.prev = prev = root.prev
             prev.next = root.prev = link
@@ -164,13 +167,13 @@ class TTLCache(Cache):
         if time is None:
             time = self.__timer()
         root = self.__root
-        curr = root.next
+        curr = root.__next__
         links = self.__links
         cache_delitem = Cache.__delitem__
         while curr is not root and curr.expire < time:
             cache_delitem(self, curr.key)
             del links[curr.key]
-            next = curr.next
+            next = curr.__next__
             curr.unlink()
             curr = next
 

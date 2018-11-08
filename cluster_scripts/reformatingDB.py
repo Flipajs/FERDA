@@ -1,7 +1,12 @@
 from __future__ import print_function
+from __future__ import unicode_literals
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
+from builtins import range
 from core.region.region import Region, encode_RLE
 import sqlite3 as sql
-import cPickle as pickle
+import pickle as pickle
 from core.region.region import encode_RLE
 from core.region import region_manager as RM
 import numpy as np

@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+from builtins import object
 __author__ = 'fnaiser'
 
 
@@ -6,7 +8,7 @@ from utils.video_manager import get_auto_video_manager
 from utils.img import prepare_for_segmentation
 from core.region.mser import get_filtered_msers
 
-class Reduced:
+class Reduced(object):
     def __init__(self, region=None):
         if not region:
             self.centroid_ = None

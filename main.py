@@ -1,11 +1,14 @@
+from __future__ import unicode_literals
+from __future__ import print_function
+from __future__ import absolute_import
 import argparse
 import sys
 import time
 from PyQt4 import QtGui
 
-from core.project.project import Project
-from core.config import config
-from gui.main_tab_widget import MainTabWidget
+from .core.project.project import Project
+from .core.config import config
+from .gui.main_tab_widget import MainTabWidget
 
 parser = argparse.ArgumentParser(description='FERDA laboratory animal tracking system')
 parser.add_argument('project', nargs='?', help='project directory or file')
@@ -31,6 +34,6 @@ if args.project is not None:
     main_window.update_project(project)
 
 
-print "FERDA is READY, loaded in {:.3}s".format(time.time()-t_)
+print("FERDA is READY, loaded in {:.3}s".format(time.time()-t_))
 
 sys.exit(app.exec_())

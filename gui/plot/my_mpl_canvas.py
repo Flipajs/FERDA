@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 __author__ = 'filip@naiser.cz'
 
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas

@@ -1,7 +1,12 @@
 from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import range
+from builtins import object
+from past.utils import old_div
 import numpy as np
 
-class ColorHist3d():
+class ColorHist3d(object):
     def __init__(self, im, num_colors, num_bins1=32, num_bins2=32, num_bins3=32, theta=0.1, epsilon=0.3):
         self.theta = theta
         self.epsilon = epsilon
@@ -17,7 +22,7 @@ class ColorHist3d():
         self.num_colors = num_colors
         self.BG = 0
 
-        pos = np.asarray(im / self.num_bins_v, dtype=np.int)
+        pos = np.asarray(old_div(im, self.num_bins_v), dtype=np.int)
 
         # num_colors + 1 for background
         self.hist_ = np.zeros((self.num_bins1, self.num_bins2, self.num_bins3, num_colors + 1), dtype=np.int)
@@ -31,7 +36,7 @@ class ColorHist3d():
                 self.hist_[p[0], p[1], p[2], self.BG] += 1
 
     def swap_bg2color(self, pxs, color_id):
-        pos = np.asarray(pxs / self.num_bins_v, dtype=np.int)
+        pos = np.asarray(old_div(pxs, self.num_bins_v), dtype=np.int)
         for i in range(pxs.shape[0]):
             p = pos[i, :]
 
@@ -41,7 +46,7 @@ class ColorHist3d():
             self.hist_[p[0], p[1], p[2], color_id] += 1
 
     def remove_bg(self, pxs):
-        pos = np.asarray(pxs / self.num_bins_v, dtype=np.int)
+        pos = np.asarray(old_div(pxs, self.num_bins_v), dtype=np.int)
         for i in range(pxs.shape[0]):
             p = pos[i, :]
 
@@ -49,7 +54,7 @@ class ColorHist3d():
                 self.hist_[p[0], p[1], p[2], self.BG] -= 1
 
     def add_color(self, pxs, color_id):
-        pos = np.asarray(pxs / self.num_bins_v, dtype=np.int)
+        pos = np.asarray(old_div(pxs, self.num_bins_v), dtype=np.int)
 
         for i in range(pxs.shape[0]):
             p = pos[i, :]
@@ -63,14 +68,14 @@ class ColorHist3d():
                     num_bg = self.hist_bg_[i, j, k]
                     num_fg = self.hist_fg_[i, j, k]
                     if num_bg + num_fg > 0:
-                        self.p_fg_[i, j, k] = num_fg / float(num_bg + num_fg)
+                        self.p_fg_[i, j, k] = old_div(num_fg, float(num_bg + num_fg))
                         print(i, j, k, self.p_fg_[i, j, k])
 
     def get_p_k_x(self, k, x):
         a = self.hist_[x[0], x[1], x[2], k]
         n = np.sum(self.hist_[x[0], x[1], x[2], :])
 
-        return a / float(n)
+        return old_div(a, float(n))
 
     def get_p_x_k(self, x, k):
         a = self.hist_[x[0], x[1], x[2], k]
@@ -79,7 +84,7 @@ class ColorHist3d():
 
         n = np.sum(self.hist_[:, :, :, k])
 
-        return a / float(n)
+        return old_div(a, float(n))
 
     def assign_labels(self):
         # skip bg

@@ -1,4 +1,11 @@
 from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
+from future import standard_library
+standard_library.install_aliases()
+from builtins import range
+from builtins import object
+from past.utils import old_div
 __author__ = 'fnaiser'
 
 from utils.video_manager import get_auto_video_manager
@@ -116,7 +123,7 @@ class Region(object):
                 d = row['col2'] + 1 - row['col1']
 
                 pts[i:i+d, 0] = row['line']
-                pts[i:i+d, 1] = range(row['col1'], row['col2'] + 1)
+                pts[i:i+d, 1] = list(range(row['col1'], row['col2'] + 1))
                 i += d
 
                 # for c in xrange(row['col1'], row['col2'] + 1):
@@ -128,7 +135,7 @@ class Region(object):
             pts = []
 
             for row in data:
-                for c in xrange(row['col1'], row['col2'] + 1):
+                for c in range(row['col1'], row['col2'] + 1):
                     pts.append([row['line'], c])
                     i += 1
 
@@ -168,8 +175,8 @@ class Region(object):
         a = self.major_axis_
         b = self.minor_axis_
 
-        axis_ratio = a / float(b)
-        self.minor_axis_ = math.sqrt(self.area_ / (axis_ratio * math.pi))
+        axis_ratio = old_div(a, float(b))
+        self.minor_axis_ = math.sqrt(old_div(self.area_, (axis_ratio * math.pi)))
         self.major_axis_ = self.minor_axis_ * axis_ratio
         ########
 
@@ -279,7 +286,7 @@ class Region(object):
         if u_d == 0:
             return 0
 
-        a = np.dot(v, u/u_d)
+        a = np.dot(v, old_div(u,u_d))
 
         return abs(a)
 
@@ -310,7 +317,7 @@ class Region(object):
         return not self.roi().is_intersecting_expanded(r2.roi(), max_dist)
 
     def eccentricity(self):
-        return 1- (self.minor_axis_ / self.major_axis_) ** 0.5
+        return 1- (old_div(self.minor_axis_, self.major_axis_)) ** 0.5
 
 
     def get_phi(self, r2):
@@ -403,7 +410,7 @@ class Region(object):
         return border_point_xy
 
     def ellipse_area_ratio(self):
-        return (4*self.major_axis_ * self.minor_axis_) / float(self.area())
+        return old_div((4*self.major_axis_ * self.minor_axis_), float(self.area()))
 
     def get_img(self, image_manager, **kwargs):
         return image_manager.get_crop(self.frame(), self.roi(), **kwargs)
@@ -469,8 +476,8 @@ def get_region_endpoints(r):
     return endpoint1, endpoint2
 
 def compute_region_axis_(sxx, syy, sxy):
-    la = (sxx + syy) / 2
-    lb = math.sqrt(4 * sxy * sxy + (sxx - syy) * (sxx - syy)) / 2
+    la = old_div((sxx + syy), 2)
+    lb = old_div(math.sqrt(4 * sxy * sxy + (sxx - syy) * (sxx - syy)), 2)
 
     lambda1 = math.sqrt(la+lb)
     lambda2 = math.sqrt(la-lb)
@@ -490,7 +497,7 @@ def get_orientation(sxx, syy, sxy):
 
 
 if __name__ == '__main__':
-    import cPickle as pickle
+    import pickle as pickle
     import numpy as np
     f = open('/home/dita/PycharmProjects/c5regions.pkl', 'r+b')
     up = pickle.Unpickler(f)

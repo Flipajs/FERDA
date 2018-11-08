@@ -1,5 +1,9 @@
 from __future__ import print_function
-import cPickle as pickle
+from __future__ import unicode_literals
+from future import standard_library
+standard_library.install_aliases()
+from builtins import range
+import pickle as pickle
 import numpy as np
 
 def detect_interactions(m):
@@ -34,7 +38,7 @@ if __name__ == '__main__':
         match = pickle.load(f)
 
     m = []
-    frames = sorted([f for f in match.keys()])
+    frames = sorted([f for f in list(match.keys())])
     for f in frames:
         m.append(match[f])
 

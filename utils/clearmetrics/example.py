@@ -1,4 +1,6 @@
 from __future__ import print_function
+from __future__ import unicode_literals
+from builtins import str
 import _clearmetrics
 
 # 1d ground truth and measurements for 3 frames
@@ -35,7 +37,7 @@ print('')
 
 clear = _clearmetrics.ClearMetrics(groundtruth, measurements, 1.5)
 clear.match_sequence()
-for frame in groundtruth.keys():
+for frame in list(groundtruth.keys()):
     print('Frame ' + str(frame) + ' matches:')
     for gt in clear.measurements_matches[frame]:
         if gt is not None and gt != -1:

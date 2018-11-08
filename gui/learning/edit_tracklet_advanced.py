@@ -1,4 +1,8 @@
 from __future__ import print_function
+from __future__ import unicode_literals
+from builtins import str
+from builtins import range
+from builtins import object
 from PyQt4 import QtGui, QtCore
 import sys
 from functools import partial
@@ -80,7 +84,7 @@ class EditTrackletAdvanced(QtGui.QWidget):
         self.close()
 
 
-class FakeTracklet:
+class FakeTracklet(object):
     def __init__(self):
         self.N = set()
         self.P = set()

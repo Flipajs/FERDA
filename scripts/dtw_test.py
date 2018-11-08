@@ -6,6 +6,7 @@ Date: Wednesday, March  7 2012
 Description: Test DTW algorithms.
 """
 from __future__ import print_function
+from __future__ import unicode_literals
 
 import numpy as np
 from dtw import *

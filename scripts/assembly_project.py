@@ -1,8 +1,13 @@
 from __future__ import print_function
+from __future__ import unicode_literals
+from future import standard_library
+standard_library.install_aliases()
+from builtins import zip
+from builtins import range
 __author__ = 'flipajs'
 
 from core.project.project import Project
-import cPickle as pickle
+import pickle as pickle
 from core.graph.solver import Solver
 import os, glob
 from core.log import Log
@@ -10,7 +15,7 @@ from core.log import Log
 
 def get_part_names(p):
     part_names = glob.glob(p.working_directory+'/part_*_progress_save.pkl')
-    part_names = map(lambda x: x.replace(p.working_directory+'/', ''), part_names)
+    part_names = [x.replace(p.working_directory+'/', '') for x in part_names]
 
     nums = []
     for s in part_names:
@@ -31,7 +36,7 @@ def assembly(project_path, part_names):
     solver = Solver(p)
     nodes_to_process = []
     end_nodes_prev = []
-    for part, i in zip(part_names, range(len(part_names))):
+    for part, i in zip(part_names, list(range(len(part_names)))):
         print("Processing ", part)
         # this is slightly changed code from background_computer/assembly_after_parallelization
         with open(p.working_directory+'/'+part, 'rb') as f:

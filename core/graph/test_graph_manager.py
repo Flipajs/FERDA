@@ -1,3 +1,6 @@
+from __future__ import unicode_literals
+from builtins import zip
+from builtins import range
 import unittest
 from core.graph.graph_manager import GraphManager
 from core.project.project import dummy_project
@@ -11,7 +14,7 @@ class TestGraphManager(unittest.TestCase):
 
         self.frames_ = [8, 102, 3, 3, 4, 1, 0, 90, 0, 12]
         self.regions_ = [Region() for i in range(10)]
-        for r, f, i in zip(self.regions_, self.frames_, range(len(self.regions_))):
+        for r, f, i in zip(self.regions_, self.frames_, list(range(len(self.regions_)))):
             self.p.rm.add(r)
             r.frame_ = f
             r.id_ = i + 1

@@ -1,8 +1,15 @@
 from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
+from future import standard_library
+standard_library.install_aliases()
+from builtins import range
+from past.utils import old_div
+from builtins import object
 import sys
 from core.graph.region_chunk import RegionChunk
 import numpy as np
-import cPickle as pickle
+import pickle as pickle
 import os.path
 from core.graph.chunk_manager import ChunkManager
 from core.project.project import Project
@@ -11,7 +18,7 @@ import scipy.io as sio
 from core.fake_background_computer import FakeBGComp
 from tqdm import tqdm
 
-class Exporter:
+class Exporter(object):
     def __init__(self, chm, gm, rm, pts_export=False, contour_pts_export=True):
         self.chm = chm
         self.gm = gm
@@ -88,7 +95,7 @@ class Exporter:
 
     def obj_arr_append_(self, obj_arr, d):
         new_d = {}
-        for key, val in d.iteritems():
+        for key, val in d.items():
             if key != 'frame' and key != 'region_id':
                 val = np.array(val)
 
@@ -101,7 +108,7 @@ class Exporter:
 
         # it is important to go through vertices to have access to active feature...
         # When processing one part there are inactive chunks in chm...
-        for ch in tqdm(self.chm.chunks_.itervalues(), total=len(self.chm)):
+        for ch in tqdm(iter(self.chm.chunks_.values()), total=len(self.chm)):
             if ch.length() < min_tracklet_length:
                 continue
 
@@ -146,8 +153,8 @@ def export_arena(out_path, project):
                             center += np.array([y, x])
                             num += 1
 
-                c = center / num
-                radius = round((num / np.pi) ** 0.5)
+                c = old_div(center, num)
+                radius = round((old_div(num, np.pi)) ** 0.5)
 
             arena = {'cx': c[1], 'cy': c[0], 'radius': radius}
             try:

@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 # import the necessary packages
 from skimage.segmentation import slic
 from skimage.segmentation import mark_boundaries

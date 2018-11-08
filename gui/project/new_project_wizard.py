@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 from PyQt4 import QtGui
 
 from core.project.project import Project

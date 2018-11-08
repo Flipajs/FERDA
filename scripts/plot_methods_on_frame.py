@@ -1,4 +1,9 @@
 from __future__ import absolute_import
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import str
+from builtins import range
+from past.utils import old_div
 __author__ = 'filip@naiser.cz'
 
 from clearmetrics import clearmetrics
@@ -55,7 +60,7 @@ cols = 4
 scale_fact = 2
 
 #figure(num=None, figsize=(8, 6), dpi=80, facecolor='w', edgecolor='k')
-f, axarr = plt.subplots(int(ceil(seq_len/cols)), cols, figsize=(4*scale_fact, ceil(seq_len/cols)*scale_fact), dpi=80, facecolor='w', edgecolor='k')
+f, axarr = plt.subplots(int(ceil(old_div(seq_len,cols))), cols, figsize=(4*scale_fact, ceil(old_div(seq_len,cols))*scale_fact), dpi=80, facecolor='w', edgecolor='k')
 #y = 330
 #h = 140
 #x = 745
@@ -74,7 +79,7 @@ for frame in range(start, start+seq_len*step):
     i = frame-start
     img = mpimg.imread(sequence_path+'/'+str(frame-1)+'.png')
 
-    axarr[i/cols, i%cols].imshow(img)
+    axarr[old_div(i,cols), i%cols].imshow(img)
 
     data = array(method['data'][frame])
     c_data = array(eight_ctrax.data[frame])
@@ -85,7 +90,7 @@ for frame in range(start, start+seq_len*step):
     mm = array(measurements_matches[frame])
 
     for j in range(gt_data.shape[0]):
-        axarr[i/cols, i%cols].scatter(gt_data[j, 0], gt_data[j, 1], color='r', marker='+', alpha=op, s=m_size)
+        axarr[old_div(i,cols), i%cols].scatter(gt_data[j, 0], gt_data[j, 1], color='r', marker='+', alpha=op, s=m_size)
 
     #for j in range(c_data.shape[0]):
     #    if c_data[j] is not None:
@@ -98,7 +103,7 @@ for frame in range(start, start+seq_len*step):
     #        axarr[i/cols, i%cols].scatter(i_data[j][0], i_data[j][1], color='y', marker='o', alpha=op, s=m_size, facecolor='none')
 
     for j in range(data.shape[0]):
-        axarr[i/cols, i%cols].scatter(data[j, 0], data[j, 1], color=colors[j], marker='o', alpha=op, s=m_size, facecolor='none')
+        axarr[old_div(i,cols), i%cols].scatter(data[j, 0], data[j, 1], color=colors[j], marker='o', alpha=op, s=m_size, facecolor='none')
 
 
         #a = gt_data[j, :]
@@ -107,11 +112,11 @@ for frame in range(start, start+seq_len*step):
         #    axarr[i/cols, i%cols].plot([a[0], b[0]], [a[1], b[1]], c='r')
 
 
-    axarr[i/cols, i%cols].set_ylim((y, y+h))
-    axarr[i/cols, i%cols].axes.set_xlim((x, x+w))
-    axarr[i/cols, i%cols].invert_yaxis()
-    axarr[i/cols, i%cols].get_xaxis().set_visible(False)
-    axarr[i/cols, i%cols].get_yaxis().set_visible(False)
+    axarr[old_div(i,cols), i%cols].set_ylim((y, y+h))
+    axarr[old_div(i,cols), i%cols].axes.set_xlim((x, x+w))
+    axarr[old_div(i,cols), i%cols].invert_yaxis()
+    axarr[old_div(i,cols), i%cols].get_xaxis().set_visible(False)
+    axarr[old_div(i,cols), i%cols].get_yaxis().set_visible(False)
 
 #plt.subplots_adjust(hspace=.01, wspace=.01, left=None, bottom=None, right=None, top=None)
 plt.subplots_adjust(hspace=0, wspace=0, left=0, bottom=0, right=1, top=1)

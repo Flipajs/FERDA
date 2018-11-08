@@ -1,8 +1,10 @@
 from __future__ import print_function
+from __future__ import unicode_literals
 # author
 # based on this work... https://github.com/delestro/rand_cmap
 
 # Generate random colormap
+from builtins import range
 def rand_cmap(nlabels, type='bright', first_color_black=True, last_color_black=False):
     """
     Creates a random colormap to be used together with matplotlib. Useful for segmentation tasks
@@ -25,7 +27,7 @@ def rand_cmap(nlabels, type='bright', first_color_black=True, last_color_black=F
     if type == 'bright':
         randHSVcolors = [(np.random.uniform(low=0.0, high=1),
                           np.random.uniform(low=0.2, high=1),
-                          np.random.uniform(low=0.9, high=1)) for i in xrange(nlabels)]
+                          np.random.uniform(low=0.9, high=1)) for i in range(nlabels)]
 
         # Convert HSV list to RGB
         randRGBcolors = []
@@ -46,7 +48,7 @@ def rand_cmap(nlabels, type='bright', first_color_black=True, last_color_black=F
         high = 0.95
         randRGBcolors = [(np.random.uniform(low=low, high=high),
                           np.random.uniform(low=low, high=high),
-                          np.random.uniform(low=low, high=high)) for i in xrange(nlabels)]
+                          np.random.uniform(low=low, high=high)) for i in range(nlabels)]
 
         if first_color_black:
             randRGBcolors[0] = [0, 0, 0]

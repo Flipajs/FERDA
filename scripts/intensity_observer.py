@@ -1,3 +1,7 @@
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import range
+from past.utils import old_div
 __author__ = 'flipajs'
 
 import cv2
@@ -28,7 +32,7 @@ def stretch_intensity(im):
     from skimage.filters import sobel, roberts
     # im2 = sobel(im)
     im2 = roberts(im)
-    im2 = np.asarray((im2/np.max(im2)) * 255, dtype=np.uint8)
+    im2 = np.asarray((old_div(im2,np.max(im2))) * 255, dtype=np.uint8)
     cv2.imwrite('/Users/flipajs/Documents/wd/roberts.png', im2)
 
     plt.subplot(313)

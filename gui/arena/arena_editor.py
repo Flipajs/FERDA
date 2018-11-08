@@ -1,4 +1,8 @@
 from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import range
+from past.utils import old_div
 from gui.arena.my_ellipse import MyEllipse
 from gui.arena.my_popup   import MyPopup
 from gui.arena.my_view    import MyView
@@ -431,8 +435,8 @@ class ArenaEditor(QtGui.QDialog):
 
         # paint the area around the point position
         bg_height, bg_width = self.background.shape[:2]
-        for i in range(point.x() - self.pen_size/2, point.x() + self.pen_size/2):
-            for j in range(point.y() - self.pen_size/2, point.y() + self.pen_size/2):
+        for i in range(point.x() - old_div(self.pen_size,2), point.x() + old_div(self.pen_size,2)):
+            for j in range(point.y() - old_div(self.pen_size,2), point.y() + old_div(self.pen_size,2)):
                 if i >= 0 and i < bg_width and j > 0 and j <= bg_height:
                     try:
                         self.paint_image.setPixel(i, j, value)

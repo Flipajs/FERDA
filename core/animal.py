@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+from builtins import object
 __author__ = 'fnaiser'
 
 import numpy as np
@@ -14,7 +16,7 @@ colors_ = [(145, 95, 22), (54, 38, 227), (0, 191, 255), (204, 102, 153), (190, 1
                   (210,180,140), (240,255,240), (184,134,11), (0,255,127), (220,20,60), (128,0,0), (117, 149, 105)]
 
 
-class Animal():
+class Animal(object):
     def __init__(self, id=0, name=None, colormark=None, color=None):
         self.id = id
         self.name = male_names_[id]

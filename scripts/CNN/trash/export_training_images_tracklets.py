@@ -1,4 +1,6 @@
 from __future__ import print_function
+from __future__ import unicode_literals
+from builtins import str
 import numpy as np
 import sys, os, re, random
 import h5py
@@ -27,7 +29,7 @@ def repre(project):
     repre['blue'] = [25021, 29489, 21416, 19292, 22633, 21292, 191, 32167, 2532, 11778, 27151]
     repre['purple'] = [6001]
 
-    for key, vals in repre.iteritems():
+    for key, vals in repre.items():
         s = 0
         for id_ in vals:
             try:
@@ -82,7 +84,7 @@ if __name__ == '__main__':
     vm = get_auto_video_manager(p)
 
     if True:
-        for key, tracklets in tqdm.tqdm(repre.iteritems()):
+        for key, tracklets in tqdm.tqdm(iter(repre.items())):
             print(id, key)
             try:
                 os.mkdir(OUT_DIR+'/'+str(id))

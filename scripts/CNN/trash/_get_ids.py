@@ -1,4 +1,7 @@
 from __future__ import print_function
+from __future__ import unicode_literals
+from builtins import str
+from builtins import range
 import os
 import pickle
 WD = '/Users/flipajs/Documents/dev/ferda/scripts/out9'

@@ -1,3 +1,6 @@
+from __future__ import division
+from __future__ import unicode_literals
+from past.utils import old_div
 from PyQt4 import Qt
 
 __author__ = 'filip@naiser.cz'
@@ -105,14 +108,14 @@ class MyView(QtGui.QGraphicsView, object):
                 if m11 < 0.1 or m22 < 0.1:
                     return
 
-                self.scale(1.0 / scale_factor, 1.0 / scale_factor)
+                self.scale(old_div(1.0, scale_factor), old_div(1.0, scale_factor))
 
     def zoom(self, factor, center_point):
         self.scale(factor, factor)
         self.centerOn(center_point)
 
     def zoom_into(self, x1, y1, x2, y2):
-        center_ = QtCore.QPointF(float(x2 + x1) / 2, float(y2 + y1)/2)
+        center_ = QtCore.QPointF(old_div(float(x2 + x1), 2), old_div(float(y2 + y1),2))
         max_zoom = 20
-        scale = min(self.width() / float(x2 - x1), self.height() / float(y2 - y1))
+        scale = min(old_div(self.width(), float(x2 - x1)), old_div(self.height(), float(y2 - y1)))
         self.zoom(min(scale, max_zoom), center_)

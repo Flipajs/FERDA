@@ -1,4 +1,7 @@
 from __future__ import print_function
+from __future__ import unicode_literals
+from builtins import str
+from builtins import range
 import numpy as np
 import sys, os, re, random
 import h5py
@@ -38,9 +41,9 @@ if __name__ == '__main__':
             if pattern.match(fname):
                 images_f[i].append(fname)
 
-    for k in tqdm.tqdm(range(NUM_EXAMPLES)):
+    for k in tqdm.tqdm(list(range(NUM_EXAMPLES))):
         for i in range(NUM_ANIMALS):
-            ai, aj = random.sample(xrange(0, len(images_f[i])), 2)
+            ai, aj = random.sample(range(0, len(images_f[i])), 2)
 
             im1 = misc.imread(OUT_DIR+'/'+str(i)+'/'+images_f[i][ai])
             im2 = misc.imread(OUT_DIR+'/'+str(i)+'/'+images_f[i][aj])

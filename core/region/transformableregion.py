@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+from builtins import object
 import math
 
 import cv2
@@ -6,7 +8,7 @@ import numpy as np
 from core.region.ep import p2e, e2p
 
 
-class TransformableRegion:
+class TransformableRegion(object):
     def __init__(self, image=None):
         self.img = image
         #

@@ -1,5 +1,7 @@
 from __future__ import print_function
 from __future__ import print_function
+from __future__ import unicode_literals
+from builtins import range
 import numpy as np
 import tqdm
 from cachetools import LRUCache
@@ -55,7 +57,7 @@ def generate_reidentification_training_data(project_path, out_dir):
     cache = LRUCache(maxsize=5000, missing=lambda x: vm.get_frame(x))
 
     if LINEAR:
-        for i in tqdm(range(p.num_frames())):
+        for i in tqdm(list(range(p.num_frames()))):
             cache[i]
 
     imgs = []
@@ -65,7 +67,7 @@ def generate_reidentification_training_data(project_path, out_dir):
         while i < NUM_EXAMPLES:
             frame = random.randint(0, vm.total_frame_count())
 
-            tracklets = filter(lambda x: x.is_single(), p.chm.tracklets_in_frame(frame))
+            tracklets = [x for x in p.chm.tracklets_in_frame(frame) if x.is_single()]
             if len(tracklets) > 1:
                 trackletA, trackletB = random.sample(tracklets)
                 regionA1 = trackletA.get_random_region(p.gm)

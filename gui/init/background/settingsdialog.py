@@ -1,3 +1,6 @@
+from __future__ import unicode_literals
+from builtins import str
+from builtins import range
 from PyQt4.QtGui import *
 from PyQt4.QtCore import *
 

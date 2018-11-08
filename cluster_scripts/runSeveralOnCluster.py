@@ -1,5 +1,8 @@
 from __future__ import print_function
 from __future__ import absolute_import
+from __future__ import unicode_literals
+from builtins import input
+from builtins import str
 import sys
 import os
 import datetime
@@ -121,7 +124,7 @@ for l in lines:
     if ars.exists_remote(remoteUser + "@" + remoteHost, remoteProjectPath):
         print(
         "\nW: project " + projectName + "is already on the cluster. Maybe it was submitted before. Do you wish to submit it again? ATTENTION: this will overwrite all work done on that project.");
-        answer = raw_input('Submit again (y/n)');
+        answer = input('Submit again (y/n)');
         if not ((answer == 'y') or (answer == 'Y')):
             print("will not overwrite, skipping project");
             numberSkipped += 1;
@@ -187,7 +190,7 @@ remoteParallelizationFile = remoteFerdaPath + parallelizationListFile;
 logText += "\nSUMMARY: of " + str(totNumLines) + " lines in the file " + str(numberSkipped) + " where skipped\n"
 print("\nSUMMARY of " + str(totNumLines) + " in the project file " + str(
     numberSkipped) + " were skipped. The rest are ready to be copied & submitted for execution.\n")
-answer = raw_input('Proceed (y/n)');
+answer = input('Proceed (y/n)');
 if ((answer == 'y') or (answer == 'Y')):
     lastFile = -1;
     while len(remoteCommandQueue) > 0:

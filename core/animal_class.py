@@ -1,7 +1,9 @@
+from __future__ import unicode_literals
+from builtins import object
 __author__ = 'fnaiser'
 
 
-class AnimalClass():
+class AnimalClass(object):
     """
     example of AnimalClass is 'worker', 'queen'. It is based on appearance.
     """

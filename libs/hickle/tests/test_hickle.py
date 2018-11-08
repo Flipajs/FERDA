@@ -7,7 +7,12 @@ Unit tests for hickle module.
 
 """
 from __future__ import print_function
+from __future__ import unicode_literals
 
+from builtins import zip
+from builtins import chr
+from builtins import str
+from builtins import range
 import os
 from hickle import *
 import hickle
@@ -59,12 +64,12 @@ def test_string():
 def test_unicode():
     """ Dumping and loading a unicode string """
     filename, mode = 'test.h5', 'w'
-    u = unichr(233) + unichr(0x0bf2) + unichr(3972) + unichr(6000)
+    u = chr(233) + chr(0x0bf2) + chr(3972) + chr(6000)
     dump(u, filename, mode)
     u_hkl = load(filename)
 
     try:
-        assert type(u) == type(u_hkl) == unicode
+        assert type(u) == type(u_hkl) == str
         assert u == u_hkl
         # For those interested, uncomment below to see what those codes are:
         # for i, c in enumerate(u_hkl):
@@ -171,9 +176,9 @@ def test_dict():
     dump(dd, filename, mode)
     dd_hkl = load(filename)
     
-    for k in dd.keys():
+    for k in list(dd.keys()):
         try:
-            assert k in dd_hkl.keys()
+            assert k in list(dd_hkl.keys())
             
             if type(dd[k]) is type(np.array([1])):
                 assert np.all((dd[k], dd_hkl[k]))
@@ -260,9 +265,9 @@ def test_masked_dict():
     dump(dd, filename, mode)
     dd_hkl = load(filename)
     
-    for k in dd.keys():
+    for k in list(dd.keys()):
         try:
-            assert k in dd_hkl.keys()
+            assert k in list(dd_hkl.keys())
             if type(dd[k]) is type(np.array([1])):
                 assert np.all((dd[k], dd_hkl[k]))
             elif type(dd[k]) is type(np.ma.array([1])):
@@ -537,8 +542,8 @@ def test_list_long_type():
         print("ERR:", list_obj, list_hkl)
         import h5py
         a = h5py.File(filename)
-        print(a.keys())
-        print(a['data'].keys())
+        print(list(a.keys()))
+        print(list(a['data'].keys()))
         os.remove(filename)
         raise
 
@@ -693,7 +698,7 @@ def test_simple_dict():
 
 def test_complex_dict():
     a = {'akey': 1, 'akey2': 2}
-    b = {'bkey': 2.0, 'bkey3': long(3.0)}
+    b = {'bkey': 2.0, 'bkey3': int(3.0)}
     c = {'ckey': "hello", "ckey2": "hi there"}
     z = {'zkey1': a, 'zkey2': b, 'zkey3': c}
 
@@ -712,7 +717,7 @@ def test_unicode():
 
     z = load('test.hkl')
     assert a == z
-    assert type(a) == type(z) == unicode
+    assert type(a) == type(z) == str
     pprint(z)
 
 
@@ -762,7 +767,7 @@ def test_complex():
     data = {"A":1.5, "B":1.5 + 1j, "C":np.linspace(0,1,4) + 2j}
     dump(data, "test.hkl")   
     data2 = load("test.hkl")
-    for key in data.keys():
+    for key in list(data.keys()):
         assert type(data[key]) == type(data2[key])
 
     

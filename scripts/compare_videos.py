@@ -1,4 +1,6 @@
 from __future__ import print_function
+from __future__ import unicode_literals
+from builtins import range
 import cv2
 import time
 from utils.video_manager import get_auto_video_manager
@@ -26,7 +28,7 @@ p2 = Project()
 p2.video_paths = ['/Users/flipajs/Downloads/Cam1_clip_slow.mp4']
 
 import random
-random_frames = random.sample(range(4500), 50)
+random_frames = random.sample(list(range(4500)), 50)
 
 print("Super fast")
 measure(p1, random_frames)

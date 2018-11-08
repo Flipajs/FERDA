@@ -1,4 +1,10 @@
 from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import str
+from builtins import range
+from builtins import object
+from past.utils import old_div
 from PyQt4 import QtGui, QtCore
 from matplotlib import colors
 from matplotlib import cm as cmx
@@ -10,7 +16,7 @@ from core.graph.region_chunk import RegionChunk
 
 # TODO: opravit chybu databaze pri nacitani projektu rucne (spatne vlakno)
 
-class ColorManager():
+class ColorManager(object):
     def __init__(self, length, limit, overlap=30, mode="rand", cmap='Accent', rand_quality=80, rand_loop_limit=100):
         """
         :param length: the length of the video (frames)
@@ -46,7 +52,7 @@ class ColorManager():
             self.mode = "rainbow"
             self.colors_list = []
             if limit >= 2:
-                dx = 1 / (limit - 1.0)
+                dx = old_div(1, (limit - 1.0))
                 for i in range (0, limit):
                     self.colors_list.append(self.generate_color_cube(i * dx))
             self.cube_id = 0
@@ -222,27 +228,27 @@ class ColorManager():
     def generate_color_cube(self, x):
         r, g, b = 0, 0, 1
         if 0 <= x < 0.2:
-            x = x / 0.2
+            x = old_div(x, 0.2)
             r = 0
             g = x
             b = 1
         elif x < 0.4:
-            x = (x - 0.2) / 0.2
+            x = old_div((x - 0.2), 0.2)
             r = 0
             g = 1
             b = 1
         elif x < 0.6:
-            x = (x - 0.4) / 0.2
+            x = old_div((x - 0.4), 0.2)
             r = x
             g = 1
             b = 0
         elif x < 0.8:
-            x = (x - 0.6) / 0.2
+            x = old_div((x - 0.6), 0.2)
             r = 1.0
             g = 1.0 - x
             b = 0.0
         elif x <= 1.0:
-            x = (x - 0.8) / 0.2
+            x = old_div((x - 0.8), 0.2)
             r = 1
             g = 0
             b = x
@@ -357,7 +363,7 @@ class ColorComparatorGui(QtGui.QWidget):
         qp.end()
 
 
-class Track():
+class Track(object):
     def __init__(self, start, stop, id, color):
         self.color = color
         if start > stop:
@@ -387,7 +393,7 @@ def colorize_project(project):
     vid = get_auto_video_manager(project)
 
     limit = 0
-    for _, ch in project.chm.chunks_.iteritems():
+    for _, ch in project.chm.chunks_.items():
         if ch.length() > 0:
             limit += 1
 
@@ -415,7 +421,7 @@ if __name__ == "__main__":
 
 
     app.exec_()
-    for key, track_dict in ex.cm.adjacency.iteritems():
+    for key, track_dict in ex.cm.adjacency.items():
         track_ids = ""
         for track in track_dict:
             track_ids += str(track.id)

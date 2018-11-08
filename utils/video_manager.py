@@ -1,4 +1,6 @@
 from __future__ import absolute_import
+from __future__ import unicode_literals
+from builtins import object
 __author__ = 'filip@naiser.cz'
 
 import cv2
@@ -8,7 +10,7 @@ import errno
 import warnings
 
 
-class VideoType:
+class VideoType(object):
     """Enum type to easily distinguish between ordinary video (one video file) and Ferda compressed, which is
     composed from 2 files. Highly compressed full video and segmented second one.
     """
@@ -24,7 +26,7 @@ class VideoFileError(OSError):
         super(VideoFileError, self).__init__(*args, **kwargs)
 
 
-class VideoManager:
+class VideoManager(object):
     """
     this class encapsulates video capturing using OpenCV class VideoCapture
     """

@@ -1,17 +1,23 @@
 from __future__ import print_function
 from __future__ import absolute_import
+from __future__ import unicode_literals
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
+from builtins import range
+from builtins import object
 from core.region.region import Region, encode_RLE
 
 __author__ = 'flipajs'
 
 import sqlite3 as sql
-import cPickle as pickle
+import pickle as pickle
 from core.region.region import encode_RLE
 from cachetools import LRUCache
 import sys
 
 
-class Dummy():
+class Dummy(object):
     def __getitem__(self, item):
         return None
 
@@ -19,7 +25,7 @@ class Dummy():
         pass
 
 
-class RegionManager:
+class RegionManager(object):
     def __init__(self, db_wd=None, db_name="rm.sqlite3", cache_size_limit=1000, data=None, supress_init_print=False):
         """
         RegionManager is designed to store regions data. By default, all data is stored in memory cache (dictionary) and
@@ -341,7 +347,7 @@ class RegionManager:
             for r in regions:
                 if isinstance(r, Region):
                     sql_ids.append(r.id())
-                elif isinstance(r, (int, long)):
+                elif isinstance(r, (int, int)):
                     sql_ids.append(r)
                 else:
                     raise TypeError("Remove method only accepts Regions or their ids (int)")
@@ -363,7 +369,7 @@ class RegionManager:
         # print "Removing %s " % region
         if isinstance(region, Region):
             id_ = region.id()
-        elif isinstance(region, (int, long)):
+        elif isinstance(region, (int, int)):
             id_ = region
         else:
             raise TypeError("Remove method only accepts Regions or their ids (int)")
@@ -411,7 +417,7 @@ class RegionManager:
     def __contains__(self, item):
         if isinstance(item, Region):
             return len(self)+1 > item.id() > 0
-        return isinstance(item, (int, long)) and len(self)+1 > item > 0
+        return isinstance(item, (int, int)) and len(self)+1 > item > 0
 
 
 if __name__ == "__main__":

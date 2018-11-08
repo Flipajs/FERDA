@@ -12,6 +12,7 @@
 # may be distributed without limitation.
 
 from __future__ import unicode_literals
+from builtins import range
 import sys
 import os
 import random

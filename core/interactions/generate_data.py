@@ -1,8 +1,16 @@
+from __future__ import division
 from __future__ import print_function
+from __future__ import unicode_literals
 
+from builtins import zip
+from builtins import str
+from builtins import range
+from builtins import object
+from past.utils import old_div
 """
 use: $ python -m core.interactions.generate_data
 """
+
 
 #TODO change self.__video.get_frame() for cached self._project.img_manager.get_whole_img()
 
@@ -236,9 +244,9 @@ class DataGenerator(object):
         self._init_regions()
         regions = []
         if multi:
-            regions.extend([item for sublist in self._multi.values() for item in sublist])
+            regions.extend([item for sublist in list(self._multi.values()) for item in sublist])
         if single:
-            regions.extend([item for sublist in self._single.values() for item in sublist])
+            regions.extend([item for sublist in list(self._single.values()) for item in sublist])
         n_regions = np.random.choice(regions, n)
         frames = np.array([r.frame() for r in n_regions])
         sort_idx = np.argsort(frames)
@@ -392,7 +400,7 @@ class DataGenerator(object):
                     n = len(region_tracklet_fixed)
                     region_tracklet_fixed = region_tracklet_fixed[
                         int(n * self.params['single_tracklet_remove_fraction'] / 2):
-                        int(n * (1 - self.params['single_tracklet_remove_fraction'] / 2))]
+                        int(n * (1 - old_div(self.params['single_tracklet_remove_fraction'], 2)))]
                 head_fix(region_tracklet_fixed)
                 single_region_tracklets.append(region_tracklet_fixed)
                 all_regions_idx.extend([(i, j) for j in range(len(region_tracklet_fixed) - 1)])
@@ -502,7 +510,7 @@ class DataGenerator(object):
 
         # construct alpha channel
         bg_diff = (self._get_bg_model().astype(np.float) - img_a).mean(axis=2).clip(5, 100)
-        alpha = ((bg_diff - bg_diff.min()) / np.ptp(bg_diff))
+        alpha = (old_div((bg_diff - bg_diff.min()), np.ptp(bg_diff)))
         img_rgba = np.concatenate((img_a, np.expand_dims(alpha * 255, 2).astype(np.uint8)), 2)
 
         tregion = TransformableRegion(img_rgba)
@@ -520,7 +528,7 @@ class DataGenerator(object):
         tregion.move(ellipse.get_point(theta_deg)[::-1])  # move the object 2 to the object 1 border
 
         alpha_trans = tregion.get_img()[:, :, -1].astype(float)
-        alpha_trans *= tregion.get_mask(alpha=True) / 255
+        alpha_trans *= old_div(tregion.get_mask(alpha=True), 255)
         alpha_trans /= 255
         alpha_trans = np.expand_dims(alpha_trans, 2)
 
@@ -561,10 +569,10 @@ class DataGenerator(object):
         # _ = plt.axis([center_xy[0] - zoomed_size / 2, center_xy[0] + zoomed_size / 2,
         #               center_xy[1] - zoomed_size / 2, center_xy[1] + zoomed_size / 2])
         moments = cv2.moments(mask.astype(np.uint8), True)
-        centroid_xy = (moments['m10'] / moments['m00'], moments['m01'] / moments['m00'])
-        moments['muprime20'] = moments['mu20'] / moments['m00']
-        moments['muprime02'] = moments['mu02'] / moments['m00']
-        moments['muprime11'] = moments['mu11'] / moments['m00']
+        centroid_xy = (old_div(moments['m10'], moments['m00']), old_div(moments['m01'], moments['m00']))
+        moments['muprime20'] = old_div(moments['mu20'], moments['m00'])
+        moments['muprime02'] = old_div(moments['mu02'], moments['m00'])
+        moments['muprime11'] = old_div(moments['mu11'], moments['m00'])
         major_deg = math.degrees(0.5 * math.atan2(2 * moments['muprime11'],
                                                   (moments['muprime20'] - moments['muprime02'])))
         return centroid_xy, major_deg

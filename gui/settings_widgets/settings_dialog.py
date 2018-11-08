@@ -1,3 +1,7 @@
+from __future__ import unicode_literals
+from builtins import str
+from builtins import range
+from builtins import object
 from PyQt4 import QtGui, QtCore
 from gui.settings_widgets.parameters_tab import ParametersTab
 from gui.settings_widgets.visualisation_tab import VisualisationTab
@@ -253,7 +257,7 @@ class KeyBindingsTab(QtGui.QWidget):
 
         return root
 
-class ConflictFinder():
+class ConflictFinder(object):
     def __init__(self):
         self.conflicts = []
 
@@ -302,7 +306,7 @@ class ConflictFinder():
         return short
 
 
-class Node:
+class Node(object):
     def __init__(self, name, parent):
         self.name = name
         self.parent = parent
@@ -310,7 +314,7 @@ class Node:
         self.children = []
 
 
-class Key:
+class Key(object):
     def __init__(self, value, parent, usage=""):
         self.value = value
         self.parent = parent

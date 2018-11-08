@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+from builtins import zip
 import unittest
 
 import numpy as np
@@ -25,7 +27,7 @@ class InteractionsTestCase(unittest.TestCase):
     def test__synthetize(self):
         self.init()
         n_objects = 2
-        single_regions = [item for sublist in self.intr._single.values() for item in sublist]
+        single_regions = [item for sublist in list(self.intr._single.values()) for item in sublist]
         regions = np.random.choice(single_regions, n_objects * 1)
         images = [self.intr._video.get_frame(r.frame()) for r in regions]
         masks = [np.zeros(shape=images[0].shape[:2], dtype=images[0].dtype) for _ in regions]

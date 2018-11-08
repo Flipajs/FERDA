@@ -1,7 +1,17 @@
 from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
 # from __future__ import print_function
-import cPickle as pickle
-from itertools import izip
+from future import standard_library
+standard_library.install_aliases()
+from builtins import zip
+from builtins import next
+from builtins import map
+from builtins import str
+from builtins import range
+from past.utils import old_div
+import pickle as pickle
+
 
 import cv2
 from libs.hickle import hickle
@@ -120,14 +130,14 @@ def display_head_pairs(project):
     # sort by d2
     pairs = sorted(pairs, key=lambda x: -x[2])
     # d1 > 0.5major_axes_mean
-    pairs = filter(lambda x: project.gm.region(x[0][0]).vector_on_major_axis_projection_head_unknown(project.gm.region(x[0][1])) > major_axes_mean, pairs)
+    pairs = [x for x in pairs if project.gm.region(x[0][0]).vector_on_major_axis_projection_head_unknown(project.gm.region(x[0][1])) > major_axes_mean]
     d2s = [x[2] for x in pairs]
 
     plt.hist(d2s, bins=20)
     plt.ion()
     plt.show()
 
-    pairs = filter(lambda x: x[2] > D2_COEF*major_axes_mean, pairs)
+    pairs = [x for x in pairs if x[2] > D2_COEF*major_axes_mean]
 
     hickle.dump(pairs, '/Users/flipajs/Desktop/temp/pairs/head_pairs.pkl')
 
@@ -265,9 +275,9 @@ def head_features(r, swap=False):
     features = []
     nu = __get_mu_moments_pick(img)
     features.extend(nu)
-    nu = __get_mu_moments_pick(img[:, :img.shape[1] / 2])
+    nu = __get_mu_moments_pick(img[:, :old_div(img.shape[1], 2)])
     features.extend(nu)
-    nu = __get_mu_moments_pick(img[:, img.shape[1] / 2:])
+    nu = __get_mu_moments_pick(img[:, old_div(img.shape[1], 2):])
     features.extend(nu)
 
     # cv2.imshow('test', img*255)
@@ -579,7 +589,7 @@ def get_max_dist2(project):
             d = np.linalg.norm(reg(e.source()).centroid() - reg(e.target()).centroid())
             distances.append(d)
 
-        if distances[1] / distances[0] > 2:
+        if old_div(distances[1], distances[0]) > 2:
             safe_dists.append(distances[0])
             pairs.append((best_e[0].source(), best_e[0].target()))
 
@@ -674,15 +684,15 @@ def get_movement_histogram(p):
     H, edges = np.histogramdd(data, bins=10)
     data = data[::5, :]
 
-    ax.scatter(data[:, 1], data[:, 2], data[:, 0], c=data[:, 0]/data[:, 0].max())
+    ax.scatter(data[:, 1], data[:, 2], data[:, 0], c=old_div(data[:, 0],data[:, 0].max()))
 
     data2 = np.array(data2)
-    from itertools import izip
+    
 
     cases_p = []
     cases_n = []
 
-    for it, case in izip(data2, cases):
+    for it, case in zip(data2, cases):
         it = np.array(it)
 
         # if np.linalg.norm(it[0, :] - it[1, :]) > 60:
@@ -724,7 +734,7 @@ def observe_cases(project, type='case_p'):
     from utils.video_manager import get_auto_video_manager
     import cv2
     from utils.drawing.points import draw_points
-    from itertools import izip
+    
 
     BORDER = 150
     COLS = 1
@@ -737,7 +747,7 @@ def observe_cases(project, type='case_p'):
     part = 0
     data = []
     for vals, case in cases:
-        for val, (v, x, w) in izip(vals, case):
+        for val, (v, x, w) in zip(vals, case):
             c = (0, 255, 0, 70)
             if val <= 1e-10:
                 c = (255, 0, 0, 70)
@@ -788,7 +798,7 @@ def expand_based_on_movement_model(p):
     THRESH = 100.0
 
     # when merge... it will change size
-    ch_keys = p.chm.chunks_.keys()
+    ch_keys = list(p.chm.chunks_.keys())
     for t_id in ch_keys:
         if t_id not in p.chm.chunks_:
             continue
@@ -808,7 +818,7 @@ def expand_based_on_movement_model(p):
                     options = sorted(options, key=lambda x: -x[0])
 
                     if len(options) > 1:
-                        ratio = options[0][0] / options[1][0]
+                        ratio = old_div(options[0][0], options[1][0])
                     else:
                         ratio = options[0][0]
 
@@ -832,7 +842,7 @@ def expand_based_on_movement_model(p):
                     options = sorted(options, key=lambda x: -x[0])
 
                     if len(options) > 1:
-                        ratio = options[0][0] / options[1][0]
+                        ratio = old_div(options[0][0], options[1][0])
                     else:
                         ratio = options[0][0]
 
@@ -917,7 +927,7 @@ def simple_tracklets(p):
             else:
                 break
 
-        new_t_vertices_ = map(int, new_t_vertices_)
+        new_t_vertices_ = list(map(int, new_t_vertices_))
 
         if len(new_t_vertices_) > 1:
             for v in new_t_vertices_:
@@ -1055,7 +1065,7 @@ def solve_nearby_passings(p):
     cases_p = []
     cases_n = []
 
-    for it, case in izip(data, cases):
+    for it, case in zip(data, cases):
         it = np.array(it)
 
         # if np.linalg.norm(it[0, :] - it[1, :]) > 60:
@@ -1174,9 +1184,9 @@ def tracklet_stats(p):
     print (
     "LENGTHS mean: {:.1f} median: {}, max: {}, sum: {} coverage: {:.2%}".format(np.mean(lengths), np.median(lengths),
                                                                                 lengths.max(), np.sum(lengths),
-                                                                                np.sum(lengths) / float(
+                                                                                old_div(np.sum(lengths), float(
                                                                                     (p.gm.end_t - p.gm.start_t) * len(
-                                                                                        p.animals))))
+                                                                                        p.animals)))))
 
 
 def load_p_checkpoint(p, name=''):
@@ -1216,10 +1226,10 @@ def get_pair_fetures_appearance(r1, r2):
 
     f = [
         abs(r1.area() - r2.area()),
-        r1.area() / float(r2.area()),
+        old_div(r1.area(), float(r2.area())),
         r1.ellipse_major_axis_length() - r2.ellipse_major_axis_length(),
-        r1.ellipse_major_axis_length() / r2.ellipse_major_axis_length(),
-        (r1.ellipse_major_axis_length() / r1.ellipse_minor_axis_length()) / (r2.ellipse_major_axis_length() / r2.ellipse_minor_axis_length()),
+        old_div(r1.ellipse_major_axis_length(), r2.ellipse_major_axis_length()),
+        old_div((old_div(r1.ellipse_major_axis_length(), r1.ellipse_minor_axis_length())), (old_div(r2.ellipse_major_axis_length(), r2.ellipse_minor_axis_length()))),
         # r1.eccentricity() - r2.eccentricity(),
         # r1.sxx_ - r2.sxx_,
         # r1.syy_ - r2.syy_,
@@ -1361,7 +1371,7 @@ def add_score_to_edges(p):
         probs = lr.predict_proba(np.array(vals).reshape((len(vals), 1)))
 
         print("assigning score to edges..")
-        for val, e in izip(probs[:, 0], edges):
+        for val, e in zip(probs[:, 0], edges):
             if type == 'appearance':
                 p.gm.g.ep['score'][e] = val
             else:
@@ -1626,7 +1636,7 @@ if __name__ == '__main__':
                         pairs.append((e, p.gm.g.ep['score'][e]))
 
                     pairs = sorted(pairs, key=lambda x: -x[1])
-                    if len(pairs) == 1 or pairs[0][1] / pairs[1][1] > THRESH:
+                    if len(pairs) == 1 or old_div(pairs[0][1], pairs[1][1]) > THRESH:
                         best_s = 1
                         for e in pairs[0][0].target().in_edges():
                             if e == pairs[0][0]:
@@ -1636,7 +1646,7 @@ if __name__ == '__main__':
                             if s > best_s:
                                 best_s = s
 
-                        if pairs[0][1] / best_s > THRESH:
+                        if old_div(pairs[0][1], best_s) > THRESH:
                             confirm_later.append((pairs[0][0].source(), pairs[0][0].target()))
 
             solver.confirm_edges(confirm_later)

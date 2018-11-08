@@ -1,6 +1,10 @@
 """
 In this file all global settings are stored.
 """
+from __future__ import unicode_literals
+from builtins import str
+from builtins import object
+from future.utils import with_metaclass
 __author__ = 'fnaiser'
 from PyQt4 import QtCore, QtGui
 
@@ -27,7 +31,7 @@ class SettingsType(type):
         return type.__getattribute__(self, attr).set(val)
 
 
-class Item:
+class Item(object):
     def __init__(self, key, val, tooltip=''):
         self.key_ = key
         self.val_ = val
@@ -70,8 +74,7 @@ class Item:
 #     img_manager_size_MB = Item('cache/img_manager_size_MB', 500, '')
 #     region_manager_num_of_instances = Item('cache/region_manager_num_of_instances', 0, '')
 
-class Colormarks:
-    __metaclass__ = SettingsType
+class Colormarks(with_metaclass(SettingsType, object)):
     use = Item('colormarks/use', True)
     mser_max_area = Item('colormarks/mser_max_area', 200, 'Used in colormark detection process to ignore all regions bigger then this parameter (in pixels)')
     mser_min_area = Item('colormarks/mser_min_area', 5, 'Used in colormark detection process to ignore all regions lower then this parameter (in pixels)')
@@ -82,8 +85,7 @@ class Colormarks:
     igbr_i_weight = Item('colormarks/igbr_i_weight', 0.5)
 
 
-class Visualization:
-    __metaclass__ = SettingsType
+class Visualization(with_metaclass(SettingsType, object)):
     default_region_color = Item('visualization/default_region_color', QtGui.QColor(0, 255, 255, 50), '')
     basic_marker_opacity = Item('visualization/basic_marker_opacity', 0.8, '...')
     segmentation_alpha = Item('visualization/segmentation_alpha', 230, '...')
@@ -95,16 +97,13 @@ class Visualization:
     tracklet_len_per_px = Item('visualization/tracklet_len_per_px_sb', 1, '...')
 
 
-class Temp:
-    __metaclass__ = SettingsType
+class Temp(with_metaclass(SettingsType, object)):
     last_vid_path = Item('temp/last_vid_path', '')
     last_wd_path = Item('temp/last_wd_path', '')
     last_gt_path = Item('temp/last_gt_path', '')
 
 
-class Controls:
-    __metaclass__ = SettingsType
-    # general
+class Controls(with_metaclass(SettingsType, object)):
     show_settings = Item('controls/show_settings', QtGui.QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.Key_Comma), 'Show settings tab')
 
     # step by step results
@@ -144,7 +143,7 @@ class Controls:
     global_view_stop_following = Item('controls/gv/stop_following', QtGui.QKeySequence(QtCore.Qt.Key_S))
 
 
-class Settings:
+class Settings(object):
     colormarks = Colormarks
     visualization = Visualization
     temp = Temp

@@ -1,3 +1,7 @@
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import range
+from past.utils import old_div
 __author__ = 'fnaiser'
 
 import math
@@ -62,7 +66,7 @@ class NewRegionWidget(QtGui.QWidget):
 
         h_ = 2*a_ + 1
         im = np.zeros((h_, h_, 3))
-        cv2.ellipse(im, el_c, (int(math.ceil(a_)), int(math.ceil(a_/3.))), int(round(th)), 0, 360, (255, 255, 0), -1)
+        cv2.ellipse(im, el_c, (int(math.ceil(a_)), int(math.ceil(old_div(a_,3.)))), int(round(th)), 0, 360, (255, 255, 0), -1)
         ids = im[:, :, 1] > 0
         pts = []
         for y in range(ids.shape[0]):

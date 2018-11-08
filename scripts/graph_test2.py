@@ -1,4 +1,7 @@
 from __future__ import print_function
+from __future__ import unicode_literals
+from builtins import zip
+from builtins import range
 __author__ = 'flipajs'
 
 import graph_tool
@@ -35,7 +38,7 @@ if __name__ == "__main__":
     g2.ep['cost'] = g2.new_edge_property("float")
 
     ids = {}
-    for i, n in zip(range(len(nodes)), nodes):
+    for i, n in zip(list(range(len(nodes))), nodes):
         ids[n] = i
 
     region_vertex_refs = {}

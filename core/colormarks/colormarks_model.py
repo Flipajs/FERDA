@@ -1,4 +1,10 @@
 from __future__ import absolute_import
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import zip
+from builtins import range
+from builtins import object
+from past.utils import old_div
 import numpy as np
 from .processing import transform_img_
 from .hist_3d import ColorHist3d
@@ -8,7 +14,7 @@ from math import ceil
 from utils.img import get_safe_selection
 
 
-class ColormarksModel:
+class ColormarksModel(object):
     def __init__(self, num_bins1=16, num_bins2=16, num_bins3=16):
         self.num_bins1 = num_bins1
         self.num_bins2 = num_bins2
@@ -33,7 +39,7 @@ class ColormarksModel:
                                   num_bins1=self.num_bins1, num_bins2=self.num_bins2, num_bins3=self.num_bins3,
                                   theta=0.3, epsilon=0.9)
 
-        for (picked_pxs, all_pxs, mean_color), c_id in zip(color_samples, range(1, len(color_samples)+1)):
+        for (picked_pxs, all_pxs, mean_color), c_id in zip(color_samples, list(range(1, len(color_samples)+1))):
             self.hist3d.remove_bg(all_pxs)
             self.hist3d.add_color(picked_pxs, c_id)
             self.colors_[c_id] = mean_color
@@ -67,8 +73,8 @@ class ColormarksModel:
 
         roi = r.roi()
 
-        height2 = int(ceil((roi.height() * border_percent) / 2.0))
-        width2 = int(ceil((roi.width() * border_percent) / 2.0))
+        height2 = int(ceil(old_div((roi.height() * border_percent), 2.0)))
+        width2 = int(ceil(old_div((roi.width() * border_percent), 2.0)))
         x = r.centroid()[1] - width2
         y = r.centroid()[0] - height2
 

@@ -1,4 +1,10 @@
 from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import map
+from builtins import str
+from builtins import range
+from past.utils import old_div
 import sys
 
 import numpy as np
@@ -533,8 +539,8 @@ class LearningWidget(QtGui.QWidget):
             end_f_ = t.end_frame(self.project.gm)
             max_ = max(max_, end_f_)
 
-        full_coverage = coverage / float(max_*len(self.project.animals))
-        single_id_coverage = coverage / float(single_id_sum)
+        full_coverage = old_div(coverage, float(max_*len(self.project.animals)))
+        single_id_coverage = old_div(coverage, float(single_id_sum))
         return full_coverage, single_id_coverage
 
     def __f2str(self, f, prec=1):
@@ -562,7 +568,7 @@ class LearningWidget(QtGui.QWidget):
 
     def decide_tracklet_question(self, tracklet, id_=None):
         if id_ is None:
-            items = map(str, self.lp.all_ids - tracklet.N)
+            items = list(map(str, self.lp.all_ids - tracklet.N))
             items = sorted(items)
 
             item, ok = QtGui.QInputDialog.getItem(self, "select animal ID for tracklet ID: "+str(tracklet.id()),
@@ -671,7 +677,7 @@ class LearningWidget(QtGui.QWidget):
             probs = np.array(probs)
             ind = np.arange(probs.shape[1])
             width = 1.
-            ax.bar(ind + (width/num_animals)/2 + (aid * (width/num_animals)), np.mean(probs, 0), width/(num_animals+1), yerr=np.std(probs, 0, ddof=1))
+            ax.bar(ind + old_div((old_div(width,num_animals)),2) + (aid * (old_div(width,num_animals))), np.mean(probs, 0), old_div(width,(num_animals+1)), yerr=np.std(probs, 0, ddof=1))
             # ax.bar(ind + width, np.mean(wprobs, 0), width, yerr=np.std(wprobs, 0, ddof=1))
         # ax.set_xticks(major_ticks)
         plt.xticks(major_ticks, ['black', 'blue', 'brown', 'gray', 'green', 'orange', 'pink', 'purple', 'red', 'white', 'yellow'])

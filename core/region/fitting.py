@@ -1,3 +1,8 @@
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import range
+from past.utils import old_div
+from builtins import object
 __author__ = 'fnaiser'
 
 from core.region.distance_map import DistanceMap
@@ -16,7 +21,7 @@ from copy import deepcopy
 # all point lists are in format [y, x]
 ###
 
-class TransHelper():
+class TransHelper(object):
     def __init__(self, animal):
         self.centroid = np.copy(animal.centroid())
         self.global_translation = np.array([0., 0.])
@@ -24,7 +29,7 @@ class TransHelper():
         self.angle = 0
 
 
-class Fitting():
+class Fitting(object):
     def __init__(self, region, animals, num_of_iterations=10, use_settled_heuristics=True):
         self.region = region
         self.animals = animals
@@ -46,7 +51,7 @@ class Fitting():
             process_flag = np.ones((len(self.animals)), dtype=np.bool)
             process_flag[settled_ids] = False
 
-            for i in range(self.num_of_iterations/2):
+            for i in range(old_div(self.num_of_iterations,2)):
                 # print i
                 list_of_pairs = self.get_pairs_a2r_region()
 
@@ -251,8 +256,8 @@ class Fitting():
             weights_ = np.array([weights, weights]).T
 
             w_sum = np.sum(weights)
-            p = np.sum(apts * weights_, axis=0) / w_sum
-            q = np.sum(rpts * weights_, axis=0) / w_sum
+            p = old_div(np.sum(apts * weights_, axis=0), w_sum)
+            q = old_div(np.sum(rpts * weights_, axis=0), w_sum)
 
             # centering
             apts = np.asarray(apts, dtype=np.float64)

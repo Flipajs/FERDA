@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+from builtins import range
 from core.project.project import Project
 from core.id_detection.features import get_colornames_hists
 from core.graph.region_chunk import RegionChunk

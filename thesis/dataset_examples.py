@@ -1,4 +1,6 @@
 from __future__ import absolute_import
+from __future__ import unicode_literals
+from builtins import str
 from .thesis_utils import load_all_projects, project_paths
 import matplotlib.pyplot as plt
 import cv2
@@ -23,7 +25,7 @@ if __name__ == '__main__':
              }
 
 
-    for p_name, p in projects.iteritems():
+    for p_name, p in projects.items():
         # if p_name != 'Camera3':
         #     continue
 

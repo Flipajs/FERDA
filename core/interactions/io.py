@@ -1,3 +1,6 @@
+from __future__ import division
+from __future__ import unicode_literals
+from past.utils import old_div
 import re
 import pandas as pd
 
@@ -25,5 +28,5 @@ def read_gt(filename):
         n = len(ids)
     assert min(ids) == 0 and max(ids) == n - 1, 'object describing columns have to be prefixed with numbers starting with 0'
     assert len(properties) % n == 0
-    properties = properties[:(len(properties) / n)]  # only properties for object 0
+    properties = properties[:(old_div(len(properties), n))]  # only properties for object 0
     return n, properties, df

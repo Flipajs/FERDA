@@ -1,7 +1,9 @@
+from __future__ import unicode_literals
+from builtins import object
 __author__ = 'fnaiser'
 
 
-class Configuration():
+class Configuration(object):
     def __init__(self, id, regions_t1, regions_t2, certainty, confs, scores):
         self.regions_t1 = regions_t1
         self.regions_t2 = regions_t2

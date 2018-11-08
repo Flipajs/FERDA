@@ -1,4 +1,9 @@
 from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import str
+from builtins import range
+from past.utils import old_div
 import numpy as np
 import sys, os, re, random
 import h5py
@@ -45,7 +50,7 @@ if __name__ == '__main__':
     ids_set = set(range(NUM_ANIMALS))
     num_examples = []
 
-    for i in tqdm.tqdm(range(NUM_ANIMALS)):
+    for i in tqdm.tqdm(list(range(NUM_ANIMALS))):
         # imgs.append([])
 
         pattern = re.compile(r"(.)*\.jpg")
@@ -120,5 +125,5 @@ if __name__ == '__main__':
 
     print()
     print(NUM_ANIMALS)
-    print("Correct: {}({:.2%}) Wrong: {}({:.2%})".format(correct, correct/float(correct+wrong), wrong, wrong/float(correct+wrong)))
+    print("Correct: {}({:.2%}) Wrong: {}({:.2%})".format(correct, old_div(correct,float(correct+wrong)), wrong, old_div(wrong,float(correct+wrong))))
 

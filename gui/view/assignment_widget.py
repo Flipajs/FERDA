@@ -1,3 +1,6 @@
+from __future__ import division
+from __future__ import unicode_literals
+from past.utils import old_div
 __author__ = 'fnaiser'
 
 import numpy as np
@@ -27,7 +30,7 @@ class AssignmentRowWidget(QtGui.QWidget):
         self.info.setFixedWidth(60)
 
         a_ = 100
-        im_crop = get_safe_selection(img, animal.init_pos_center_[0] - a_/2, animal.init_pos_center_[1] - a_/2, a_, a_)
+        im_crop = get_safe_selection(img, animal.init_pos_center_[0] - old_div(a_,2), animal.init_pos_center_[1] - old_div(a_,2), a_, a_)
         self.im_label = gui_utils.get_image_label(im_crop)
         self.im_label.setFixedWidth(row_height)
         self.im_label.setFixedHeight(row_height)

@@ -1,6 +1,12 @@
 from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
+from future import standard_library
+standard_library.install_aliases()
+from builtins import range
+from past.utils import old_div
 from utils.gt.gt import GT
-import cPickle as pickle
+import pickle as pickle
 
 if __name__ == '__main__':
     from core.project.project import Project
@@ -21,7 +27,7 @@ if __name__ == '__main__':
     p.rm = RegionManager(p.working_directory+'/temp', db_name='part0_rm.sqlite3')
     p.gm.rm = p.rm
 
-    p.chm.add_single_vertices_chunks(p, frames=range(4500))
+    p.chm.add_single_vertices_chunks(p, frames=list(range(4500)))
     p.gm.update_nodes_in_t_refs()
 
 
@@ -57,10 +63,10 @@ if __name__ == '__main__':
             A = es[0]
             B = es[1]
             if gt.test_edge(p.gm.get_chunk(e[0].source()), p.gm.get_chunk(e[0].target()), p):
-                eps = (A / theta) - (A + B)
+                eps = (old_div(A, theta)) - (A + B)
                 variant.append(0)
             else:
-                eps = (A + B) / ((1/theta) - 1)
+                eps = old_div((A + B), ((old_div(1,theta)) - 1))
                 variant.append(1)
 
 

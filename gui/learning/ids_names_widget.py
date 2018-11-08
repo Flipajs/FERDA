@@ -1,3 +1,7 @@
+from __future__ import unicode_literals
+from builtins import zip
+from builtins import str
+from builtins import range
 from PyQt4 import QtGui, QtCore
 import sys
 from utils.paired_dict import PairedDict
@@ -39,7 +43,7 @@ class IdsNamesWidget(QtGui.QWidget):
 
     def finish(self):
         id_names_pd = PairedDict()
-        for i, name in zip(range(len(self.id_names)), self.id_names):
+        for i, name in zip(list(range(len(self.id_names))), self.id_names):
             id_names_pd[i] = name
 
         self.callback_(id_names_pd)

@@ -1,4 +1,6 @@
 from __future__ import print_function
+from __future__ import unicode_literals
+from builtins import range
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 

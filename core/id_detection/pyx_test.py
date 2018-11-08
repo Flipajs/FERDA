@@ -1,5 +1,8 @@
 from __future__ import print_function
 from __future__ import absolute_import
+from __future__ import unicode_literals
+from future import standard_library
+standard_library.install_aliases()
 import pyximport; pyximport.install()
 
 from . import features2
@@ -8,7 +11,7 @@ from utils.misc import print_progress
 
 if __name__ == '__main__':
     from core.project.project import Project
-    import cPickle as pickle
+    import pickle as pickle
 
     wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_playground'
     # wd = '/Users/flipajs/Documents/wd/FERDA/zebrafish_playground'

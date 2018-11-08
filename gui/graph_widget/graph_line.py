@@ -1,23 +1,26 @@
+from __future__ import unicode_literals
+from builtins import range
+from builtins import object
 from PyQt4 import QtGui
 
 HASH_PRIME = 100663319
 
 
-class LineType:
-    TRACKLET, LINE, PARTIAL_TRACKLET = range(3) # line cannot be partial (takes only two frames)
+class LineType(object):
+    TRACKLET, LINE, PARTIAL_TRACKLET = list(range(3)) # line cannot be partial (takes only two frames)
 
     @staticmethod
     def valid_type(type):
         return type in range(3)
 
-class Overlap:
+class Overlap(object):
 
     def __init__(self, left=False, right=False):
         self.left = left
         self.right = right
 
 
-class GraphLine:
+class GraphLine(object):
 
     def __init__(self, id, region_from, region_to, type=LineType.LINE, overlap=Overlap(), sureness=0, color=QtGui.QColor(0, 0, 0, 120), appearance_score=0, movement_score=0):
         self.id = id

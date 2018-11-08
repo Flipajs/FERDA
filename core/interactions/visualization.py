@@ -1,5 +1,8 @@
 from __future__ import print_function
+from __future__ import unicode_literals
 
+from builtins import zip
+from builtins import range
 import glob
 import itertools
 import shlex
@@ -98,7 +101,7 @@ def plot_interaction(num_objects, pred=None, gt=None, ax=None, color='r'):
     if ax is None:
         ax = plt.gca()
     colors = itertools.cycle(['red', 'blue', 'green', 'yellow', 'white'])
-    for i, c in zip(range(num_objects), colors):
+    for i, c in zip(list(range(num_objects)), colors):
         if pred is not None:
             ax.add_patch(Ellipse((pred['%d_x' % i], pred['%d_y' % i]),
                                  pred['%d_major' % i], pred['%d_minor' % i],

@@ -1,5 +1,12 @@
 from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
 
+from builtins import zip
+from builtins import str
+from builtins import range
+from builtins import object
+from past.utils import old_div
 import numbers
 import os
 import sys
@@ -56,7 +63,7 @@ class ValidationCallback(Callback):
         self.evaluate_fun(self.model, self.test_generator)
 
 
-class TrainInteractions:
+class TrainInteractions(object):
     def __init__(self, num_objects=None, num_input_layers=3, predicted_properties=None, error_functions=None,
                  detector_input_size_px=200):
         assert (predicted_properties is None and error_functions is None) or \
@@ -575,7 +582,7 @@ class TrainInteractions:
         # def image_dim(img):
         #     return img * mask
 
-        test_datagen = ImageDataGenerator(rescale=1./255)  # , preprocessing_function=rotate90)
+        test_datagen = ImageDataGenerator(rescale=old_div(1.,255))  # , preprocessing_function=rotate90)
         test_generator = test_datagen.flow(X_test, shuffle=False)
 
         base_experiment_name = time.strftime("%y%m%d_%H%M", time.localtime())
@@ -633,7 +640,7 @@ class TrainInteractions:
         # input image and gt rotation
         if rotate:
             tregion = TransformableRegion(X_test[0])
-            tregion.rotate(90, np.array(tregion.img.shape[:2]) / 2)
+            tregion.rotate(90, old_div(np.array(tregion.img.shape[:2]), 2))
             for i in range(ti.num_objects):
                 y_train_df[['%d_x' % i, '%d_y' % i]] = tregion.get_transformed_coords(
                     y_train_df[['%d_x' % i, '%d_y' % i]].values.T).T
@@ -665,7 +672,7 @@ class TrainInteractions:
         assert model in self.models, 'model {} doesn\'t exist'.format(model)
 
         parameters = {'epochs': n_epochs,
-                      'steps_per_epoch': int(len(X_train) / BATCH_SIZE),  # 1
+                      'steps_per_epoch': int(old_div(len(X_train), BATCH_SIZE)),  # 1
                       'n_test': len(X_test),
         }
         if isinstance(loss_alpha, str) and loss_alpha == 'batch':
@@ -687,7 +694,7 @@ class TrainInteractions:
 
         size = self.detector_input_size_px
         x, y = np.mgrid[0:size, 0:size]
-        mask = np.expand_dims(np.exp(- 0.0002 * ((x - size / 2) ** 2 + (y - size / 2) ** 2)), 2)
+        mask = np.expand_dims(np.exp(- 0.0002 * ((x - old_div(size, 2)) ** 2 + (y - old_div(size, 2)) ** 2)), 2)
 
         def image_dim(img):
             return img * mask
@@ -701,17 +708,17 @@ class TrainInteractions:
             X_test = np.expand_dims(X_test, 3)
 
         def get_sample_weight(df, detector_input_size_px, max_reweighted_distance_px=20):
-            distance = np.linalg.norm(df[['0_x', '0_y']] - detector_input_size_px / 2, axis=1)
+            distance = np.linalg.norm(df[['0_x', '0_y']] - old_div(detector_input_size_px, 2), axis=1)
             kde = stats.gaussian_kde(distance)
-            weights = 1. / kde(distance)
+            weights = old_div(1., kde(distance))
             max_weight = weights[distance < max_reweighted_distance_px].max()
             weights[distance >= max_reweighted_distance_px] = max_weight
-            return weights / weights.min()
+            return old_div(weights, weights.min())
 
-        train_datagen = ImageDataGenerator(rescale=1./255, preprocessing_function=preprocessing)
+        train_datagen = ImageDataGenerator(rescale=old_div(1.,255), preprocessing_function=preprocessing)
         train_generator = train_datagen.flow(X_train, y_train)
 #                                             sample_weight=get_sample_weight(y_train_df, self.detector_input_size_px))
-        test_datagen = ImageDataGenerator(rescale=1./255, preprocessing_function=preprocessing)
+        test_datagen = ImageDataGenerator(rescale=old_div(1.,255), preprocessing_function=preprocessing)
         test_generator = test_datagen.flow(X_test, y_test, shuffle=False)
 #                                           sample_weight=get_sample_weight(y_test_df, self.detector_input_size_px))
 

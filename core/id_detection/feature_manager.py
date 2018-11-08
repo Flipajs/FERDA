@@ -1,13 +1,20 @@
 from __future__ import print_function
+from __future__ import unicode_literals
+from future import standard_library
+standard_library.install_aliases()
+from builtins import zip
+from builtins import str
+from builtins import range
+from builtins import object
 import sqlite3 as sql
-import cPickle
+import pickle
 import random
 
 DEBUG = False
 __author__ = 'dita'
 
 
-class FeatureManager:
+class FeatureManager(object):
     def __init__(self, db_wd=None, db_name="fm.sqlite3", cache_size_limit=-1, data=None, use_cache=True):
         """
         RegionManager is designed to store regions data. By default, all data is stored in memory cache (dictionary) and
@@ -82,7 +89,7 @@ class FeatureManager:
                     self.add_to_cache_(i, f)
                 return
 
-        if not isinstance(f_id, (long, int)):
+        if not isinstance(f_id, (int, int)):
             raise TypeError("IDs can be given as list of ints or int/long, not %s" % type(f_id))
 
         if self.use_db:
@@ -181,7 +188,7 @@ class FeatureManager:
                 raise ValueError("Invalid slice parameters (%s:%s:%s)" % (start, stop, step))
 
             # go through slice
-            count = len(range(start, stop, step))
+            count = len(list(range(start, stop, step)))
             result_ = [None] * count
             pos = {}
             k = 0
@@ -267,7 +274,7 @@ class FeatureManager:
             # add it to result
             id_ = sql_ids[0]
             try:
-                data = cPickle.loads(str(row[0]))
+                data = pickle.loads(str(row[0]))
                 result[pos[id_]] = data
                 # add it to cache
                 self.add_to_cache_(id_, data)
@@ -286,7 +293,7 @@ class FeatureManager:
                 if row[0] in tmp_ids:
                     continue
                 tmp_ids.append(row[0])
-                data = cPickle.loads(str(row[1]))
+                data = pickle.loads(str(row[1]))
                 self.add_to_cache_(row[0], data)
                 result[pos[row[0]]] = data
                 i += 1
@@ -306,12 +313,12 @@ class FeatureManager:
                 if row[0] in ids:
                     continue
                 ids.append(row[0])
-                data = cPickle.loads(str(row[1]))
+                data = pickle.loads(str(row[1]))
                 self.add_to_cache_(row[0], data)
                 result.append(data)
                 i += 1
         else:
-            (ids, result) = zip(*self.features_cache_.iteritems())
+            (ids, result) = list(zip(*iter(self.features_cache_.items())))
         return ids, result
 
     def removemany_(self, features):
@@ -319,7 +326,7 @@ class FeatureManager:
             sql_ids = []
             if isinstance(features, list):
                 for f in features:
-                    if isinstance(f, (int, long)):
+                    if isinstance(f, (int, int)):
                         sql_ids.append(f)
                     else:
                         raise TypeError("Remove method can only work with tuple objects, not %s" % type(f))
@@ -345,7 +352,7 @@ class FeatureManager:
         if isinstance(ids, list):
             self.removemany_(ids)
             return
-        elif isinstance(ids, (int, long)):
+        elif isinstance(ids, (int, int)):
             id_ = ids
             if self.use_db:
                 cmd = "DELETE FROM features WHERE id = %s;" % id_
@@ -362,7 +369,7 @@ class FeatureManager:
 
 def pickle_data(data):
     """ Convert data object to sql Binary object using pickle."""
-    return sql.Binary(cPickle.dumps(data, -1))
+    return sql.Binary(pickle.dumps(data, -1))
 
 
 def pretty_list(data):

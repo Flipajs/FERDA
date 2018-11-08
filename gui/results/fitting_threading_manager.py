@@ -1,16 +1,22 @@
 from __future__ import print_function
 from __future__ import absolute_import
+from __future__ import unicode_literals
+from future import standard_library
+standard_library.install_aliases()
+from builtins import map
+from builtins import str
+from builtins import object
 from .fitting_thread import FittingThread, FittingThreadChunk
 from copy import deepcopy
 from PyQt4.QtCore import QProcess
 import sys, os
 from functools import partial
 from PyQt4 import QtCore
-import cPickle as pickle
+import pickle as pickle
 from core.region.fitting import Fitting
 
 
-class FittingSession:
+class FittingSession(object):
     def __init__(self, id, fitting_thread, pivot, callback):
         self.id = id
         self.locked_vertices = []
@@ -120,7 +126,7 @@ class FittingSessionChunk(FittingSession):
             self.fp[-1].start(ex_str)
 
 
-class FittingThreadingManager:
+class FittingThreadingManager(object):
     def __init__(self):
         self.locked_vertices = set()
         self.fitting_sessions = {}
@@ -197,8 +203,8 @@ class FittingThreadingManager:
         s_id = self.session_id
         self.session_id += 1
 
-        regions_before_chunk = map(project.gm.region, vertices_before_chunk)
-        chunk_regions = map(project.gm.region, chunk_vertices)
+        regions_before_chunk = list(map(project.gm.region, vertices_before_chunk))
+        chunk_regions = list(map(project.gm.region, chunk_vertices))
 
         fs = FittingSessionChunk(s_id, project, done_callback, regions_before_chunk, chunk_regions, chunk_vertices, vertices_after_chunk)
         fs.locked_vertices.extend(vertices_before_chunk)
@@ -214,7 +220,7 @@ class FittingThreadingManager:
         print("STARTING ", s_id)
 
     def add_lock(self, s_id, vertices):
-        vertices = map(int, vertices)
+        vertices = list(map(int, vertices))
         self.fitting_sessions[s_id].locked_vertices.extend(vertices)
         for v in vertices:
             self.locked_vertices.add(v)

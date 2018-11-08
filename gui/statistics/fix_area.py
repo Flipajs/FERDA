@@ -1,3 +1,7 @@
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import range
+from past.utils import old_div
 __author__ = 'flipajs'
 
 
@@ -54,7 +58,7 @@ class AreaUpdatingThread(QtCore.QThread):
                         ch.statistics['area_sum'] += best_match.area()
                         ch.statistics['area2_sum'] += best_match.area()**2
 
-            self.part_done.emit(f/float(vid.total_frame_count()))
+            self.part_done.emit(old_div(f,float(vid.total_frame_count())))
 
         self.proc_done.emit(self.solver)
 
@@ -70,8 +74,8 @@ class AreaUpdatingThread(QtCore.QThread):
 
         register = {}
         for ch in chunks:
-            start_t = (ch.start_t() / self.step) * (self.step + 1)
-            end_t = (ch.end_t() / self.step) * (self.step - 1)
+            start_t = (old_div(ch.start_t(), self.step)) * (self.step + 1)
+            end_t = (old_div(ch.end_t(), self.step)) * (self.step - 1)
 
             for f in range(start_t, end_t, self.step):
                 register.setdefault(f, []).append(ch)

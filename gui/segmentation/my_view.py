@@ -1,3 +1,6 @@
+from __future__ import division
+from __future__ import unicode_literals
+from past.utils import old_div
 from PyQt4.QtGui import QMatrix
 
 __author__ = 'filip@naiser.cz'
@@ -55,7 +58,7 @@ class MyView(QtGui.QGraphicsView):
                 if m11 < 0.1 or m22 < 0.1:
                     return
 
-                self.scale(1.0 / scale_factor, 1.0 / scale_factor)
+                self.scale(old_div(1.0, scale_factor), old_div(1.0, scale_factor))
     #
     # def wheelEvent(self, event):
     #     if QtGui.QApplication.keyboardModifiers() == QtCore.Qt.ControlModifier:
@@ -97,7 +100,7 @@ class MyView(QtGui.QGraphicsView):
 
         # these functions represent scaling well. It isn't too fast or too slow and is convenient for the user.
         elif self.scale_step < 0:
-            return -2 / (self.scale_step-2 + 0.0)
+            return old_div(-2, (self.scale_step-2 + 0.0))
 
         else:
             return 2 ** (self.scale_step)

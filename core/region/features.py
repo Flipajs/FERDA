@@ -1,4 +1,9 @@
 from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import str
+from builtins import range
+from past.utils import old_div
 __author__ = 'fnaiser'
 
 import numpy as np
@@ -37,7 +42,7 @@ def shape_description(region, n):
     middle = region.centroid() - np.array(offset)
     j = 0
     for a in angles:
-        th = (region.theta_ + np.pi/2 + a) % (2*np.pi)
+        th = (region.theta_ + old_div(np.pi,2) + a) % (2*np.pi)
 
         prev = im[middle[0], middle[1]]
         for i in range(1, int(ceil(region.ellipse_major_axis_length()))):

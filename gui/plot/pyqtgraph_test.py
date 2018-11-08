@@ -1,4 +1,8 @@
 from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import range
+from past.utils import old_div
 import numpy as np
 import pyqtgraph as pg
 import pyqtgraph.opengl as gl
@@ -117,7 +121,7 @@ class MyView(QtGui.QWidget):
                     color = rgb
                 else:
                     color = black
-                pos[k] = (pos_x, pos_y, i/2)
+                pos[k] = (pos_x, pos_y, old_div(i,2))
                 size[k] = 2
                 colors[k] = color
                 k += 1

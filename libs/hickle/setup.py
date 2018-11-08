@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 # To increment version
 # git tag x.y.z
 # git push --tags

@@ -1,14 +1,20 @@
 from __future__ import print_function
 from __future__ import absolute_import
+from __future__ import division
+from __future__ import unicode_literals
+from future import standard_library
+standard_library.install_aliases()
+from builtins import range
+from past.utils import old_div
 from .thesis_utils import load_all_projects
 from core.id_detection.features import evaluate_features_performance_opt, evaluate_features_performance_all
 import datetime
-import cPickle as pickle
+import pickle as pickle
 
 def _compute(X_data, y_data, fm_names, projects, c, out_name=None):
     results = {}
 
-    for p_name, p in projects.iteritems():
+    for p_name, p in projects.items():
         print("----------------- ", p_name, "-------------------------")
         results[p_name] = evaluate_features_performance_opt(p, X_data[p_name], y_data[p_name], fm_names,
                         seed=c['seed'],
@@ -37,7 +43,7 @@ def _compute(X_data, y_data, fm_names, projects, c, out_name=None):
 def _compute_all_f(X_data, y_data, fm_names, projects, c, out_name=None):
     results = {}
 
-    for p_name, p in projects.iteritems():
+    for p_name, p in projects.items():
         print("----------------- ", p_name, "-------------------------")
         results[p_name] = evaluate_features_performance_all(p, X_data[p_name], y_data[p_name], fm_names,
                         seed=c['seed'],
@@ -130,7 +136,7 @@ def NN_test(X_data, y_data, fm_names, c, out_name=None):
                     num_correct_ids += 1
                     correct[j] = True
 
-            print("NN accuracy: {:.2%}".format(num_correct_ids/float(X_test.shape[0])))
+            print("NN accuracy: {:.2%}".format(old_div(num_correct_ids,float(X_test.shape[0]))))
 
             results[fm_name].append((decisions.tolist(), num_correct_ids, X_test.shape[0], correct.tolist()))
 
@@ -172,7 +178,7 @@ if __name__ == '__main__':
 
     projects = load_all_projects()
 
-    for p_name, project in projects.iteritems():
+    for p_name, project in projects.items():
         X_data[p_name] = {}
         y_data[p_name] = None
 

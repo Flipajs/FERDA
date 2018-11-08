@@ -1,4 +1,9 @@
 from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import zip
+from builtins import range
+from past.utils import old_div
 __author__ = 'flipajs'
 
 from utils.video_manager import VideoManager
@@ -26,11 +31,11 @@ def igbr_transformation(im):
     igbr = np.zeros((im.shape[0], im.shape[1], 4), dtype=np.double)
 
     igbr[:, :, 0] = np.sum(im, axis=2) + 1
-    igbr[:, :, 1] = im[:, :, 0] / igbr[:, :, 0]
-    igbr[:, :, 2] = im[:, :, 1] / igbr[:, :, 0]
-    igbr[:, :, 3] = im[:, :, 2] / igbr[:, :, 0]
+    igbr[:, :, 1] = old_div(im[:, :, 0], igbr[:, :, 0])
+    igbr[:, :, 2] = old_div(im[:, :, 1], igbr[:, :, 0])
+    igbr[:, :, 3] = old_div(im[:, :, 2], igbr[:, :, 0])
 
-    igbr[:, :, 0] = igbr[:, :, 0] / I_NORM
+    igbr[:, :, 0] = old_div(igbr[:, :, 0], I_NORM)
 
     return igbr
 
@@ -100,7 +105,7 @@ def onclick(event):
 
 def compute_saturation(im):
     igbr = igbr_transformation(im)
-    out_im = np.sum((igbr[:, :, 1:4] - np.array([1.0/3., 1.0/3., 1.0/3.]))**2, axis=2)**0.5
+    out_im = np.sum((igbr[:, :, 1:4] - np.array([old_div(1.0,3.), old_div(1.0,3.), old_div(1.0,3.)]))**2, axis=2)**0.5
 
     MIN_I = 100
 
@@ -117,7 +122,7 @@ def compute_saturation_(im):
 
     out_im = np.sum(lab[:,:,1:2]**2, axis=2)
 
-    m_ = np.max(out_im) / 4.
+    m_ = old_div(np.max(out_im), 4.)
     print(m_)
     out_im[out_im > m_] = m_
     print(np.max(out_im))
@@ -140,7 +145,7 @@ def color_candidate_pixels_slow(im):
             if norm(px - WHITE) > MIN_WHITE_DIST:
                 if np.sum(px) < TOO_DARK:
                     use.append((y, x))
-                elif (norm(np.cross(WHITE, -px)) / norm(WHITE)) > MIN_GRAY_DIST:
+                elif (old_div(norm(np.cross(WHITE, -px)), norm(WHITE))) > MIN_GRAY_DIST:
                     use.append((y, x))
 
     result = np.ones((im.shape[0], im.shape[1], 3), dtype=np.uint8)*255
@@ -181,7 +186,7 @@ def color_candidate_pixels(im):
     # ids[ids == 0] = are_gray
     # print "gray dist t: ", time.time()-s
     remove = ids.reshape((im.shape[0], im.shape[1]))
-    print(np.sum(remove)/float((im.shape[0] * im.shape[1])))
+    print(old_div(np.sum(remove),float((im.shape[0] * im.shape[1]))))
     #
     im_copy[remove] = [255, 255, 255]
 
@@ -211,7 +216,7 @@ def on_key_event(event):
         quit_ = True
 
 def get_area_from_integral_im(i_im, center, square_size):
-    sq2 = square_size/2
+    sq2 = old_div(square_size,2)
     if sq2 < center[0] < i_im.shape[0] - sq2 and sq2 < center[1] < i_im.shape[1] - sq2:
         p0 = i_im[center[0] - sq2, center[1] - sq2]
         p1 = i_im[center[0] - sq2, center[1] + sq2]
@@ -219,7 +224,7 @@ def get_area_from_integral_im(i_im, center, square_size):
         p3 = i_im[center[0] + sq2, center[1] + sq2]
 
         # see http://docs.opencv.org/modules/imgproc/doc/miscellaneous_transformations.html#integral
-        return (p0 + p3 - p1 - p2) / square_size**2
+        return old_div((p0 + p3 - p1 - p2), square_size**2)
 
     return np.inf
 
@@ -294,16 +299,16 @@ def process_ccs_(im, labels, integral_im):
         M20 = np.sum(coords[:, 0]**2)
         M02 = np.sum(coords[:, 1]**2)
 
-        u20 = M20/float(M00) - c[0]**2
-        u02 = M02/float(M00) - c[1]**2
-        u11 = M11/float(M00) - c[0]*c[1]
+        u20 = old_div(M20,float(M00)) - c[0]**2
+        u02 = old_div(M02,float(M00)) - c[1]**2
+        u11 = old_div(M11,float(M00)) - c[0]*c[1]
 
-        part2 = ((4*u11**2 + (u20 - u02)**2)**0.5) / 2.
-        lambda1 = (u20 + u02) / 2.
+        part2 = old_div(((4*u11**2 + (u20 - u02)**2)**0.5), 2.)
+        lambda1 = old_div((u20 + u02), 2.)
         lambda2 = lambda1 - part2
         lambda1 += part2
 
-        eccentricity = (1 - lambda2/lambda1) ** 0.5
+        eccentricity = (1 - old_div(lambda2,lambda1)) ** 0.5
         print(eccentricity, lambda1, lambda2)
 
         std_ = np.std(coords, axis=0)
@@ -387,16 +392,16 @@ def process_ccs(im, integral_im):
             M20 = np.sum(coords[:, 0]**2)
             M02 = np.sum(coords[:, 1]**2)
 
-            u20 = M20/float(M00) - c[0]**2
-            u02 = M02/float(M00) - c[1]**2
-            u11 = M11/float(M00) - c[0]*c[1]
+            u20 = old_div(M20,float(M00)) - c[0]**2
+            u02 = old_div(M02,float(M00)) - c[1]**2
+            u11 = old_div(M11,float(M00)) - c[0]*c[1]
 
-            part2 = ((4*u11**2 + (u20 - u02)**2)**0.5) / 2.
-            lambda1 = (u20 + u02) / 2.
+            part2 = old_div(((4*u11**2 + (u20 - u02)**2)**0.5), 2.)
+            lambda1 = old_div((u20 + u02), 2.)
             lambda2 = lambda1 - part2
             lambda1 += part2
 
-            eccentricity = (1 - lambda2/lambda1) ** 0.5
+            eccentricity = (1 - old_div(lambda2,lambda1)) ** 0.5
 
             is_eccentricity_ok = True if eccentricity < 0.8 else False
             if is_eccentricity_ok and test_dark_neighbourhood(integral_im, c):

@@ -1,12 +1,17 @@
 from __future__ import print_function
-import cPickle as pickle
+from __future__ import unicode_literals
+from future import standard_library
+standard_library.install_aliases()
+from builtins import zip
+from builtins import range
+import pickle as pickle
 from core.region.region_manager import RegionManager
 from core.graph.chunk_manager import ChunkManager
 from core.graph.graph_manager import GraphManager
 from core.segmentation import load_segmentation_info
 from core.config import config
 import warnings
-from itertools import izip
+
 from tqdm import tqdm
 import os
 from os.path import join
@@ -72,7 +77,7 @@ def graph_assembly(project, graph_solver, do_semi_merge=False):
     parts_path = join(project.working_directory, 'temp')
     n_parts = get_parts_num(parts_path)
     parts_info = []
-    for i in tqdm(range(n_parts), leave=False):
+    for i in tqdm(list(range(n_parts)), leave=False):
         parts_info.append(load_segmentation_info(parts_path, i))
         rm_old = RegionManager(db_wd=parts_path,
                                db_name='part{}_rm.sqlite3'.format(i), cache_size_limit=1, supress_init_print=True)
@@ -261,7 +266,7 @@ def merge_parts(new_gm, old_g, old_g_relevant_vertices, project, old_rm, old_chm
     old_regions = old_rm[old_rids]
     new_rm.add(old_regions)
 
-    for old_v, old_reg in izip(old_vs, old_regions):
+    for old_v, old_reg in zip(old_vs, old_regions):
         new_v = new_gm.add_vertex(old_reg)
         vertex_map[old_v] = new_v
 
@@ -323,7 +328,7 @@ def merge_parts(new_gm, old_g, old_g_relevant_vertices, project, old_rm, old_chm
 
         chunks_map[old_id_] = new_id_
 
-    for old_v, new_v in vertex_map.iteritems():
+    for old_v, new_v in vertex_map.items():
         new_gm.g.vp['chunk_start_id'][new_v] = chunks_map[old_g.vp['chunk_start_id'][old_v]]
         new_gm.g.vp['chunk_end_id'][new_v] = chunks_map[old_g.vp['chunk_end_id'][old_v]]
 

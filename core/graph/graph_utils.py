@@ -1,3 +1,7 @@
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import range
+from past.utils import old_div
 __author__ = 'fnaiser'
 
 import numpy as np
@@ -195,8 +199,8 @@ def cc_certainty(g, c1, c2):
     scores = scores[ids]
 
     n_ = float(len(c1))
-    cert = abs(scores[0] / n_)
+    cert = abs(old_div(scores[0], n_))
     if len(scores) > 1:
-        cert = abs(scores[0] / n_) * abs(scores[0]-scores[1])
+        cert = abs(old_div(scores[0], n_)) * abs(scores[0]-scores[1])
 
     return cert, configurations, scores

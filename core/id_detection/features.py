@@ -1,4 +1,12 @@
 from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
+from builtins import zip
+from builtins import range
+from past.utils import old_div
 from skimage.measure import moments_central, moments_hu, moments_normalized, moments
 import cv2
 from utils.img import get_img_around_pts, replace_everything_but_pts
@@ -9,7 +17,7 @@ from skimage.feature import local_binary_pattern
 from core.id_detection.feature_manager import FeatureManager
 from utils.gt.gt import GT
 from utils.misc import print_progress
-from itertools import izip
+
 # import pyximport; pyximport.install()
 # import features2
 import time
@@ -22,8 +30,8 @@ from utils.img import img_saturation_coef
 
 def get_mu_moments(img):
     m = moments(img)
-    cr = m[0, 1] / m[0, 0]
-    cc = m[1, 0] / m[0, 0]
+    cr = old_div(m[0, 1], m[0, 0])
+    cc = old_div(m[1, 0], m[0, 0])
 
     mu = moments_central(img, cr, cc)
     return mu
@@ -64,7 +72,7 @@ def get_basic_properties(r, p):
     f.append(r.ellipse_minor_axis_length())
 
     # axis ratio
-    f.append(r.ellipse_major_axis_length() / r.ellipse_minor_axis_length())
+    f.append(old_div(r.ellipse_major_axis_length(), r.ellipse_minor_axis_length()))
 
     # # axis ratio sqrt
     # f.append((r.ellipse_major_axis_length() / r.ellipse_minor_axis_length())**0.5)
@@ -137,7 +145,7 @@ def __process_crops(crops, fliplr):
 
         f.extend(fd)
 
-        fd2 = hog(crop, orientations=8, pixels_per_cell=(w/4, h),
+        fd2 = hog(crop, orientations=8, pixels_per_cell=(old_div(w,4), h),
                             cells_per_block=(1, 1), visualise=False)
 
         f.extend(fd2)
@@ -376,15 +384,15 @@ def evaluate_features_performance(
                     if fliplr:
                         X_train_new = []
                         y_train_new = []
-                        for line, id_ in izip(X_train, y_train):
-                            X_train_new.append(line[:len(line)/2])
-                            X_train_new.append(line[len(line)/2:])
+                        for line, id_ in zip(X_train, y_train):
+                            X_train_new.append(line[:old_div(len(line),2)])
+                            X_train_new.append(line[old_div(len(line),2):])
                             y_train_new.append(id_)
                             y_train_new.append(id_)
 
                         X_test_new = []
-                        for line in izip(X_test):
-                            X_test_new.append(line[:len(line)/2])
+                        for line in zip(X_test):
+                            X_test_new.append(line[:old_div(len(line),2)])
 
                     rf.fit(X_train, y_train)
 
@@ -420,10 +428,10 @@ def evaluate_features_performance(
                         train_num_c = np.sum(y_train == ic)
                         train_class_frequency.append(train_num_c)
                         correct_c = np.sum(np.logical_and(correct_ids, y_test == ic))
-                        class_accuracy.append(correct_c / float(num_c))
+                        class_accuracy.append(old_div(correct_c, float(num_c)))
 
                     results[test_size_ratio][s]['num_correct'].append(num_correct)
-                    results[test_size_ratio][s]['accuracy'].append(num_correct / float(num_test))
+                    results[test_size_ratio][s]['accuracy'].append(old_div(num_correct, float(num_test)))
                     results[test_size_ratio][s]['class_accuracy'].append(class_accuracy)
                     results[test_size_ratio][s]['train_class_frequency'].append(train_class_frequency)
 
@@ -548,10 +556,10 @@ def evaluate_features_performance_opt(
                     train_num_c = np.sum(y_train == ic)
                     train_class_frequency.append(train_num_c)
                     correct_c = np.sum(np.logical_and(correct_ids, y_test == ic))
-                    class_accuracy.append(correct_c / float(num_c))
+                    class_accuracy.append(old_div(correct_c, float(num_c)))
 
                 results[test_size_ratio][s]['num_correct'].append(num_correct)
-                results[test_size_ratio][s]['accuracy'].append(num_correct / float(num_test))
+                results[test_size_ratio][s]['accuracy'].append(old_div(num_correct, float(num_test)))
                 results[test_size_ratio][s]['class_accuracy'].append(class_accuracy)
                 results[test_size_ratio][s]['train_class_frequency'].append(train_class_frequency)
 
@@ -672,10 +680,10 @@ def evaluate_features_performance_all(
                 train_num_c = np.sum(y_train == ic)
                 train_class_frequency.append(train_num_c)
                 correct_c = np.sum(np.logical_and(correct_ids, y_test == ic))
-                class_accuracy.append(correct_c / float(num_c))
+                class_accuracy.append(old_div(correct_c, float(num_c)))
 
             results[test_size_ratio][s]['num_correct'].append(num_correct)
-            results[test_size_ratio][s]['accuracy'].append(num_correct / float(num_test))
+            results[test_size_ratio][s]['accuracy'].append(old_div(num_correct, float(num_test)))
             results[test_size_ratio][s]['class_accuracy'].append(class_accuracy)
             results[test_size_ratio][s]['train_class_frequency'].append(train_class_frequency)
 
@@ -761,10 +769,10 @@ def get_idtracker_features(r, p, debug=False, sub=1, config=None, vectorize=True
     ids2_ = []
 
     n_p = len(pts)
-    for i in xrange(0, n_p):
+    for i in range(0, n_p):
         # ids1_.extend([i for _ in xrange(0, n_p - (i+1), sub)])
         # ids2_.extend(range(i + 1, n_p, sub))
-        r = xrange(i + 1, n_p, sub)
+        r = range(i + 1, n_p, sub)
         ids2_.extend(r)
         ids1_.extend([i] * len(r))
 
@@ -892,7 +900,7 @@ if __name__ == '__main__':
     m = moments(img)
 
     from core.project.project import Project
-    import cPickle as pickle
+    import pickle as pickle
 
     wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_playground'
     # wd = '/Users/flipajs/Documents/wd/FERDA/Cam1_rf'

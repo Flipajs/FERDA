@@ -1,7 +1,12 @@
 from __future__ import print_function
+from __future__ import unicode_literals
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
+from builtins import object
 import numpy as np
 from matplotlib import pyplot as plt
-import cPickle as pickle
+import pickle as pickle
 import cv2
 
 class clicker_class(object):
@@ -122,7 +127,7 @@ class clicker_class(object):
 
     def remove_pt(self, loc):
         if len(self.data[self.frame][self.current_ant]) > 0:
-            id_ = np.argmin(map(lambda x: np.sqrt((x[0] - loc[0]) ** 2 + (x[1] - loc[1]) ** 2), self.data[self.frame][self.current_ant]))
+            id_ = np.argmin([np.sqrt((x[0] - loc[0]) ** 2 + (x[1] - loc[1]) ** 2) for x in self.data[self.frame][self.current_ant]])
             if np.linalg.norm(np.array(loc) - np.array(self.data[self.frame][self.current_ant][id_])) < self.del_limit:
                 self.data[self.frame][self.current_ant].pop(id_)
 

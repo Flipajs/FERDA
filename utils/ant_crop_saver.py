@@ -1,11 +1,17 @@
 from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import str
+from builtins import range
+from builtins import object
+from past.utils import old_div
 __author__ = 'filip@naiser.cz'
 
 from numpy import *
 import cv2
 import math
 
-class CropSaver():
+class CropSaver(object):
     def __init__(self):
         self.out_path = '/home/flipajs/~dump/crop_/'
         self.crop_size = -1
@@ -44,8 +50,8 @@ class CropSaver():
             x = ant.state.position.x
             y = ant.state.position.y
 
-            img_small = img_[border + y - self.crop_size / 2:border + y + self.crop_size / 2,
-                             border + x - self.crop_size / 2:border + x + self.crop_size / 2].copy()
+            img_small = img_[border + y - old_div(self.crop_size, 2):border + y + old_div(self.crop_size, 2),
+                             border + x - old_div(self.crop_size, 2):border + x + old_div(self.crop_size, 2)].copy()
 
             collection[:, ant_id*self.crop_size:(ant_id+1)*self.crop_size, :] = img_small
 
@@ -61,8 +67,8 @@ class CropSaver():
             x = ant.state.position.x
             y = ant.state.position.y
 
-            cv2.rectangle(img_, (int(x - self.crop_size / 2), int(y - self.crop_size / 2)),
-                          (int(x + self.crop_size / 2), int(y + self.crop_size / 2)), (255, 0, 0), 0)
+            cv2.rectangle(img_, (int(x - old_div(self.crop_size, 2)), int(y - old_div(self.crop_size, 2))),
+                          (int(x + old_div(self.crop_size, 2)), int(y + old_div(self.crop_size, 2))), (255, 0, 0), 0)
 
 
         cv2.imshow("ant_crops", img_)

@@ -1,4 +1,9 @@
 from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import str
+from builtins import range
+from past.utils import old_div
 import numpy as np
 import sys, os, re, random
 import h5py
@@ -59,10 +64,10 @@ if __name__ == '__main__':
 
             images_f[i] = sorted(images_f[i], key=lambda x: int(x[:-4]))
 
-        for k in tqdm.tqdm(range(args.num_examples)):
+        for k in tqdm.tqdm(list(range(args.num_examples))):
             for i in range(num_animals):
                 limit = args.num_examples if args.consecutive else sys.maxsize
-                ai, aj = random.sample(xrange(0, min(limit, len(images_f[i]))), 2)
+                ai, aj = random.sample(range(0, min(limit, len(images_f[i]))), 2)
 
                 im1 = misc.imread(datadir+'/'+str(i)+'/'+images_f[i][ai])
                 im2 = misc.imread(datadir+'/'+str(i)+'/'+images_f[i][aj])
@@ -75,8 +80,8 @@ if __name__ == '__main__':
 
                 im1 = np.asarray(im1, dtype=np.double)
                 M = measure.moments(im1[:, :, 0])
-                cr = M[1, 0] / M[0, 0]
-                cc = M[0, 1] / M[0, 0]
+                cr = old_div(M[1, 0], M[0, 0])
+                cc = old_div(M[0, 1], M[0, 0])
                 measure.moments_central(im1[:, :, 0], cr, cc)
 
                 neg_ids = list(ids_set - set([i]))

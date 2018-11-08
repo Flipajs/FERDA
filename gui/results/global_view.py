@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+from __future__ import unicode_literals
 __author__ = 'flipajs'
 
 from gui.results.noise_filter_computer import NoiseFilterComputer

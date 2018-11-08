@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 import sys
 from core.project.project import Project
 from core.project.solver_parameters import SolverParameters
@@ -15,7 +16,7 @@ if __name__ == '__main__':
     old_sp = p.solver_parameters
     new_sp = SolverParameters()
 
-    for key, val in old_sp.__dict__.iteritems():
+    for key, val in old_sp.__dict__.items():
         try:
             setattr(new_sp, key, val)
         except:

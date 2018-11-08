@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 from PyQt4 import QtCore
 from utils.img import prepare_for_segmentation
 from utils.video_manager import optimize_frame_access, get_auto_video_manager

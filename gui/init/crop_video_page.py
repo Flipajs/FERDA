@@ -1,3 +1,7 @@
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import str
+from past.utils import old_div
 __author__ = 'flipajs'
 
 import math
@@ -57,7 +61,7 @@ class VideoSlider(QtGui.QSlider):
 
         if QMouseEvent.button() == QtCore.Qt.LeftButton and not sr.contains(QMouseEvent.pos()):
             if self.orientation() == QtCore.Qt.Vertical:
-                newVal = self.minimum() + ((self.maximum() - self.minimum()) * (self.height()-QMouseEvent.y()))/self.height()
+                newVal = self.minimum() + old_div(((self.maximum() - self.minimum()) * (self.height()-QMouseEvent.y())),self.height())
             else:
                 newVal = self.minimum() + (self.maximum() - self.minimum()) * QMouseEvent.x() / self.width()
             if self.invertedAppearance():
@@ -99,7 +103,7 @@ class CropVideoPage(QtGui.QWizardPage):
         self.start_frame = 0
         self.end_frame = 1
         self.timer = QtCore.QTimer(self)
-        self.timer.setInterval(1000 / self.frame_rate)
+        self.timer.setInterval(old_div(1000, self.frame_rate))
         self.scene = QtGui.QGraphicsScene()
         self.pixMap = None
         self.pixMapItem = None
@@ -277,7 +281,7 @@ class CropVideoPage(QtGui.QWizardPage):
     def speed_slider_changed(self):
         """Method invoked when value of slider controlling speed of video changed it's value"""
         self.frame_rate = self.speedSlider.value()
-        self.timer.setInterval(1000 / self.frame_rate)
+        self.timer.setInterval(old_div(1000, self.frame_rate))
         self.fpsLabel.setText(str(self.frame_rate) + ' fps')
 
     def add_data(self, solver):
@@ -427,7 +431,7 @@ class CropVideoPage(QtGui.QWizardPage):
 
     def video_labels_repaint(self):
         self.width = self.videoSlider.width()
-        self.ratio = self.width / float(self.video.total_frame_count())
+        self.ratio = old_div(self.width, float(self.video.total_frame_count()))
 
         self.first = self.ratio * self.start_frame
         self.second = self.ratio * (self.video.total_frame_count() - self.end_frame)
@@ -474,11 +478,11 @@ def view_add_bg_image(g_view, pix_map):
     m22 = g_view.transform().m22()
 
     if m11 and m22 == 1:
-        if gv_w / float(im_w) <= gv_h / float(im_h):
-            val = math.floor((gv_w / float(im_w))*100) / 100
+        if old_div(gv_w, float(im_w)) <= old_div(gv_h, float(im_h)):
+            val = old_div(math.floor((old_div(gv_w, float(im_w)))*100), 100)
             g_view.scale(val, val)
         else:
-            val = math.floor((gv_h / float(im_h))*100) / 100
+            val = old_div(math.floor((old_div(gv_h, float(im_h)))*100), 100)
             g_view.scale(val, val)
 
 

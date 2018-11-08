@@ -1,9 +1,11 @@
+from __future__ import unicode_literals
+from builtins import object
 __author__ = 'flipajs'
 
 import numpy as np
 
 
-class ROI():
+class ROI(object):
     def __init__(self, y=0, x=0, height=0, width=0):
         self.y_ = y
         self.x_ = x

@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 from PyQt4 import QtGui, QtCore
 import sys
 import core.region.clustering
@@ -131,7 +132,7 @@ class RegionClassifierTool(QtGui.QWizardPage):
 
         self.hbox_check.addWidget(QtGui.QLabel('feature space: '))
         self.feature_checkboxes = []
-        for i, description in enumerate(core.region.clustering.region_features.iterkeys()):
+        for i, description in enumerate(core.region.clustering.region_features.keys()):
             w = QtGui.QCheckBox(description)
             if description in config['region_classifier']['default_features']:
                 w.setChecked(True)
@@ -212,7 +213,7 @@ class RegionClassifierTool(QtGui.QWizardPage):
         self.grids[key].select_all_until_first()
 
     def move_selected_to(self, to):
-        for label, grid in self.grids.iteritems():
+        for label, grid in self.grids.items():
             for item in grid.get_selected_items():
                 if to != 'undecided':
                     item.label = to
@@ -238,7 +239,7 @@ class RegionClassifierTool(QtGui.QWizardPage):
         self.redraw_grids()
 
     def redraw_grids(self):
-        for item in self.grids.itervalues():
+        for item in self.grids.values():
             item.delete_all()
 
         samples = []
@@ -249,7 +250,7 @@ class RegionClassifierTool(QtGui.QWizardPage):
             samples.extend(self.samples)
 
         # add samples of corresponding lables to ImgGridWidgets
-        for label in self.grids.keys():
+        for label in list(self.grids.keys()):
             samples_label = [s for s in samples if s.label == label]
             for i, s in enumerate(sorted(samples_label, reverse=True)):
                 s.widget = self.make_item(s.image, i)

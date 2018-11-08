@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 import matplotlib.pylab as plt
 
 closed = False

@@ -1,4 +1,7 @@
 from __future__ import print_function
+from __future__ import unicode_literals
+from builtins import str
+from builtins import range
 from core.project.project import Project
 from gui.statistics.region_reconstruction import get_trajectories
 from utils.clearmetrics import _clearmetrics
@@ -25,7 +28,7 @@ if __name__ == "__main__":
     snapshot = {'chm': wd+name+'/.auto_save/'+str(sn_id)+'__chunk_manager.pkl',
                 'gm': wd+name+'/.auto_save/'+str(sn_id)+'__graph_manager.pkl'}
 
-    frames = range(5)
+    frames = list(range(5))
     p_test = Project()
     p_test.load(wd+name+'/cam1.fproj')
     gt_mesurements = get_trajectories(p_test, frames)

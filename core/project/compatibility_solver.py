@@ -1,12 +1,20 @@
 from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
+from builtins import range
+from builtins import object
+from past.utils import old_div
 __author__ = 'flipajs'
 
 from utils.video_manager import get_auto_video_manager
-import cPickle as pickle
+import pickle as pickle
 from core.project.mser_parameters import MSERParameters
 from utils.color_manager import colorize_project
 
-class CompatibilitySolver:
+class CompatibilitySolver(object):
     def __init__(self, project):
         self.project = project
 
@@ -66,7 +74,7 @@ class CompatibilitySolver:
         # fix temp files...
         vid = get_auto_video_manager(self.project)
         frame_num = int(vid.total_frame_count())
-        part_num = int(frame_num / self.project.solver_parameters.frames_in_row)
+        part_num = int(old_div(frame_num, self.project.solver_parameters.frames_in_row))
 
         for i in range(part_num):
             try:
@@ -92,6 +100,6 @@ class CompatibilitySolver:
                     p.dump(start_nodes)
                     p.dump(end_nodes)
 
-                print(i / float(part_num))
+                print(old_div(i, float(part_num)))
             except:
                 pass

@@ -1,6 +1,13 @@
 from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
+from future import standard_library
+standard_library.install_aliases()
+from builtins import zip
+from builtins import range
+from past.utils import old_div
 import cv2
-import cPickle as pickle
+import pickle as pickle
 from core.graph.region_chunk import RegionChunk
 from utils.img import get_safe_selection
 from math import ceil
@@ -26,7 +33,7 @@ def get_fastext(project):
     minCompSize = 4
     process_color = 0
     segmDeltaInt = 1
-    min_tupple_top_bottom_angle = math.pi / 2
+    min_tupple_top_bottom_angle = old_div(math.pi, 2)
     maxSpaceHeightRatio = -1
     createKeypointSegmenter = 1
 
@@ -66,8 +73,8 @@ def centered_crop(img, new_h, new_w):
     h_ = img.shape[0]
     w_ = img.shape[1]
 
-    y_ = (h_ - new_h) / 2
-    x_ = (w_ - new_w) / 2
+    y_ = old_div((h_ - new_h), 2)
+    x_ = old_div((w_ - new_w), 2)
 
     if y_ < 0 or x_ < 0:
         Warning('cropped area cannot be bigger then original image!')
@@ -81,8 +88,8 @@ def get_bounding_box(r, project, relative_border=1.3):
     img = project.img_manager.get_whole_img(frame)
     roi = r.roi()
 
-    height2 = int(ceil((roi.height() * relative_border) / 2.0))
-    width2 = int(ceil((roi.width() * relative_border) / 2.0))
+    height2 = int(ceil(old_div((roi.height() * relative_border), 2.0)))
+    width2 = int(ceil(old_div((roi.width() * relative_border), 2.0)))
     x = r.centroid()[1] - width2
     y = r.centroid()[0] - height2
 
@@ -109,8 +116,8 @@ def draw_keypoints(ft, keypoints):
     scales = ft.getImageScales()
     scs_ = []
     strokes = []
-    for kp, i in zip(keypoints, range(len(keypoints))):
-        s_ = ft.getKeypointStrokes(i) * (1.0 / scales[kp[2]])
+    for kp, i in zip(keypoints, list(range(len(keypoints)))):
+        s_ = ft.getKeypointStrokes(i) * (old_div(1.0, scales[kp[2]]))
         scs_.append(kp[2])
         strokes.append(s_)
 
@@ -150,7 +157,7 @@ def endpoint_rot(bb_img, pt, theta, centroid):
 
     pt_ = pt-centroid
     pt = np.dot(rot, pt_.reshape(2, 1))
-    new_pt = [int(round(pt[0][0] + bb_img.shape[0]/2)), int(round(pt[1][0] + bb_img.shape[1]/2))]
+    new_pt = [int(round(pt[0][0] + old_div(bb_img.shape[0],2))), int(round(pt[1][0] + old_div(bb_img.shape[1],2)))]
 
     return new_pt
 

@@ -1,4 +1,6 @@
 from __future__ import print_function
+from __future__ import unicode_literals
+from builtins import object
 __author__ = 'filip@naiser.cz'
 
 __author__ = 'flip'
@@ -6,7 +8,7 @@ __author__ = 'flip'
 import cv2
 import my_utils
 
-class VideoManager():
+class VideoManager(object):
     def __init__(self, video_path):
         self.img = None
         self.capture = cv2.VideoCapture(video_path)

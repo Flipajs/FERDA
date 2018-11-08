@@ -1,4 +1,10 @@
 from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import zip
+from builtins import str
+from builtins import range
+from past.utils import old_div
 __author__ = 'fnaiser'
 
 from functools import partial
@@ -220,9 +226,9 @@ class CaseWidget(QtGui.QWidget):
             r1 = self.project.gm.region(n1)
             t = r1.frame_ - self.frame_t
             line_ = QtGui.QGraphicsLineItem(self.left_margin + self.node_size + self.w_ * t,
-                                            self.top_margin + self.node_positions[n1] * self.h_ + self.h_ / 2,
+                                            self.top_margin + self.node_positions[n1] * self.h_ + old_div(self.h_, 2),
                                             self.left_margin + self.w_ * (t + 1),
-                                            self.top_margin + self.node_positions[n2] * self.h_ + self.h_ / 2)
+                                            self.top_margin + self.node_positions[n2] * self.h_ + old_div(self.h_, 2))
             line_.setPen(self.strong_edge_pen)
             self.config_lines.append(line_)
             self.scene.addItem(line_)
@@ -307,7 +313,7 @@ class CaseWidget(QtGui.QWidget):
         c = self.active_col
         r = self.active_row
 
-        col_it = QtGui.QGraphicsRectItem(self.left_margin + self.w_ * c - self.node_size / 2,
+        col_it = QtGui.QGraphicsRectItem(self.left_margin + self.w_ * c - old_div(self.node_size, 2),
                                          self.top_margin, self.w_, self.h_ * self.rows)
         if self.active_col_it:
             self.scene.removeItem(self.active_col_it)
@@ -317,7 +323,7 @@ class CaseWidget(QtGui.QWidget):
         col_it.setFlag(QtGui.QGraphicsItem.ItemIsSelectable, False)
         col_it.setZValue(-1)
 
-        row_it = QtGui.QGraphicsRectItem(self.left_margin - self.node_size / 2,
+        row_it = QtGui.QGraphicsRectItem(self.left_margin - old_div(self.node_size, 2),
                                          self.top_margin + self.h_ * r, self.w_ * self.cols, self.h_)
 
         if self.active_row_it:
@@ -352,7 +358,7 @@ class CaseWidget(QtGui.QWidget):
         if light_stripes:
             for r in range(rows):
                 p = self.bg_light_stripe if r % 2 else self.bg_dark_stripe
-                self.scene.addRect(self.left_margin - self.node_size / 2,
+                self.scene.addRect(self.left_margin - old_div(self.node_size, 2),
                                    self.top_margin + self.h_ * r - 1,
                                    self.w_ * cols,
                                    self.h_ - 1,
@@ -361,7 +367,7 @@ class CaseWidget(QtGui.QWidget):
 
             for c in range(cols):
                 p = self.bg_light_stripe_r if c % 2 else self.bg_dark_stripe_r
-                self.scene.addRect(self.left_margin + self.w_ * c - self.node_size / 2,
+                self.scene.addRect(self.left_margin + self.w_ * c - old_div(self.node_size, 2),
                                    self.top_margin,
                                    self.w_,
                                    self.h_ * rows,
@@ -370,18 +376,18 @@ class CaseWidget(QtGui.QWidget):
 
         if whole_grid:
             for r in range(1, rows):
-                line_ = QtGui.QGraphicsLineItem(self.left_margin - self.node_size / 2,
+                line_ = QtGui.QGraphicsLineItem(self.left_margin - old_div(self.node_size, 2),
                                                 self.top_margin + self.h_ * r - 1,
-                                                self.left_margin - self.node_size / 2 + self.w_ * cols,
+                                                self.left_margin - old_div(self.node_size, 2) + self.w_ * cols,
                                                 self.top_margin + self.h_ * r - 1)
 
                 line_.setPen(self.grid_pen)
                 self.scene.addItem(line_)
 
             for c in range(1, cols):
-                line_ = QtGui.QGraphicsLineItem(self.left_margin + self.w_ * c - self.node_size / 2,
+                line_ = QtGui.QGraphicsLineItem(self.left_margin + self.w_ * c - old_div(self.node_size, 2),
                                                 self.top_margin,
-                                                self.left_margin + self.w_ * c - self.node_size / 2,
+                                                self.left_margin + self.w_ * c - old_div(self.node_size, 2),
                                                 self.top_margin + self.h_ * rows)
 
                 line_.setPen(self.grid_pen)
@@ -389,20 +395,20 @@ class CaseWidget(QtGui.QWidget):
         else:
             mark_w = 10
             for r in range(rows + 1):
-                a = (self.w_ - self.node_size) / 2
-                line_ = QtGui.QGraphicsLineItem(self.left_margin - a - mark_w / 2,
+                a = old_div((self.w_ - self.node_size), 2)
+                line_ = QtGui.QGraphicsLineItem(self.left_margin - a - old_div(mark_w, 2),
                                                 self.top_margin + self.h_ * r - 1,
-                                                self.left_margin - a + mark_w / 2,
+                                                self.left_margin - a + old_div(mark_w, 2),
                                                 self.top_margin + self.h_ * r - 1)
 
                 line_.setPen(self.grid_mark_pen)
                 self.scene.addItem(line_)
 
             for c in range(cols + 1):
-                line_ = QtGui.QGraphicsLineItem(self.left_margin + self.w_ * c - self.node_size / 2,
-                                                self.top_margin + self.h_ * rows - mark_w / 2,
-                                                self.left_margin + self.w_ * c - self.node_size / 2,
-                                                self.top_margin + self.h_ * rows + mark_w / 2)
+                line_ = QtGui.QGraphicsLineItem(self.left_margin + self.w_ * c - old_div(self.node_size, 2),
+                                                self.top_margin + self.h_ * rows - old_div(mark_w, 2),
+                                                self.left_margin + self.w_ * c - old_div(self.node_size, 2),
+                                                self.top_margin + self.h_ * rows + old_div(mark_w, 2))
 
                 line_.setPen(self.grid_mark_pen)
                 self.scene.addItem(line_)
@@ -411,7 +417,7 @@ class CaseWidget(QtGui.QWidget):
         self.parent.remove_region(self.active_node)
 
     def highlight_chunk_nodes(self):
-        highlight_line_len = self.node_size / 2
+        highlight_line_len = old_div(self.node_size, 2)
 
         for g in self.vertices_groups:
             for n in g:
@@ -422,24 +428,24 @@ class CaseWidget(QtGui.QWidget):
                     if t_rev:
                         line_ = QtGui.QGraphicsLineItem(self.left_margin + self.w_ * t - highlight_line_len,
                                                         self.top_margin + self.node_positions[
-                                                            n] * self.h_ + self.h_ / 2,
+                                                            n] * self.h_ + old_div(self.h_, 2),
                                                         self.left_margin + self.w_ * t,
                                                         self.top_margin + self.node_positions[
-                                                            n] * self.h_ + self.h_ / 2)
+                                                            n] * self.h_ + old_div(self.h_, 2))
                     else:
                         line_ = QtGui.QGraphicsLineItem(self.left_margin + self.node_size + self.w_ * t,
                                                         self.top_margin + self.node_positions[
-                                                            n] * self.h_ + self.h_ / 2,
+                                                            n] * self.h_ + old_div(self.h_, 2),
                                                         self.left_margin + self.node_size + self.w_ * t + highlight_line_len,
                                                         self.top_margin + self.node_positions[
-                                                            n] * self.h_ + self.h_ / 2)
+                                                            n] * self.h_ + old_div(self.h_, 2))
 
                     line_.setPen(self.chunk_highlight_pen)
                     self.scene.addItem(line_)
 
     def get_node_item(self, node):
         n_it = None
-        for it, key in self.it_nodes.iteritems():
+        for it, key in self.it_nodes.items():
             if key == node:
                 n_it = it
 
@@ -459,7 +465,7 @@ class CaseWidget(QtGui.QWidget):
     def get_node_item_at_pos(self, node_pos):
         n_key = None
 
-        for key, pos in self.node_positions.iteritems():
+        for key, pos in self.node_positions.items():
             if self.frame_t < key.frame_:
                 pos += len(self.vertices_groups[0])
 
@@ -469,7 +475,7 @@ class CaseWidget(QtGui.QWidget):
 
         n_it = None
 
-        for it, key in self.it_nodes.iteritems():
+        for it, key in self.it_nodes.items():
             if key == n_key:
                 n_it = it
                 break
@@ -517,7 +523,7 @@ class CaseWidget(QtGui.QWidget):
 
         if isinstance(it, QtGui.QGraphicsRectItem):
             br = it.boundingRect()
-            it = self.scene.itemAt(br.x() + br.width() / 2, br.y() + br.height() / 2)
+            it = self.scene.itemAt(br.x() + old_div(br.width(), 2), br.y() + old_div(br.height(), 2))
 
         if isinstance(it, QtGui.QGraphicsPixmapItem):
             # it is not a node:
@@ -542,8 +548,8 @@ class CaseWidget(QtGui.QWidget):
                 QtGui.QApplication.setOverrideCursor(QtCore.Qt.ArrowCursor)
 
             else:
-                self.active_row = int(round((it.pos().y() - self.top_margin) / (self.h_ + 0.0)))
-                self.active_col = int(round(it.pos().x() / (self.w_ + 0.0)))
+                self.active_row = int(round(old_div((it.pos().y() - self.top_margin), (self.h_ + 0.0))))
+                self.active_col = int(round(old_div(it.pos().x(), (self.w_ + 0.0))))
                 self.draw_selection_rect()
                 # self.highlight_node(n2)
 
@@ -618,10 +624,10 @@ class CaseWidget(QtGui.QWidget):
             pm = cvimg2qtpixmap(crop)
             it = self.scene.addPixmap(pm)
 
-            off = (self.w_ - crop.shape[1] - self.node_size / 2) / 2 if self.w_ > crop.shape[1] else 0
+            off = old_div((self.w_ - crop.shape[1] - old_div(self.node_size, 2)), 2) if self.w_ > crop.shape[1] else 0
             off = max(0, off)
 
-            it.setPos(1 + off + self.left_margin + i * (self.w_) - self.node_size / 2, 0)
+            it.setPos(1 + off + self.left_margin + i * (self.w_) - old_div(self.node_size, 2), 0)
             self.crop_pixmaps_cache.append(pm)
 
             im = self.frame_cache[i]
@@ -629,7 +635,7 @@ class CaseWidget(QtGui.QWidget):
                 im[int(roi.y()):int(roi.y()) + int(roi.height()), int(roi.x()):int(roi.x()) + int(roi.width()), :])
             pm = cvimg2qtpixmap(crop)
             it = self.scene.addPixmap(pm)
-            it.setPos(1 + off + self.left_margin + i * (self.w_) - self.node_size / 2, 0)
+            it.setPos(1 + off + self.left_margin + i * (self.w_) - old_div(self.node_size, 2), 0)
             it.hide()
             self.crop_clear_frames_items.append(it)
 
@@ -640,7 +646,7 @@ class CaseWidget(QtGui.QWidget):
                 im[int(roi.y()):int(roi.y()) + int(roi.height()), int(roi.x()):int(roi.x()) + int(roi.width()), :])
             pm = cvimg2qtpixmap(crop)
             it = self.scene.addPixmap(pm)
-            it.setPos(1 + off + self.left_margin + i * (self.w_) - self.node_size / 2, 0)
+            it.setPos(1 + off + self.left_margin + i * (self.w_) - old_div(self.node_size, 2), 0)
             it.hide()
             self.crop_clear_frames_items.append(it)
 
@@ -657,7 +663,7 @@ class CaseWidget(QtGui.QWidget):
 
             sf = self.project.other_parameters.img_subsample_factor
             if sf > 1.0:
-                im = np.asarray(rescale(im, 1 / sf) * 255, dtype=np.uint8)
+                im = np.asarray(rescale(im, old_div(1, sf)) * 255, dtype=np.uint8)
 
             self.frame_cache.append(im)
 
@@ -699,7 +705,7 @@ class CaseWidget(QtGui.QWidget):
                 it = self.scene.addPixmap(self.get_im(n))
 
                 self.it_nodes[it] = n
-                off = (self.node_size - it.boundingRect().width()) / 2
+                off = old_div((self.node_size - it.boundingRect().width()), 2)
                 it.setPos(self.left_margin + self.w_ * i + off,
                           self.top_margin + h_pos * self.h_ + off)
                 h_pos += 1
@@ -713,10 +719,10 @@ class CaseWidget(QtGui.QWidget):
                     try:
                         line_ = QtGui.QGraphicsLineItem(self.left_margin + self.node_size + self.w_ * i,
                                                         self.top_margin + self.node_positions[
-                                                            n] * self.h_ + self.h_ / 2,
+                                                            n] * self.h_ + old_div(self.h_, 2),
                                                         self.left_margin + self.w_ + i * self.w_,
                                                         self.top_margin + self.node_positions[
-                                                            n2] * self.h_ + self.h_ / 2)
+                                                            n2] * self.h_ + old_div(self.h_, 2))
                         line_.setPen(self.edge_pen)
                         self.scene.addItem(line_)
                     except:
@@ -725,7 +731,7 @@ class CaseWidget(QtGui.QWidget):
 
     def process_suggested_config(self, suggested_config):
         l_ = []
-        for v1, v2 in suggested_config.iteritems():
+        for v1, v2 in suggested_config.items():
             r1 = self.project.gm.region(v1)
             l_.append([r1.frame_, v1, v2])
 

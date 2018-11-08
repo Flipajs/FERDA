@@ -1,8 +1,12 @@
 from __future__ import print_function
+from __future__ import unicode_literals
+from future import standard_library
+standard_library.install_aliases()
+from builtins import range
 import mahotas
 import numpy as np
 import argparse
-import cPickle as pickle
+import pickle as pickle
 import glob
 import cv2
 import matplotlib.pyplot as plt

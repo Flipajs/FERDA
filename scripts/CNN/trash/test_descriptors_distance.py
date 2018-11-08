@@ -1,4 +1,6 @@
 from __future__ import print_function
+from __future__ import unicode_literals
+from builtins import range
 import h5py
 import sys
 from sklearn.ensemble import RandomForestClassifier
@@ -58,7 +60,7 @@ if __name__ == '__main__':
 
     print("###############")
     import time
-    for name, classifier in classifiers.iteritems():
+    for name, classifier in classifiers.items():
         t = time.time()
         print(name)
         classifier.fit(X_train, y_train)

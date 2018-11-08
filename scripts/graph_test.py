@@ -1,4 +1,8 @@
 from __future__ import print_function
+from __future__ import unicode_literals
+from future import standard_library
+standard_library.install_aliases()
+from builtins import range
 import networkx as nt
 import graph_tool.all as gt
 import igraph as ig
@@ -194,7 +198,7 @@ t = time.time()
 delete_nodes_graph_tool(graph_tool, graph_tool_vertices, rnd_array)
 print("graph_tool nodes deletion: %s" % (time.time()-t))
 
-import cPickle as pickle
+import pickle as pickle
 s = time.time()
 with open('/Users/flipajs/Documents/wd/graph_test_graph_tool.pkl', 'wb') as f:
     pickle.dump(graph_tool, f, -1)

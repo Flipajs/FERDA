@@ -1,5 +1,11 @@
 from __future__ import print_function
 from __future__ import absolute_import
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import str
+from builtins import map
+from builtins import range
+from past.utils import old_div
 __author__ = 'fnaiser'
 
 
@@ -238,7 +244,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         nodes = []
         t_ = t
         while len(nodes) == 0 and t_ - t < 100:
-            nodes = map(int, self.project.gm.get_vertices_in_t(t_))
+            nodes = list(map(int, self.project.gm.get_vertices_in_t(t_)))
             t_ += 1
 
         if len(nodes) == 0:
@@ -347,7 +353,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
                         r1_ = self.project.gm.region(v1)
                         r2_ = self.project.gm.region(v2)
 
-                        s = 1 / (0.001 + np.linalg.norm(r1_.centroid() - r2_.centroid()))
+                        s = old_div(1, (0.001 + np.linalg.norm(r1_.centroid() - r2_.centroid())))
 
                         # e = self.project.gm.g.edge(v1, v2)
                         # s = self.project.gm.g.ep['score'][e]
@@ -489,8 +495,8 @@ class ConfigurationsVisualizer(QtGui.QWidget):
                 self.fitting_tm.add_chunk_session(self.project, self.fitting_thread_finished, chunk)
             else:
                 pivot = self.project.gm.g.vertex(self.active_cw.active_node)
-                model = map(self.project.gm.region, pivot.in_neighbors())
-                model = map(deepcopy, model)
+                model = list(map(self.project.gm.region, pivot.in_neighbors()))
+                model = list(map(deepcopy, model))
                 for m in model: m.frame_ += 1
 
                 region = self.project.gm.region(self.active_cw.active_node)
@@ -612,7 +618,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
             it.widget().setParent(None)
 
         elem_width = 200
-        cols = math.floor(self.scenes_widget.width() / elem_width)
+        cols = math.floor(old_div(self.scenes_widget.width(), elem_width))
         self.noise_nodes_widget = ImgGridWidget()
         self.noise_nodes_widget.reshape(cols, elem_width)
 
@@ -807,8 +813,8 @@ class ConfigurationsVisualizer(QtGui.QWidget):
             Warning("UNBALANCED CONFIGURATION! ENDING CHUNK INTERPOLATION FITTING")
             return
 
-        in_regions = map(self.project.gm.region, in_vertices)
-        out_regions = map(self.project.gm.region, out_vertices)
+        in_regions = list(map(self.project.gm.region, in_vertices))
+        out_regions = list(map(self.project.gm.region, out_vertices))
 
         matching = []
         for r in in_regions:
@@ -835,7 +841,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
                 new_r.frame_ += i
                 new_r.virtual = True
                 # TODO rotate a little bit ?
-                new_centroid = (m[0].centroid() * (ch_len - i) + m[1].centroid() * i) / ch_len
+                new_centroid = old_div((m[0].centroid() * (ch_len - i) + m[1].centroid() * i), ch_len)
                 dif_ = new_centroid - m[0].centroid()
                 new_r.centroid_ = new_centroid
                 new_r.pts_ += np.asarray(dif_, dtype=np.int64)
@@ -896,7 +902,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
             if sum(alpha[y_start, :]) > 0:
                 break
 
-        for y_end in reversed(range(alpha.shape[0])):
+        for y_end in reversed(list(range(alpha.shape[0]))):
             if sum(alpha[y_end, :]) > 0:
                 break
 
@@ -904,7 +910,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
             if sum(alpha[:, x_start]) > 0:
                 break
 
-        for x_end in reversed(range(alpha.shape[1])):
+        for x_end in reversed(list(range(alpha.shape[1]))):
             if sum(alpha[:, x_end]) > 0:
                 break
 

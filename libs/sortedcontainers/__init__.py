@@ -36,6 +36,7 @@ testing has 100% coverage with unit tests and hours of stress.
 :license: Apache 2.0, see LICENSE for more details.
 
 """
+from __future__ import unicode_literals
 
 
 from .sortedlist import SortedList, SortedListWithKey

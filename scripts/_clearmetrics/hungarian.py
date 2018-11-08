@@ -8,8 +8,12 @@ References: http://www.ams.jhu.edu/~castello/362/Handouts/hungarian.pdf
         http://www.clapper.org/software/python/munkres/
 """
 from __future__ import print_function
+from __future__ import unicode_literals
 
 # Module Information.
+from builtins import zip
+from builtins import range
+from builtins import object
 __version__ = "1.1.1"
 __author__ = "Thom Dedecko"
 __url__ = "http://github.com/tdedecko/hungarian-algorithm"
@@ -27,7 +31,7 @@ except ImportError:
     raise HungarianError("NumPy is not installed.")
 
 
-class Hungarian:
+class Hungarian(object):
     """
     Implementation of the Hungarian (Munkres) Algorithm using np.
 
@@ -152,7 +156,7 @@ class Hungarian:
                 zero_locations[:, column] = False
 
             # Save Results
-            self.__set_results(zip(matched_rows, matched_columns))
+            self.__set_results(list(zip(matched_rows, matched_columns)))
 
         # Calculate total potential
         value = 0
@@ -258,7 +262,7 @@ class Hungarian:
                 self._results.append(new_result)
 
 
-class CoverZeros:
+class CoverZeros(object):
     """
     Use minimum number of lines to cover all zeros in the matrix.
     Algorithm based on: http://weber.ucsd.edu/~vcrawfor/hungar.pdf

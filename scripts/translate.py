@@ -1,5 +1,9 @@
+from __future__ import unicode_literals
+from future import standard_library
+standard_library.install_aliases()
+from builtins import range
 import json
-import urllib
+import urllib.request, urllib.parse, urllib.error
 
 def translate(text, src = '', to = 'en'):
   parameters = ({'langpair': '{0}|{1}'.format(src, to), 'v': '1.0' })

@@ -1,8 +1,11 @@
 from __future__ import print_function
+from __future__ import unicode_literals
+from future import standard_library
+standard_library.install_aliases()
 from thesis.thesis_utils import load_all_projects
 from utils.idtracker import load_idtracker_data
 from utils.gt.evaluator import compare_trackers
-import cPickle as pickle
+import pickle as pickle
 from thesis.config import *
 
 FORMAT_PERCENTS = "{:.2%}"
@@ -11,7 +14,7 @@ def run(semistate='id_classified', dir_name='', HIL=False):
 
     results = {}
     for nogaps in ['', '_nogaps']:
-        for name in project_paths.iterkeys():
+        for name in project_paths.keys():
             if name not in ps:
                 continue
 
@@ -91,7 +94,7 @@ def results2latex2(name=''):
 
     keys = ['Cam1', 'Zebrafish', 'Camera3', 'Sowbug3']
     # for key in keys:
-    for pname in project_real_names.iterkeys():
+    for pname in project_real_names.keys():
         try:
             with open(wd+name+'_'+pname) as f:
                 r = pickle.load(f)
@@ -162,7 +165,7 @@ if __name__ == '__main__':
 
     for test in old_:
         print("$$$$$$$$$$$", test, "$$$$$$$$")
-        for pname in project_real_names.iterkeys():
+        for pname in project_real_names.keys():
             try:
                 with open(wd+test+'_'+pname) as f:
                     r = pickle.load(f)

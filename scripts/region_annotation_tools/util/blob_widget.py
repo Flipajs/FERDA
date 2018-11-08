@@ -1,3 +1,11 @@
+from __future__ import division
+from __future__ import unicode_literals
+from future import standard_library
+standard_library.install_aliases()
+from builtins import zip
+from builtins import next
+from builtins import range
+from past.utils import old_div
 import logging
 from PyQt4 import QtCore
 from PyQt4 import QtGui
@@ -14,7 +22,7 @@ from gui.segmentation.painter import mask2qimage
 from gui.segmentation.segmentation import SegmentationPicker
 from utils.drawing.points import get_contour, get_contour_without_holes
 from utils.video_manager import get_auto_video_manager
-import cPickle
+import pickle
 
 __author__ = 'simon'
 
@@ -136,7 +144,7 @@ class BlobWidget(QtGui.QWidget):
         for tracklet in tracklets:
             self.tr_id = tracklet.id()
             rch = RegionChunk(tracklet, self.project.gm, self.project.rm)
-            step = len(rch)/(self.examples_from_tracklet-1)
+            step = old_div(len(rch),(self.examples_from_tracklet-1))
             if len(rch) < self.examples_from_tracklet:
                 idcs = [0]
             else:
@@ -485,7 +493,7 @@ if __name__ == "__main__":
 
     chunks_with_clusters = [6, 10, 12, 13, 17, 18, 26, 28, 29, 32, 37, 39, 40, 41, 43, 47, 51, 54, 57, 58, 60, 61, 65,
                             67, 69, 73, 75, 78, 81, 84, 87, 90, 93, 94, 96, 99, 102, 105]
-    chunks_with_clusters = map(lambda x: chunks[x], chunks_with_clusters)
+    chunks_with_clusters = [chunks[x] for x in chunks_with_clusters]
 
     app = QtGui.QApplication(sys.argv)
 

@@ -1,7 +1,9 @@
+from __future__ import unicode_literals
+from builtins import object
 __author__ = 'fnaiser'
 
 
-class UserActions():
+class UserActions(object):
     def __init__(self):
         self.actions = []
 

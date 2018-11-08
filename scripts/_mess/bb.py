@@ -1,4 +1,8 @@
 from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import range
+from past.utils import old_div
 from reportlab.graphics.barcode.widgets import _BarcodeWidget
 
 __author__ = 'filip@naiser.cz'
@@ -18,7 +22,7 @@ def crit(ant1, ant2, mser):
 
     a1r0, a1c0, a1r1, a1c1 = region_size(ant1['region']['rle'])
     a2r0, a2c0, a2r1, a2c1 = region_size(ant2['region']['rle'])
-    margin = math.ceil(count_margin(a1c1-a1c0, a1r1-a1r0, a2c1-a2c0, a2r1-a2r0) / 4) + 4
+    margin = math.ceil(old_div(count_margin(a1c1-a1c0, a1r1-a1r0, a2c1-a2c0, a2r1-a2r0), 4)) + 4
 
     reg = create_region_img(mser['rle'], margin)
     reg = scipy.misc.imresize(reg, 0.25)
@@ -36,8 +40,8 @@ def crit(ant1, ant2, mser):
     start = time.time()
     pos_step = 4
     theta_step = 12
-    cx = reg.shape[1] / 2
-    cy = reg.shape[0] / 2
+    cx = old_div(reg.shape[1], 2)
+    cy = old_div(reg.shape[0], 2)
     #x_step = (reg.shape[1] - 2*margin) / pos_step
     #y_step = (reg.shape[0] - 2*margin) / pos_step
 
@@ -73,11 +77,11 @@ def count_score(ant1_pos, ant1_theta, ant2_pos, ant2_theta, region, ant1_reg, an
     ant1_rot = ndimage.rotate(ant1_reg, ant1_theta, reshape=False)
     ant2_rot = ndimage.rotate(ant2_reg, ant2_theta, reshape=False)
 
-    a1_cy = ant1_pos[0] - ant1_rot.shape[0] / 2
-    a1_cx = ant1_pos[1] - ant1_rot.shape[1] / 2
+    a1_cy = ant1_pos[0] - old_div(ant1_rot.shape[0], 2)
+    a1_cx = ant1_pos[1] - old_div(ant1_rot.shape[1], 2)
 
-    a2_cy = ant2_pos[0] - ant2_rot.shape[0] / 2
-    a2_cx = ant2_pos[1] - ant2_rot.shape[1] / 2
+    a2_cy = ant2_pos[0] - old_div(ant2_rot.shape[0], 2)
+    a2_cx = ant2_pos[1] - old_div(ant2_rot.shape[1], 2)
 
     ant1 = np.zeros(region.shape, dtype=np.uint8)
     ant2 = np.zeros(region.shape, dtype=np.uint8)
@@ -122,8 +126,8 @@ def create_region_img(rle, margin, square=True):
         col_end = l['col2'] - c0 + margin
 
         if square:
-            line += (height - (r1 - r0)) / 2
-            d = (width - (c1 - c0)) / 2
+            line += old_div((height - (r1 - r0)), 2)
+            d = old_div((width - (c1 - c0)), 2)
             col_start += d
             col_end += d
 
@@ -133,7 +137,7 @@ def create_region_img(rle, margin, square=True):
 
 
 def count_margin(a1_weight, a1_height, a2_weight, a2_height):
-    margin = max(max(a1_weight, a1_height), max(a2_weight, a2_height)) / 2
+    margin = old_div(max(max(a1_weight, a1_height), max(a2_weight, a2_height)), 2)
     margin += 3
 
     return margin

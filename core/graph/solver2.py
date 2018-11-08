@@ -1,7 +1,9 @@
 from __future__ import print_function
+from __future__ import unicode_literals
+from builtins import object
 import numpy as np
 
-class Solver2:
+class Solver2(object):
     def __init__(self, project):
         self.p = project
 

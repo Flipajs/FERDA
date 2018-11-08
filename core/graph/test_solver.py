@@ -1,3 +1,6 @@
+from __future__ import unicode_literals
+from builtins import zip
+from builtins import range
 import unittest
 
 from core.graph.solver import Solver
@@ -19,7 +22,7 @@ class TestSolver(unittest.TestCase):
 
         self.frames_ = [0, 0, 0, 1, 1, 2, 2, 2]
         self.regions_ = [Region() for i in range(8)]
-        for r, f, i in zip(self.regions_, self.frames_, range(len(self.regions_))):
+        for r, f, i in zip(self.regions_, self.frames_, list(range(len(self.regions_)))):
             self.p.rm.add(r)
             r.frame_ = f
             r.id_ = i + 1

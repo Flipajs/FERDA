@@ -1,3 +1,6 @@
+from __future__ import division
+from __future__ import unicode_literals
+from past.utils import old_div
 __author__ = 'filip@naiser.cz'
 
 from PyQt4 import QtGui, QtCore
@@ -48,11 +51,11 @@ def view_add_bg_image(g_view, pix_map):
     m22 = g_view.transform().m22()
 
     if m11 and m22 == 1:
-        if gv_w / float(im_w) <= gv_h / float(im_h):
-            val = math.floor((gv_w / float(im_w))*100) / 100
+        if old_div(gv_w, float(im_w)) <= old_div(gv_h, float(im_h)):
+            val = old_div(math.floor((old_div(gv_w, float(im_w)))*100), 100)
             g_view.scale(val, val)
         else:
-            val = math.floor((gv_h / float(im_h))*100) / 100
+            val = old_div(math.floor((old_div(gv_h, float(im_h)))*100), 100)
             g_view.scale(val, val)
 
 
@@ -69,7 +72,7 @@ def add_circle(size=6, color=QtGui.QColor(0x22, 0x22, 0xFF, 0x30)):
 
     brush = QtGui.QBrush(QtCore.Qt.SolidPattern)
     brush.setColor(QtGui.QColor(0x22, 0xFF, 0x00, 0x30))
-    item2 = QtGui.QGraphicsEllipseItem(size/2 - 0.5, size/2 - 0.5, 1, 1)
+    item2 = QtGui.QGraphicsEllipseItem(old_div(size,2) - 0.5, old_div(size,2) - 0.5, 1, 1)
     item2.setPos(0, 0)
     item2.setBrush(brush)
     item2.setFlag(QtGui.QGraphicsItem.ItemIsMovable, True)

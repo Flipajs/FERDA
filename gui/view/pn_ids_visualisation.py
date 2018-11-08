@@ -1,3 +1,8 @@
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import str
+from builtins import range
+from past.utils import old_div
 import numpy as np
 import cv2
 from PyQt4 import QtGui
@@ -133,7 +138,7 @@ def draw_N(img, w, id_, params):
     from utils.visualization_utils import get_contrast_color
 
     new_w = w + params['N_width']
-    y1 = (params['P_height'] - params['N_height']) / 2
+    y1 = old_div((params['P_height'] - params['N_height']), 2)
     y2 = params['N_height'] + y1
 
     c = params['colors'][id_]
@@ -154,7 +159,7 @@ def draw_N(img, w, id_, params):
 
 def draw_U(img, w, id_, params):
     new_w = w + params['U_width']
-    y1 = (params['P_height'] - params['U_height']) / 2
+    y1 = old_div((params['P_height'] - params['U_height']), 2)
     y2 = params['U_height'] + y1
     img[y1:y2, w:new_w, :] = params['colors'][id_]
 
@@ -162,7 +167,7 @@ def draw_U(img, w, id_, params):
 
 
 def show_probs(img, old_w, w, prob, params):
-    mid_w = w + (old_w - w) / 2
+    mid_w = w + old_div((old_w - w), 2)
 
     h = int(round(params['P_height'] * prob))
 

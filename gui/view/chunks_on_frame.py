@@ -1,3 +1,6 @@
+from __future__ import division
+from __future__ import unicode_literals
+from past.utils import old_div
 __author__ = 'flipajs'
 
 import numpy as np
@@ -69,7 +72,7 @@ class ChunksOnFrame(QtGui.QWidget):
         # im = self.vid.seek_frame(f)
 
         w = 420
-        scale = (w / float(im.shape[1]))
+        scale = (old_div(w, float(im.shape[1])))
         h = int(im.shape[0] * scale)
 
         for it in self.marker_its:

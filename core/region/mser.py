@@ -1,4 +1,11 @@
 from __future__ import absolute_import
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import zip
+from builtins import str
+from builtins import range
+from past.utils import old_div
+from builtins import object
 __author__ = 'fnaiser'
 import pickle
 
@@ -13,7 +20,7 @@ from .mser_operations import get_region_groups_dict_, margin_filter_dict_, min_i
 from utils.video_manager import get_auto_video_manager
 
 
-class Mser():
+class Mser(object):
     def __init__(self, max_area=0.005, min_margin=5, min_area=5):
         self.mser = cyMser.PyMser()
         self.mser.set_min_margin(min_margin)
@@ -43,7 +50,7 @@ class Mser():
             if use_margin_filter:
                 ids = margin_filter_dict_(regions, groups)
             else:
-                ids = range(len(regions))
+                ids = list(range(len(regions)))
 
             if region_min_intensity is not None and region_min_intensity < 256:
 
@@ -72,10 +79,10 @@ class Mser():
 
             regions = [Region(regions[id], frame, id) for id in ids]
         else:
-            regions = [Region(dr, frame, id) for dr, id in zip(regions, range(len(regions)))]
+            regions = [Region(dr, frame, id) for dr, id in zip(regions, list(range(len(regions))))]
 
         if use_children_filter:
-            ids = range(len(regions))
+            ids = list(range(len(regions)))
             ids = children_filter(regions, ids)
 
             regions = [regions[i] for i in ids]
@@ -133,7 +140,7 @@ def get_msers_img(img, project, frame=-1, prefiltered=False):
     min_area = project.mser_parameters.min_area
     min_margin = project.mser_parameters.min_margin
 
-    max_area_relative = max_area / float(img.shape[0]*img.shape[1])
+    max_area_relative = old_div(max_area, float(img.shape[0]*img.shape[1]))
 
     region_min_intensity = project.mser_parameters.region_min_intensity
 
@@ -202,7 +209,7 @@ def get_filtered_msers(img, project, frame=-1):
     if project.mser_parameters.area_roi_ratio_threshold > ratio_th:
         new_msers = []
         for m in msers:
-            if m.area() / float(m.roi().width() * m.roi().height()) > ratio_th:
+            if old_div(m.area(), float(m.roi().width() * m.roi().height())) > ratio_th:
                 new_msers.append(m)
 
         msers = new_msers

@@ -1,4 +1,9 @@
 from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import zip
+from builtins import range
+from past.utils import old_div
 __author__ = 'filip@naiser.cz'
 import numpy as np
 import math
@@ -97,11 +102,11 @@ def _rotate_back_projection(pts, th, center, roi):
 
 
 def roi_x_range(roi):
-    return range(roi[0][0], roi[1][0] + 1)
+    return list(range(roi[0][0], roi[1][0] + 1))
 
 
 def roi_y_range(roi):
-    return range(roi[0][1], roi[1][1] + 1)
+    return list(range(roi[0][1], roi[1][1] + 1))
 
 
 def roi_corners(roi):
@@ -122,7 +127,7 @@ def count_centroid(pts):
     in format [x, y]
     """
     s = [sum(x) for x in zip(*pts)]
-    centroid = [s[0]/len(pts), s[1]/len(pts)]
+    centroid = [old_div(s[0],len(pts)), old_div(s[1],len(pts))]
 
     return centroid
 

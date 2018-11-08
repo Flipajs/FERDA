@@ -1,5 +1,10 @@
 from __future__ import print_function
 from __future__ import absolute_import
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import next
+from builtins import str
+from past.utils import old_div
 import operator
 
 import warnings
@@ -47,7 +52,7 @@ class VideoPlayer(QtGui.QWidget):
 
         self.frame_rate = 30
         self.timer = QtCore.QTimer()
-        self.timer.setInterval(1000 / self.frame_rate)
+        self.timer.setInterval(old_div(1000, self.frame_rate))
 
         self._video_controls()
         self._add_actions()
@@ -171,12 +176,12 @@ class VideoPlayer(QtGui.QWidget):
 
     def connect_GUI(self):
         """Connects GUI elements to appropriate methods"""
-        self.forward.clicked.connect(self.next)
+        self.forward.clicked.connect(self.__next__)
         self.backward.clicked.connect(self.prev)
         self.playPause.clicked.connect(self.play_pause)
         self.speedSlider.valueChanged.connect(self.speed_slider_changed)
         self.video_slider.valueChanged.connect(self.video_slider_changed)
-        self.timer.timeout.connect(self.next)
+        self.timer.timeout.connect(self.__next__)
 
     def play_pause(self):
         if self.timer.isActive():
@@ -271,7 +276,7 @@ class VideoPlayer(QtGui.QWidget):
         pixmap = cvimg2qtpixmap(img)
         self.visualise_temp(QtGui.QGraphicsPixmapItem(pixmap), 'bg')
 
-    def next(self):
+    def __next__(self):
         self._change_frame(self._get_next_operator())
 
     def prev(self):
@@ -319,7 +324,7 @@ class VideoPlayer(QtGui.QWidget):
 
     def clear_all_temp_visualisations(self, except_for=[]):
         delete_ = []
-        for key, arr in self._scene_items['temp'].iteritems():
+        for key, arr in self._scene_items['temp'].items():
             if key in except_for:
                 continue
 
@@ -334,7 +339,7 @@ class VideoPlayer(QtGui.QWidget):
     def init_speed_slider(self):
         """Initiates components associated with speed of viewing videos"""
         self.speedSlider.setValue(self.frame_rate)
-        self.timer.setInterval(1000 / self.frame_rate)
+        self.timer.setInterval(old_div(1000, self.frame_rate))
         self.fpsLabel.setText(str(self.frame_rate) + ' fps')
         self.speedSlider.setMinimum(1)
         self.speedSlider.setMaximum(120)
@@ -342,7 +347,7 @@ class VideoPlayer(QtGui.QWidget):
     def speed_slider_changed(self):
         """Method invoked when value of slider controlling speed of video changed it's value"""
         self.frame_rate = self.speedSlider.value()
-        self.timer.setInterval(1000 / self.frame_rate)
+        self.timer.setInterval(old_div(1000, self.frame_rate))
         self.fpsLabel.setText(str(self.frame_rate) + ' fps')
 
     def video_slider_changed(self):

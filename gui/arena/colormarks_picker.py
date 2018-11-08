@@ -1,4 +1,9 @@
 from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import zip
+from builtins import range
+from past.utils import old_div
 import sys
 import random
 import gc
@@ -73,7 +78,7 @@ class ColormarksPicker(QtGui.QWidget):
     def done(self):
         if self.done_callback:
             masks = []
-            for m, frame in self.masks.itervalues():
+            for m, frame in self.masks.values():
                 masks.append({'mask': m.T, 'frame': frame})
 
             self.done_callback(self.project, masks)
@@ -182,10 +187,10 @@ class ColormarksPicker(QtGui.QWidget):
             old, new = 1, 0
 
         # paint the area around the point position
-        fromx = point.x() - self.pen_size / 2
-        tox = point.x() + self.pen_size / 2
-        fromy = point.y() - self.pen_size / 2
-        toy = point.y() + self.pen_size / 2
+        fromx = point.x() - old_div(self.pen_size, 2)
+        tox = point.x() + old_div(self.pen_size, 2)
+        fromy = point.y() - old_div(self.pen_size, 2)
+        toy = point.y() + old_div(self.pen_size, 2)
 
         for i in range(fromx, tox):
             for j in range(fromy, toy):
@@ -259,7 +264,7 @@ class ColormarksPicker(QtGui.QWidget):
         if count == 0:
             return 255, 255, 255
         else:
-            return sumr/count+0.0, sumg/count+0.0, sumb/count+0.0
+            return old_div(sumr,count)+0.0, old_div(sumg,count)+0.0, old_div(sumb,count)+0.0
 
     def switch_color(self):
         text = self.sender().text()
@@ -304,7 +309,7 @@ class ColormarksPicker(QtGui.QWidget):
         self.masks.pop(self.pick_id)
 
         # move all following masks one down, so the ids stay consistent
-        for key in sorted(self.masks.iterkeys()):
+        for key in sorted(self.masks.keys()):
             if key > self.pick_id:
                 self.move_mask(key, key-1)
 

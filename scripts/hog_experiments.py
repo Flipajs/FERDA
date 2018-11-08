@@ -1,4 +1,11 @@
 from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
+from builtins import range
+from past.utils import old_div
 __author__ = 'flipajs'
 
 import matplotlib.pyplot as plt
@@ -17,7 +24,7 @@ from utils.drawing.points import draw_points
 import cv2
 from PyQt4 import QtGui, QtCore
 import sys
-import cPickle as pickle
+import pickle as pickle
 from utils.roi import get_roi
 
 
@@ -26,12 +33,12 @@ def get_mser(im, p):
     msers = get_filtered_msers(np.asarray(im * 255, dtype=np.uint8), p, 0)
 
     m = msers[0]
-    ab = m.area() / np.pi
+    ab = old_div(m.area(), np.pi)
     cd = m.ellipse_major_axis_length() * m.ellipse_minor_axis_length()
-    r = cd/ab
+    r = old_div(cd,ab)
 
-    b = ((r*m.ellipse_major_axis_length()*(m.ellipse_minor_axis_length()**2))/m.ellipse_major_axis_length())**0.5
-    a = ab/b
+    b = (old_div((r*m.ellipse_major_axis_length()*(m.ellipse_minor_axis_length()**2)),m.ellipse_major_axis_length()))**0.5
+    a = old_div(ab,b)
 
     print("PREV: ", m.ellipse_major_axis_length(), m.ellipse_minor_axis_length())
     print("NOW: ", a, b, np.rad2deg(m.theta_), m.theta_)
@@ -50,7 +57,7 @@ def get_regions(project, solver, from_t, to_t):
 
         from gui.statistics.region_reconstruction import RegionReconstruction
         rr = RegionReconstruction(project, solver)
-        frames = range(from_t, to_t)
+        frames = list(range(from_t, to_t))
         reconstructed = rr.reconstruct_regions(frames)
 
         with open(project.working_directory+'/regions.pkl', 'wb') as f:
@@ -79,7 +86,7 @@ def warp_region(r, im, dst_h=16, dst_w=48):
         head, back = back, head
     
     b_ = r.ellipse_minor_axis_length()*2.5
-    p_ = np.array([b_*math.sin(-r.theta_+np.pi+np.pi/2), b_*math.cos(-r.theta_+np.pi+np.pi/2)])
+    p_ = np.array([b_*math.sin(-r.theta_+np.pi+old_div(np.pi,2)), b_*math.cos(-r.theta_+np.pi+old_div(np.pi,2))])
     tl_c = back + p_
     tr_c = head + p_
     bl_c = back - p_
@@ -146,7 +153,7 @@ def hogs_test(p, chunks):
                     pass
 
         if right+wrong:
-            print(compare_with, "#RIGHT: ", right, "#WRONG: ", wrong, "SR: ", round(right / float(right+wrong), 2))
+            print(compare_with, "#RIGHT: ", right, "#WRONG: ", wrong, "SR: ", round(old_div(right, float(right+wrong)), 2))
         else:
             print("none")
 
@@ -193,7 +200,7 @@ def hogs_test2(p, chunks):
                     pass
 
         if right+wrong:
-            print(compare_with, "#RIGHT: ", right, "#WRONG: ", wrong, "SR: ", round(right / float(right+wrong), 2))
+            print(compare_with, "#RIGHT: ", right, "#WRONG: ", wrong, "SR: ", round(old_div(right, float(right+wrong)), 2))
         else:
             print("none")
 
@@ -205,8 +212,8 @@ def head_test(im_):
     """
     h, w = im_.shape
 
-    left_ = im_[:, 0:w/2]
-    right_ = im_[:, w/2:]
+    left_ = im_[:, 0:old_div(w,2)]
+    right_ = im_[:, old_div(w,2):]
 
     left_ = np.sum(left_[left_ == 255])
     right_ = np.sum(right_[right_ == 255])

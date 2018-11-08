@@ -1,4 +1,6 @@
 from __future__ import print_function
+from __future__ import unicode_literals
+from builtins import zip
 from core.project.project import Project
 
 
@@ -50,8 +52,8 @@ if __name__ == "__main__":
         matchings.append(ids_)
 
 
-    from itertools import izip
-    for ch1, ch2, ch3 in izip(projects[0].chm.chunk_gen(), projects[1].chm.chunk_gen(), projects[2].chm.chunk_gen()):
+    
+    for ch1, ch2, ch3 in zip(projects[0].chm.chunk_gen(), projects[1].chm.chunk_gen(), projects[2].chm.chunk_gen()):
         ch1_id_ = -1
         ch2_id_ = -1
         ch3_id_ = -1

@@ -1,4 +1,8 @@
 from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
+from past.utils import old_div
+from builtins import object
 __author__ = 'fnaiser'
 
 import pickle
@@ -11,7 +15,7 @@ from utils.drawing.points import get_contour
 from utils.roi import get_roi
 
 
-class DistanceMap():
+class DistanceMap(object):
     """
     This class encapsulates distance map image, which is used to speed up search for nearest point for given coordinates.
     """
@@ -84,7 +88,7 @@ if __name__ == '__main__':
     im = np.asarray(255*dm_region.contour_img_, dtype=np.uint8)
     cv2.imshow('contour', im)
     dm_im = dm_region.d_map
-    dm_im = dm_region.d_map / np.max(dm_im)
+    dm_im = old_div(dm_region.d_map, np.max(dm_im))
 
     dm_im = np.asarray(dm_im*255, dtype=np.uint8)
     # print dm_region.x_min, dm_region.y_min, dm_region.x_max, dm_region.y_max

@@ -1,5 +1,8 @@
+from __future__ import unicode_literals
+from future import standard_library
+standard_library.install_aliases()
 import sys
-import cPickle as pickle
+import pickle as pickle
 
 def change_pr(path,value,property):
     pathToProj=path

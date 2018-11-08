@@ -1,8 +1,14 @@
 from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import str
+from builtins import zip
+from builtins import range
+from past.utils import old_div
 import h5py
 import numpy as np
 
-from itertools import izip
+
 from core.project.project import Project
 from utils.video_manager import get_auto_video_manager
 from utils.misc import print_progress
@@ -46,7 +52,7 @@ def test_output(wd, vm, p, k):
     # f.create_dataset("edge_probs", data=edge_probs, dtype=np.float16)
     # f.close()
 
-    edges_i = random.sample(range(0, edges.shape[0]), 1000)
+    edges_i = random.sample(list(range(0, edges.shape[0])), 1000)
 
     plt.ion()
 
@@ -60,7 +66,7 @@ def test_output(wd, vm, p, k):
         img1 = vm.get_frame(vi[0])
         img1 = cv2.cvtColor(img1, cv2.COLOR_BGR2RGB)
         if p.other_parameters.img_subsample_factor > 1.0:
-            img1 = rescale(img1, 1 / p.other_parameters.img_subsample_factor)
+            img1 = rescale(img1, old_div(1, p.other_parameters.img_subsample_factor))
 
         plt.figure(1)
         plt.imshow(img1)
@@ -88,7 +94,7 @@ def test_output(wd, vm, p, k):
             img2 = vm.get_frame(vj[0])
             img2 = cv2.cvtColor(img2, cv2.COLOR_BGR2RGB)
             if p.other_parameters.img_subsample_factor > 1.0:
-                img2 = rescale(img2, 1 / p.other_parameters.img_subsample_factor)
+                img2 = rescale(img2, old_div(1, p.other_parameters.img_subsample_factor))
 
             fig2 = plt.figure(2)
             plt.imshow(img2)
@@ -117,7 +123,7 @@ if __name__ == '__main__':
 
     import math
 
-    k = -math.log(0.5)/(2*p.stats.major_axis_median/p.other_parameters.img_subsample_factor)
+    k = old_div(-math.log(0.5),(2*p.stats.major_axis_median/p.other_parameters.img_subsample_factor))
     print("k: {:.3f}".format(k))
 
     MAX_D /= p.other_parameters.img_subsample_factor
@@ -160,10 +166,10 @@ if __name__ == '__main__':
             prob_map = prob_map[b:-b, b:-b].copy()
 
             if p.other_parameters.img_subsample_factor > 1.0:
-                prob_map = rescale(prob_map, 1 / p.other_parameters.img_subsample_factor)
+                prob_map = rescale(prob_map, old_div(1, p.other_parameters.img_subsample_factor))
 
             if p.other_parameters.img_subsample_factor > 1.0:
-                img = np.asarray(rescale(img, 1 / p.other_parameters.img_subsample_factor) * 255, dtype=np.uint8)
+                img = np.asarray(rescale(img, old_div(1, p.other_parameters.img_subsample_factor)) * 255, dtype=np.uint8)
 
             s_frame = str(frame)
             while len(s_frame) < 4:
@@ -178,7 +184,7 @@ if __name__ == '__main__':
             if prev_ys is not None:
                 current_offset += len(prev_ys)
 
-            for y, x in izip(ys, xs):
+            for y, x in zip(ys, xs):
                 print_progress(i+1, len(ys))
 
                 vertex_probs.append(prob_map[y, x])
@@ -198,7 +204,7 @@ if __name__ == '__main__':
 
                 if prev_xs is not None:
                     dists = cdist(np.array([[y, x]]), np.vstack((prev_ys, prev_xs)).T)
-                    for prev_id, (yy, xx) in enumerate(izip(prev_ys, prev_xs)):
+                    for prev_id, (yy, xx) in enumerate(zip(prev_ys, prev_xs)):
                         d = dists[0, prev_id]
                         if d < MAX_D:
                             # FROM ID, TO ID

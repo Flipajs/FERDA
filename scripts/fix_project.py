@@ -1,4 +1,5 @@
 from __future__ import print_function
+from __future__ import unicode_literals
 l__author__ = 'flipajs'
 
 from core.project.project import Project

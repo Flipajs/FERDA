@@ -1,4 +1,9 @@
 from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import str
+from builtins import range
+from past.utils import old_div
 import h5py
 import numpy as np
 import matplotlib.pyplot as plt
@@ -46,7 +51,7 @@ for i, id_ in enumerate(ids):
     print(avg_vects[-1])
     print(std_vects[-1])
 
-    xx = np.array(range(len(avg_vects[-1]))) + i / float(len(ids) * 2)
+    xx = np.array(list(range(len(avg_vects[-1])))) + old_div(i, float(len(ids) * 2))
     yy = avg_vects[-1]
     e = std_vects[-1]
 
@@ -155,7 +160,7 @@ distances = []
 for i in range(len(ids)):
     distances.append([])
 
-for id, val in tqdm(dists.iteritems()):
+for id, val in tqdm(iter(dists.items())):
     k = np.argmax(results[id])
     d = np.linalg.norm(avg_vects[k] - val)
 
@@ -188,14 +193,14 @@ for id, val in tqdm(dists.iteritems()):
         crop = get_safe_selection(img, y - offset, x - offset, 2 * offset, 2 * offset)
 
 
-        rs = "{}".format(int((d/percentiles1[k])*100))
+        rs = "{}".format(int((old_div(d,percentiles1[k]))*100))
 
 
         ds = "{}".format(int(d))
         while len(ds) < 6:
             ds = "0"+ds
 
-        cv2.putText(crop, "{:.2f}".format((d/percentiles1[k])), (3, 10), cv2.FONT_HERSHEY_PLAIN, 0.65,
+        cv2.putText(crop, "{:.2f}".format((old_div(d,percentiles1[k]))), (3, 10), cv2.FONT_HERSHEY_PLAIN, 0.65,
                     (255, 255, 255), 1, cv2.cv.CV_AA)
 
         cv2.putText(crop, str(k), (3, 20), cv2.FONT_HERSHEY_PLAIN, 0.65,

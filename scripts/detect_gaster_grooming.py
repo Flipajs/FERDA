@@ -1,4 +1,6 @@
 from __future__ import print_function
+from __future__ import unicode_literals
+from builtins import range
 from core.project.project import Project
 from core.id_detection.learning_process import LearningProcess
 from tqdm import tqdm

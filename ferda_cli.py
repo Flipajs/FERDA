@@ -7,9 +7,13 @@ Features:
 
 For more help run this file as a script with --help parameter.
 """
+from __future__ import unicode_literals
+from __future__ import print_function
+from __future__ import absolute_import
+from builtins import str
 import time
 
-from core.project.project import Project
+from .core.project.project import Project
 import numpy as np
 import os
 from os.path import join
@@ -21,7 +25,7 @@ import shutil
 from collections import defaultdict
 import webbrowser
 
-from utils.gt.mot import results_to_mot
+from .utils.gt.mot import results_to_mot
 
 
 def setup_logging():
@@ -48,7 +52,7 @@ def fix_legacy_project(project_path):
     if os.path.isfile(chm_path):
         with open(chm_path, 'rb') as fr:
             chm = pickle.load(fr)
-        for _, ch in chm.chunks_.iteritems():
+        for _, ch in chm.chunks_.items():
             ch.project = None
             if isinstance(ch.color, QtGui.QColor):
                 ch.color = ch.color.getRgb()[:3]
@@ -68,11 +72,11 @@ def fix_legacy_project(project_path):
 
 
 def run_tracking(project_dir, video_file=None, force_recompute=False, reid_model_weights_path=None, results_mot=None):
-    import core.segmentation
-    from core.region.clustering import is_project_cardinality_classified
-    import core.graph_assembly
-    import core.graph.solver
-    from core.id_detection.complete_set_matching import do_complete_set_matching
+    from . import core.segmentation
+    from .core.region.clustering import is_project_cardinality_classified
+    from . import core.graph_assembly
+    from . import core.graph.solver
+    from .core.id_detection.complete_set_matching import do_complete_set_matching
     logger.info('run_tracking: segmentation')
     project = Project()
     project.load(project_dir, video_file=video_file)
@@ -93,7 +97,7 @@ def run_tracking(project_dir, video_file=None, force_recompute=False, reid_model
     if force_recompute or not os.path.isfile(join(project_dir, 'descriptors.pkl')):
         assert reid_model_weights_path is not None, \
             'missing reidentification model weights, to train a model see prepare_siamese_data.py, train_siamese_contrastive_lost.py'
-        from scripts.CNN.siamese_descriptor import compute_descriptors
+        from .scripts.CNN.siamese_descriptor import compute_descriptors
         compute_descriptors(project_dir, reid_model_weights_path)
     logger.info('run_tracking: complete set matching')
     do_complete_set_matching(project)
@@ -191,7 +195,7 @@ def run_benchmarks(notebook_path='experiments/tracking/benchmarking.ipynb',
 
 
 def run_visualization(experiment_names, all_experiments, dataset, out_video=None):
-    from utils.gt.mot import visualize_mot, load_mot
+    from .utils.gt.mot import visualize_mot, load_mot
     df_mots = []
     names = []
     for name in experiment_names:
@@ -256,8 +260,8 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if args.info:
-        import core.graph_assembly
-        from core.region.clustering import is_project_cardinality_classified
+        from . import core.graph_assembly
+        from .core.region.clustering import is_project_cardinality_classified
         project = Project(args.project)
         print('assembled: {}'.format(core.graph_assembly.is_assemply_completed(project)))
         print('cardinality classified: {}'.format(is_project_cardinality_classified(project)))
@@ -291,7 +295,7 @@ if __name__ == '__main__':
         datasets = experiments['datasets']
         experiment_config = experiments.copy()
         del experiment_config['datasets']
-        for dataset_name, dataset in datasets.iteritems():
+        for dataset_name, dataset in datasets.items():
             experiment_config['dataset'] = dataset
             experiment_config['dataset_name'] = dataset_name
             run_experiment(experiment_config)
@@ -300,7 +304,7 @@ if __name__ == '__main__':
         with open(args.run_visualizations_yaml, 'r') as fr:
             experiments = yaml.load(fr)
         evaluations = load_evaluations(experiments)
-        for dataset_name, dataset in experiments['datasets'].iteritems():
+        for dataset_name, dataset in experiments['datasets'].items():
             if 'visualize_experiments' in dataset:
                 print(dataset_name)
                 run_visualization(dataset['visualize_experiments'], evaluations[dataset_name], dataset)

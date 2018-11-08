@@ -1,4 +1,8 @@
 from __future__ import absolute_import
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import zip
+from past.utils import old_div
 import sys
 import random
 import gc
@@ -145,7 +149,7 @@ class SegmentationPicker(QtGui.QWidget):
             self.color_buttons["eraser"].setChecked(True)
         else:
             self.view.set_pen_color(self.cur_color)
-            for color, btn in self.color_buttons.iteritems():
+            for color, btn in self.color_buttons.items():
                 if color == self.cur_color.lower():
                     btn.setChecked(True) 
                 else:
@@ -171,7 +175,7 @@ class SegmentationPicker(QtGui.QWidget):
         img = cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY)
         
         img_sum = shift_up + shift_down + shift_left + shift_right + img
-        avg = img_sum / 5
+        avg = old_div(img_sum, 5)
         
         plt.imshow(avg)
         plt.show()

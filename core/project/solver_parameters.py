@@ -1,7 +1,9 @@
+from __future__ import unicode_literals
+from builtins import object
 __author__ = 'flipajs'
 
 
-class SolverParameters():
+class SolverParameters(object):
     def __init__(self, initial_data=None):
         self.max_edge_distance_in_ant_length = 1.0
         self.antlikeness_threshold = 0.1

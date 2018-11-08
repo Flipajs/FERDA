@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+from builtins import str
 from utils.video_manager import get_auto_video_manager
 from core.project.project import Project
 import os

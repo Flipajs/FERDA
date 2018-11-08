@@ -1,7 +1,9 @@
+from __future__ import unicode_literals
+from builtins import object
 __author__ = 'flipajs'
 
 
-class OtherParameters:
+class OtherParameters(object):
     def __init__(self, initial_data=None):
         self.img_subsample_factor = 1.0
         self.use_only_red_channel = False

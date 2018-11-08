@@ -1,4 +1,9 @@
 from __future__ import print_function
+from __future__ import unicode_literals
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
+from builtins import range
 import sys
 from collections import OrderedDict
 from functools import partial
@@ -160,7 +165,7 @@ class MainTabWidget(QtGui.QWidget):
 
     def reload_tabs(self):
         self.tabs.clear()
-        for i, (name, widget) in enumerate(self.widgets.iteritems()):
+        for i, (name, widget) in enumerate(self.widgets.items()):
             if widget is not None:
                 self.tabs.addTab(widget, self.widgets_info[name])
                 self.tabs.setTabEnabled(i, True)
@@ -170,7 +175,7 @@ class MainTabWidget(QtGui.QWidget):
 
     def reload_ids(self):
         print("RELOADING")
-        import cPickle as pickle
+        import pickle as pickle
         try:
             with open(self.project.working_directory+'/temp/chunk_available_ids.pkl', 'rb') as f_:
                 chunk_available_ids = pickle.load(f_)

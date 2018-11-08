@@ -1,4 +1,8 @@
 from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import range
+from past.utils import old_div
 __author__ = 'fnaiser'
 
 import math
@@ -25,7 +29,7 @@ def dist_score(pos, region, std=10):
         d = norm(pos - region.centroid())
 
         max_val = normpdf(0, 0, std)
-        s = normpdf(d, 0, std) / max_val
+        s = old_div(normpdf(d, 0, std), max_val)
 
         return s
 
@@ -36,14 +40,14 @@ def axis_length_score(region, mean=10, std=2.5):
     major_axis = region.ellipse_major_axis_length()
 
     max_val = normpdf(mean, mean, std)
-    s = normpdf(major_axis, mean, std) / max_val
+    s = old_div(normpdf(major_axis, mean, std), max_val)
 
     return s
 
 
 def margin_score(region):
     #TODO REMOVE CONSTANT!
-    return min(region.margin() / 30.0, 1)
+    return min(old_div(region.margin(), 30.0), 1)
 
 def get_np_array(chunks, id, key):
     l = []
@@ -59,11 +63,11 @@ def get_np_array(chunks, id, key):
         if key == 'min_intensity':
             l.append(chunks[id][i].min_intensity_)
         if key == 'axis_ratio':
-            l.append(chunks[id][i].ellipse_major_axis_length() / chunks[id][i].ellipse_minor_axis_length())
+            l.append(old_div(chunks[id][i].ellipse_major_axis_length(), chunks[id][i].ellipse_minor_axis_length()))
         if key == 'avg_intensity':
             im = vid.seek_frame(i)
             p = chunks[id][i].pts()
-            val = np.sum(im[p[:,0], p[:,1],:], axis=0) / float(len(p))
+            val = old_div(np.sum(im[p[:,0], p[:,1],:], axis=0), float(len(p)))
             l.append(val)
 
     return np.array(l)
@@ -82,16 +86,16 @@ def plot_mean_std(chunks, key, steps=8, chunk_range=None, percentile_val=100):
     data = get_np_arrays(chunks, key)
 
     if not chunk_range:
-        data_step = int(math.floor(len(chunks[0]) / steps))
+        data_step = int(math.floor(old_div(len(chunks[0]), steps)))
         ch_from = 0
     else:
-        data_step = int(math.floor(len(chunk_range) / steps))
+        data_step = int(math.floor(old_div(len(chunk_range), steps)))
         ch_from = chunk_range[0]
 
     print(data_step, ch_from)
 
     for i in range(steps):
-        r1_ = range(ch_from + data_step*i, ch_from + data_step*(i+1))
+        r1_ = list(range(ch_from + data_step*i, ch_from + data_step*(i+1)))
 
         means = [np.median(a[r1_]) for a in data]
         stds = [np.std(a[r1_]) for a in data]
@@ -111,13 +115,13 @@ def plot_percentile(chunks, key):
     ############# AREAS
     data = get_np_arrays(chunks, key)
 
-    r1_ = range(len_/2)
+    r1_ = list(range(old_div(len_,2)))
     means = [np.percentile(a[r1_], 10) for a in data]
     stds = [np.std(a[r1_]) for a in data]
 
     plt.errorbar(x, means, linestyle='None', marker='^')
 
-    r2_ = range(len_/2, len_)
+    r2_ = list(range(old_div(len_,2), len_))
     means = [np.percentile(a[r1_], 10) for a in data]
     stds = [np.std(a[r2_]) for a in data]
 
@@ -139,11 +143,11 @@ def test_chunks(chunk_1, chunk_2, chunk_A, chunk_B):
 
     mean1 = np.mean(chunk_1)
     std1 = np.std(chunk_1)
-    mean_std1 = std1 / math.sqrt(len(chunk_1))
+    mean_std1 = old_div(std1, math.sqrt(len(chunk_1)))
 
     mean2 = np.mean(chunk_2)
     std2 = np.std(chunk_2)
-    mean_std2 = std2 / math.sqrt(len(chunk_2))
+    mean_std2 = old_div(std2, math.sqrt(len(chunk_2)))
 
     # print mean1-mean2
     # print mean_std1, mean_std2
@@ -151,7 +155,7 @@ def test_chunks(chunk_1, chunk_2, chunk_A, chunk_B):
     std_ = math.sqrt(mean_std1**2 + mean_std2**2)
     n_ = normpdf(0, 0, std_)
 
-    c_ = 1 - (normpdf(mean1-mean2, 0, std_) / n_)
+    c_ = 1 - (old_div(normpdf(mean1-mean2, 0, std_), n_))
     # print 1 - (normpdf(mean1-mean2, 0, std_) / n_)
 
     meanA = np.mean(chunk_A)
@@ -224,7 +228,7 @@ if __name__ == '__main__':
 
     step = 50
     sequences = 8
-    ranges = [range(i*step, (i+1)*step) for i in range(sequences)]
+    ranges = [list(range(i*step, (i+1)*step)) for i in range(sequences)]
 
     animal_num = len(areas)
 
@@ -251,10 +255,10 @@ if __name__ == '__main__':
 
 
     right = np.sum(np.array(decisions))
-    print(right, len(decisions), right/float(len(decisions)))
+    print(right, len(decisions), old_div(right,float(len(decisions))))
 
-    r_1 = range(0, 50)
-    r_2 = range(50, 100)
+    r_1 = list(range(0, 50))
+    r_2 = list(range(50, 100))
 
 
     test_chunks(areas[id1][r_1], areas[id2][r_1], areas[id1][r_2], areas[id2][r_2])

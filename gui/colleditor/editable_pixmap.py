@@ -1,3 +1,6 @@
+from __future__ import unicode_literals
+from builtins import range
+from builtins import object
 __author__ = 'filip@naiser.cz'
 
 from PyQt4.QtGui import *
@@ -6,7 +9,7 @@ import math
 from utils import geometry
 
 
-class EditablePixmap:
+class EditablePixmap(object):
     #class for editable binary qt pix_map
     def __init__(self, pts, scene, img_width, img_height, color=QColor(0, 255, 255, 90).rgba(), centroid=None):
         self.original_pts = list(pts)
@@ -64,7 +67,7 @@ class EditablePixmap:
         return img_q
 
     def translate(self, x, y):
-        self.pts = map(lambda el: [el[0]+x, el[1]+y], self.pts)
+        self.pts = [[el[0]+x, el[1]+y] for el in self.pts]
         self.centroid[0] += x
         self.centroid[1] += y
         self.update_pixmap()

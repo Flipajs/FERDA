@@ -1,4 +1,8 @@
 from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import object
+from past.utils import old_div
 import numpy as np
 import cv2
 
@@ -9,7 +13,7 @@ from utils.roi import ROI, get_roi
 from core.region.region import Region
 
 
-class ImgManager:
+class ImgManager(object):
     def __init__(self, project, max_size_mb=-1, max_num_of_instances=-1):
         """
         This class can be used to load images from FERDA videos. It keeps used images in cache and is able to provide
@@ -37,7 +41,7 @@ class ImgManager:
         props = Properties(frame, False)
 
         # check if these properties are already saved
-        for p, img in self.crop_cache.items():
+        for p, img in list(self.crop_cache.items()):
             # if so:
             if p.__eq__(props):
                 # re-append it to the end of self.crop_properties list (used recently)
@@ -201,8 +205,8 @@ class ImgManager:
 
         # if both width and height are set
         if width > 0 and height > 0:
-            scaley = width / (cr_width + 0.0)
-            scalex = height / (cr_height + 0.0)
+            scaley = old_div(width, (cr_width + 0.0))
+            scalex = old_div(height, (cr_height + 0.0))
             # if the image should not be deformed
             if constant_propotions and scaley != scalex:
                 new_image = np.zeros((height, width, 3), dtype=np.uint8)
@@ -210,13 +214,13 @@ class ImgManager:
                 if scaley < scalex:
                     # create top and bottom borders
                     resized = cv2.resize(crop, (0,0), fx=scaley, fy=scaley)
-                    border = int((height - resized.shape[1])/2.0)
+                    border = int(old_div((height - resized.shape[1]),2.0))
                     new_image[border:border+resized.shape[0], :] = resized
                     return new_image
                 else:
                     # create left and right borders
                     resized = cv2.resize(crop, (0,0), fx=scalex, fy=scalex)
-                    border = int((width - resized.shape[0])/2.0)
+                    border = int(old_div((width - resized.shape[0]),2.0))
                     new_image[:, border:border+resized.shape[1]] = resized
                     return new_image
             # return deformed image
@@ -229,9 +233,9 @@ class ImgManager:
             scaley = 1
             # get scale values needed
             if cr_height > max_height and max_height > 0:
-                scaley = max_height / (cr_height + 0.0)
+                scaley = old_div(max_height, (cr_height + 0.0))
             if cr_width > max_width and max_width > 0:
-                scalex = max_width / (cr_width + 0.0)
+                scalex = old_div(max_width, (cr_width + 0.0))
             print("scalex: %s, scaley: %s" % (scalex, scaley))
 
             if not constant_propotions:
@@ -248,9 +252,9 @@ class ImgManager:
             scalex = 1
             scaley = 1
             if cr_height < min_height and min_height > 0:
-                scaley = min_height / (cr_height + 0.0)
+                scaley = old_div(min_height, (cr_height + 0.0))
             if cr_width > min_width and min_width > 0:
-                scalex = min_width / (cr_width + 0.0)
+                scalex = old_div(min_width, (cr_width + 0.0))
 
             if not constant_propotions:
                 return cv2.resize(crop, (0,0), fx=scalex, fy=scaley)
@@ -289,12 +293,12 @@ class ImgManager:
 
     def get_cache_size_bytes(self):
         size = 0
-        for props, image in self.crop_cache.items():
+        for props, image in list(self.crop_cache.items()):
             size += image.nbytes
         return size
 
 
-class Frame:
+class Frame(object):
     def __init__(self, frame, x0, y0, x1, y1):
         self.frame = frame
         self.x0 = x0
@@ -306,7 +310,7 @@ class Frame:
         return self.frame == crop.frame and self.x0 == crop.x0 and self.y0 == crop.y0 and self.x1 == crop.x1 and self.y1 == crop.y1
 
 
-class Properties:
+class Properties(object):
     def __init__(self, frame, is_crop, roi=ROI(), margin=0, relative_margin=0, width=-1, height=-1, wrap_width=-1,
                 wrap_height=-1, regions=[], colors={}, default_color=(255, 255, 255, 0.8),
                 fill_color=(0, 0, 0)):

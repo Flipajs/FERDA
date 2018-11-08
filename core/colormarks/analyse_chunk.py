@@ -1,7 +1,13 @@
 from __future__ import print_function
 from __future__ import absolute_import
+from __future__ import division
+from __future__ import unicode_literals
+from future import standard_library
+standard_library.install_aliases()
+from builtins import range
+from past.utils import old_div
 import cv2
-import cPickle as pickle
+import pickle as pickle
 from core.graph.region_chunk import RegionChunk
 from utils.img import get_safe_selection
 from math import ceil
@@ -51,8 +57,8 @@ def get_bounding_box(r, project, cm_model):
 
     roi = r.roi()
 
-    height2 = int(ceil((roi.height() * border_percent) / 2.0))
-    width2 = int(ceil((roi.width() * border_percent) / 2.0))
+    height2 = int(ceil(old_div((roi.height() * border_percent), 2.0)))
+    width2 = int(ceil(old_div((roi.width() * border_percent), 2.0)))
     x = r.centroid()[1] - width2
     y = r.centroid()[0] - height2
 
@@ -64,7 +70,7 @@ def get_bounding_box(r, project, cm_model):
 def evolve_measurements(measurements):
     votes_ = {}
 
-    for m in measurements.itervalues():
+    for m in measurements.values():
          if m:
              id_ = m[0][1]
              if id_ not in votes_:
@@ -74,12 +80,12 @@ def evolve_measurements(measurements):
 
     best_id = None
     best_val = 0
-    for id_, num in votes_.iteritems():
+    for id_, num in votes_.items():
         if num > best_val:
             best_val = num
             best_id = id_
 
-    return best_id, best_val /float(len(measurements))
+    return best_id, old_div(best_val,float(len(measurements)))
 
 
 def colormarks_init_finished_cb(project, masks):
@@ -160,7 +166,7 @@ if __name__ == '__main__':
 
     for cs, _, _ in color_samples:
         for px in cs:
-            pos = np.asarray(px / cm_model.num_bins_v, dtype=np.int)
+            pos = np.asarray(old_div(px, cm_model.num_bins_v), dtype=np.int)
             print(px, cm_model.hist3d.hist_labels_[pos[0], pos[1], pos[2]])
 
     chunks = []

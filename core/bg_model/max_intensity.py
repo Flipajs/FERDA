@@ -1,5 +1,9 @@
 from __future__ import print_function
 from __future__ import absolute_import
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import range
+from past.utils import old_div
 __author__ = 'fnaiser'
 
 from math import floor
@@ -31,7 +35,7 @@ class MaxIntensity(Model):
         im = self.video.next_frame()
         self.bg_model = np.zeros(im.shape, dtype=np.uint8)
 
-        step = int(floor(frame_num / float(self.iterations)))
+        step = int(floor(old_div(frame_num, float(self.iterations))))
         frame_i = 0
         for i in range(self.iterations):
             if self.random_frames:

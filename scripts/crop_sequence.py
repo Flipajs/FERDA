@@ -1,11 +1,16 @@
 from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import str
+from builtins import range
+from past.utils import old_div
 __author__ = 'filip@naiser.cz'
 import os
 import cv2
 import math
 import numpy as np
 
-frames = range(700, 4201, 700)
+frames = list(range(700, 4201, 700))
 print(frames)
 
 #dir = os.path.expanduser('~/dump/mesors/frame_results/')
@@ -23,7 +28,7 @@ print(frames)
 #font_width = 2
 #name='collection_mesors'
 #
-frames = range(800, 1601, 800)
+frames = list(range(800, 1601, 800))
 print(frames)
 
 dir = os.path.expanduser('~/dump/zebrafish/frame_results/')
@@ -123,7 +128,7 @@ counter = 0
 for f in frames:
     img = np.array(cv2.imread(dir+str(f)+'.png'))
     crop = img[y:y+h, x:x+w]
-    r = math.floor(counter/cols)
+    r = math.floor(old_div(counter,cols))
     c = counter % cols
 
     cv2.putText(crop, str(f), (3, textH), cv2.FONT_HERSHEY_PLAIN, font, (0, 0, 0), font_width, cv2.CV_AA)

@@ -2,6 +2,11 @@
 CLEAR multi target tracking metric evaluation.
 """
 from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import range
+from builtins import object
+from past.utils import old_div
 import numpy as np
 import sys
 import math
@@ -112,7 +117,7 @@ class ClearMetrics(object):
         @rtype: int
         """
         count = 0
-        for matches in self.measurements_matches.values():
+        for matches in list(self.measurements_matches.values()):
             count += matches.count(-1)
         return count
 
@@ -124,7 +129,7 @@ class ClearMetrics(object):
         @rtype: int
         """
         count = 0
-        for matches in self.gt_matches.values():
+        for matches in list(self.gt_matches.values()):
             count += matches.count(-1)
         return count
 
@@ -173,7 +178,7 @@ class ClearMetrics(object):
             if frame >= len(self.measurements):
                 break
             targets = self.groundtruth[frame]
-            none_empty_count = len(filter(lambda x: x is None or len(x) == 0, targets))
+            none_empty_count = len([x for x in targets if x is None or len(x) == 0])
             object_count += len(targets) - none_empty_count
         return object_count
 
@@ -184,7 +189,7 @@ class ClearMetrics(object):
         @return: number of matches
         @rtype: int
         """
-        distances = np.array([dists for dists in self.gt_distances.values()])
+        distances = np.array([dists for dists in list(self.gt_distances.values())])
         matches_mask = distances != -1
         return distances[matches_mask].size
 
@@ -197,7 +202,7 @@ class ClearMetrics(object):
         @return: MOTP score
         @rtype: float
         """
-        distances = np.array([dists for dists in self.gt_distances.values()])
+        distances = np.array([dists for dists in list(self.gt_distances.values())])
         matches_mask = distances != -1
         return distances[matches_mask].mean()
 
@@ -210,8 +215,8 @@ class ClearMetrics(object):
         @return: MOTA score, <= 1
         @rtype: float
         """
-        return 1 - (self.get_fp_count() + self.get_fn_count() + self.get_mismatches_count(verbose=False)) / \
-               float(self.get_object_count())
+        return 1 - old_div((self.get_fp_count() + self.get_fn_count() + self.get_mismatches_count(verbose=False)), \
+               float(self.get_object_count()))
 
     def _get_sq_distance_matrix(self, frame):
         """
@@ -227,9 +232,9 @@ class ClearMetrics(object):
         n_gt = len(self.groundtruth[frame])
         n_meas = len(self.measurements[frame])
         distance_mat = np.zeros((n_gt, n_meas))
-        for i in xrange(n_gt):
+        for i in range(n_gt):
             gt_pos = self.groundtruth[frame][i]
-            for j in xrange(n_meas):
+            for j in range(n_meas):
                 measured_pos = self.measurements[frame][j]
                 if gt_pos is None or measured_pos is None:
                     distance_mat[i, j] = np.nan
@@ -267,7 +272,7 @@ class ClearMetrics(object):
 
         # set all ground truth matches to FN or not defined
         gt_matches = []
-        for i in xrange(len(self.groundtruth[frame])):
+        for i in range(len(self.groundtruth[frame])):
             if self.groundtruth[frame][i] is None:
                 gt_matches.append(None)
             else:
@@ -276,7 +281,7 @@ class ClearMetrics(object):
         # set all measurements matches to FP or not defined
         gt_distances = [-1] * len(self.groundtruth[frame])
         measurements_matches = []
-        for i in xrange(len(self.measurements[frame])):
+        for i in range(len(self.measurements[frame])):
             if self.measurements[frame][i] is None:
                 measurements_matches.append(None)
             else:
@@ -324,4 +329,4 @@ class ClearMetrics(object):
         if isinstance(self.measurements, dict):
             return sorted(self.measurements.keys())
         else:
-            return xrange(len(self.groundtruth))
+            return range(len(self.groundtruth))

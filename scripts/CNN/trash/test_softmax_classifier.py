@@ -1,5 +1,8 @@
 from __future__ import print_function
 from __future__ import absolute_import
+from __future__ import unicode_literals
+from builtins import str
+from builtins import range
 import numpy as np
 import sys, os, re, random
 import h5py
@@ -48,7 +51,7 @@ if __name__ == '__main__':
     ids_set = set(range(NUM_ANIMALS))
     num_examples = []
 
-    for i in tqdm.tqdm(range(NUM_ANIMALS)):
+    for i in tqdm.tqdm(list(range(NUM_ANIMALS))):
         images_f.append([])
 
         pattern = re.compile(r"(.)*\.jpg")

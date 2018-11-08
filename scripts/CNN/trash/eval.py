@@ -1,4 +1,7 @@
 from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
+from past.utils import old_div
 import h5py
 import keras
 import sys
@@ -80,7 +83,7 @@ if __name__ == '__main__':
 
     correct_match = y_test[correct] == 1
     correct_match = np.sum(correct_match)
-    print(correct_match, correct_match/float(y_predict.shape[0]))
+    print(correct_match, old_div(correct_match,float(y_predict.shape[0])))
     print()
 
     results = classification_model.evaluate([X_test_a, X_test_b], y_test, verbose=1)

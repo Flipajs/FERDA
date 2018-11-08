@@ -1,4 +1,7 @@
 from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
+from past.utils import old_div
 __author__ = 'fnaiser'
 
 import math
@@ -134,7 +137,7 @@ class TrackerWidget(QtGui.QWidget):
 
     def noise_nodes_filter(self):
         elem_width = 100
-        cols = math.floor(self.width() / elem_width)
+        cols = math.floor(old_div(self.width(), elem_width))
 
         steps = 500
 

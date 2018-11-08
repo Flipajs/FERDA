@@ -1,4 +1,8 @@
 from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import range
+from past.utils import old_div
 __author__ = 'filip@naiser.cz'
 
 import pickle
@@ -65,7 +69,7 @@ for id in ids:
     else:
         values2 = np.zeros((1, num_px))
         for i in range(num_px):
-            val = values[:, i] / main_axis
+            val = old_div(values[:, i], main_axis)
             new_val = math.sqrt(val[0]*val[0] + val[1]*val[1])
             new_val = math.copysign(new_val, val[0])
             new_val = math.copysign(new_val, val[1])
@@ -103,14 +107,14 @@ for id in ids:
 
     theta1 = 0.5*math.atan2(2*ant1['sxy'], (ant1['sxx'] - ant1['syy']))
     theta1 = -theta1
-    theta2 = 0.5*math.atan(ant1['sxy'] / ((ant1['sxx'] - ant1['syy']) / 2))
+    theta2 = 0.5*math.atan(old_div(ant1['sxy'], (old_div((ant1['sxx'] - ant1['syy']), 2))))
 
     #print "__Theta1: ", theta1 * 180 / math.pi
     #print "__Theta2: ", (-theta2) * 180 / math.pi
     #theta3 = my_utils.mser_theta(ant1['sxy'], ant1['sxx'], ant1['syy'])
     #print "__Theta: ", theta3 * 180 / math.pi
 
-    m_a_r = s[0]/s[1]
+    m_a_r = old_div(s[0],s[1])
 
     main_x = main_axis[0]
     main_y = main_axis[1]
@@ -132,13 +136,13 @@ for id in ids:
     positions = [0]*num_px
     for i in range(num_px):
         v = values[0, i]
-        position = int(((v-min) / float(length)) * (num_bins - 1))
+        position = int((old_div((v-min), float(length))) * (num_bins - 1))
         positions[i] = position
         hist[position] += 1
 
 
-    skip = int(math.floor(length/10))
-    sum_len = int(math.floor(length/7))
+    skip = int(math.floor(old_div(length,10)))
+    sum_len = int(math.floor(old_div(length,7)))
     print('skip: ', skip)
 
     l = r = 0

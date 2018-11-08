@@ -1,4 +1,9 @@
 from __future__ import absolute_import
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import range
+from builtins import object
+from past.utils import old_div
 import numpy as np
 from .hungarian import Hungarian
 import sys
@@ -78,7 +83,7 @@ class ClearMetrics(object):
             self.gt_matches
             self.gt_distances
         """
-        prev_gt_matches = [-1] * len(self.groundtruth.values()[0])
+        prev_gt_matches = [-1] * len(list(self.groundtruth.values())[0])
         self.gt_matches = {}
         self.gt_distances = {}
         self.measurements_matches = {}
@@ -98,7 +103,7 @@ class ClearMetrics(object):
         """
         count = 0
         i = 0
-        for matches in self.measurements_matches.values():
+        for matches in list(self.measurements_matches.values()):
             val = matches.count(-1)
             count += val
             if val > 0:
@@ -116,7 +121,7 @@ class ClearMetrics(object):
         """
         count = 0
         i = 0
-        for matches in self.gt_matches.values():
+        for matches in list(self.gt_matches.values()):
             val = matches.count(-1)
             count += val
 
@@ -174,7 +179,7 @@ class ClearMetrics(object):
         @return: number of matches
         @rtype: int
         """
-        distances = np.array([dists for dists in self.gt_distances.values()])
+        distances = np.array([dists for dists in list(self.gt_distances.values())])
         matches_mask = distances != -1
         return distances[matches_mask].size
 
@@ -187,7 +192,7 @@ class ClearMetrics(object):
         @return: MOTP score
         @rtype: float
         """
-        distances = np.array([dists for dists in self.gt_distances.values()])
+        distances = np.array([dists for dists in list(self.gt_distances.values())])
         matches_mask = distances != -1
         return distances[matches_mask].mean()
 
@@ -200,8 +205,8 @@ class ClearMetrics(object):
         @return: MOTA score, <= 1
         @rtype: float
         """
-        return 1 - (self.get_fp_count() + self.get_fn_count() + self.get_mismatches_count()) / \
-               float(self.get_object_count())
+        return 1 - old_div((self.get_fp_count() + self.get_fn_count() + self.get_mismatches_count()), \
+               float(self.get_object_count()))
 
     def _get_sq_distance_matrix(self, frame):
         """
@@ -217,9 +222,9 @@ class ClearMetrics(object):
         n_gt = len(self.groundtruth[frame])
         n_meas = len(self.measurements[frame])
         distance_mat = np.zeros((n_gt, n_meas))
-        for i in xrange(n_gt):
+        for i in range(n_gt):
             gt_pos = self.groundtruth[frame][i]
-            for j in xrange(n_meas):
+            for j in range(n_meas):
                 measured_pos = self.measurements[frame][j]
                 if gt_pos is None or measured_pos is None:
                     distance_mat[i, j] = sys.maxsize
@@ -244,7 +249,7 @@ class ClearMetrics(object):
 
         # set all ground truth matches to FN or not defined
         gt_matches = []
-        for i in xrange(len(self.groundtruth[frame])):
+        for i in range(len(self.groundtruth[frame])):
             if self.groundtruth[frame][i] is None:
                 gt_matches.append(None)
             else:
@@ -252,7 +257,7 @@ class ClearMetrics(object):
         # set all measurements matches to FP or not defined
         gt_distances = [-1] * len(self.groundtruth[frame])
         measurements_matches = []
-        for i in xrange(len(self.measurements[frame])):
+        for i in range(len(self.measurements[frame])):
             if self.measurements[frame][i] is None:
                 measurements_matches.append(None)
             else:

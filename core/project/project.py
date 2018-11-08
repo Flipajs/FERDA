@@ -1,4 +1,9 @@
 from __future__ import print_function
+from __future__ import unicode_literals
+from builtins import zip
+from builtins import str
+from builtins import range
+from builtins import object
 __author__ = 'filip@naiser.cz'
 import pickle
 import string
@@ -24,7 +29,7 @@ class ProjectNotFoundError(OSError):
         super(ProjectNotFoundError, self).__init__(*args, **kwargs)
 
 
-class Project:
+class Project(object):
     """
     This class encapsulates one experiment using FERDA
     """
@@ -246,7 +251,7 @@ class Project:
 
         # Chunk Manager
         if self.chm:
-            for _, ch in self.chm.chunks_.iteritems():
+            for _, ch in self.chm.chunks_.items():
                 ch.project = None
 
             with open(file_path, 'wb') as f:
@@ -528,7 +533,7 @@ class Project:
         assert self.video_start_t != -1
         n_frames = self.video_end_t
         results = np.ones(shape=(n_frames, len(self.animals), 2)) * np.nan
-        for frame in tqdm.tqdm(range(self.video_start_t, n_frames), desc='gathering trajectories'):
+        for frame in tqdm.tqdm(list(range(self.video_start_t, n_frames)), desc='gathering trajectories'):
             for t in self.chm.tracklets_in_frame(frame - self.video_start_t):
                 if len(t.P) == 1:
                     id_ = list(t.P)[0]

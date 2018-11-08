@@ -1,4 +1,8 @@
 from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import range
+from past.utils import old_div
 __author__ = 'filip@naiser.cz'
 
 import pickle
@@ -21,11 +25,11 @@ def get_points(region):
 
 
 def get_trans_matrix(ellipse):
-    e = float(ellipse.width)/2
-    f = float(ellipse.height)/2
+    e = old_div(float(ellipse.width),2)
+    f = old_div(float(ellipse.height),2)
     th = ellipse.angle * math.pi / 180
 
-    scale = np.array([[1 / e, 0], [0, 1 / f]])
+    scale = np.array([[old_div(1, e), 0], [0, old_div(1, f)]])
     rot = np.array([[math.cos(th), math.sin(th)], [-math.sin(th), math.cos(th)]])
 
     t_matrix = np.dot(scale, rot)
@@ -392,12 +396,12 @@ def update_theta(data, ell):
     for p in data:
         pt = p - ell.center
         if pt[0] != 0:
-            t = math.atan(pt[1]/float(pt[0])) - theta
+            t = math.atan(old_div(pt[1],float(pt[0]))) - theta
 
-            if t < -math.pi / 2:
-                t = -(t + math.pi / 2)
-            if t > math.pi / 2:
-                t = -(t - math.pi / 2)
+            if t < old_div(-math.pi, 2):
+                t = -(t + old_div(math.pi, 2))
+            if t > old_div(math.pi, 2):
+                t = -(t - old_div(math.pi, 2))
 
             theta_sum += t
 
@@ -417,22 +421,22 @@ def update_theta_med(data, ell):
     for p in data:
         pt = p - ell.center
         if pt[0] != 0:
-            t = math.atan(pt[1]/float(pt[0])) - theta
+            t = math.atan(old_div(pt[1],float(pt[0]))) - theta
 
-            if t < -math.pi / 2:
-                t = -(t + math.pi / 2)
-            if t > math.pi / 2:
-                t = -(t - math.pi / 2)
+            if t < old_div(-math.pi, 2):
+                t = -(t + old_div(math.pi, 2))
+            if t > old_div(math.pi, 2):
+                t = -(t - old_div(math.pi, 2))
 
             theta_difs[i] = t
 
         i += 1
 
     if len(theta_difs) % 2 == 0:
-        mid = len(theta_difs) / 2
+        mid = old_div(len(theta_difs), 2)
         theta_new = sorted(theta_difs)[mid]
     else:
-        mid = len(theta_difs) / 2
+        mid = old_div(len(theta_difs), 2)
         s = sorted(theta_difs)
         theta_new = s[mid]
         theta_new += s[mid+1]
@@ -459,8 +463,8 @@ def update_theta_moments(data, ell):
         m02 += pt[1]*pt[1]
 
 
-    cx = m10/float(u00)
-    cy = m01/float(u00)
+    cx = old_div(m10,float(u00))
+    cy = old_div(m01,float(u00))
 
     u11 = m11 - cx*m01
     u20 = m20 - cx*m10
@@ -542,8 +546,8 @@ def visualize_init(data, ell1, ell2):
     #draw_ellipse(ell1, ax)
     #draw_ellipse(ell2, ax)
 
-    epts1 = get_ellipse_coords(a=ell1.width/2, b=ell1.height/2, x=ell1.center[0], y=ell1.center[1], angle=-ell1.angle, k=1./8)
-    epts2 = get_ellipse_coords(a=ell2.width/2, b=ell2.height/2, x=ell2.center[0], y=ell2.center[1], angle=-ell2.angle, k=1./8)
+    epts1 = get_ellipse_coords(a=old_div(ell1.width,2), b=old_div(ell1.height,2), x=ell1.center[0], y=ell1.center[1], angle=-ell1.angle, k=old_div(1.,8))
+    epts2 = get_ellipse_coords(a=old_div(ell2.width,2), b=old_div(ell2.height,2), x=ell2.center[0], y=ell2.center[1], angle=-ell2.angle, k=old_div(1.,8))
     plt.plot(epts1[:, 0], epts1[:, 1], 'y', linewidth=3)
     plt.plot(ell1.center[0], ell1.center[1], 'rx', mew=2)
 
@@ -567,8 +571,8 @@ def visualize(data, l1, l2, ell1, ell2, noellipse=False):
     border = 5
     plt.axis((a-border, b+border, c-border, d+border))
 
-    epts1 = get_ellipse_coords(a=ell1.width/2, b=ell1.height/2, x=ell1.center[0], y=ell1.center[1], angle=-ell1.angle, k=1./8)
-    epts2 = get_ellipse_coords(a=ell2.width/2, b=ell2.height/2, x=ell2.center[0], y=ell2.center[1], angle=-ell2.angle, k=1./8)
+    epts1 = get_ellipse_coords(a=old_div(ell1.width,2), b=old_div(ell1.height,2), x=ell1.center[0], y=ell1.center[1], angle=-ell1.angle, k=old_div(1.,8))
+    epts2 = get_ellipse_coords(a=old_div(ell2.width,2), b=old_div(ell2.height,2), x=ell2.center[0], y=ell2.center[1], angle=-ell2.angle, k=old_div(1.,8))
     if not noellipse:
         plt.plot(epts1[:, 0], epts1[:, 1], 'y', linewidth=3)
         plt.plot(ell1.center[0], ell1.center[1], 'rx', mew=2)

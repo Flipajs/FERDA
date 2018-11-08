@@ -1,11 +1,14 @@
 from __future__ import print_function
+from __future__ import unicode_literals
+from builtins import range
+from builtins import object
 import sqlite3 as sql
 import json
 import time
 import numpy as np
 
 
-class DB_Test():
+class DB_Test(object):
     def __init__(self, db_path, db_path_json, pts_size=10, reg_size=1000):
         self.db_path = db_path
         self.db_path_json = db_path_json

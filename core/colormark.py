@@ -1,3 +1,8 @@
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import range
+from builtins import object
+from past.utils import old_div
 import utils.img_temp
 
 __author__ = 'fnaiser'
@@ -10,7 +15,7 @@ import utils.img
 import cv2
 
 
-class Colormark():
+class Colormark(object):
     I_NORM = (255 * 3 + 1) * 3
 
     def __init__(self, color, pos=None):
@@ -34,8 +39,8 @@ class Colormark():
 
         color = np.array(self.color_, dtype=np.float)
         s = np.sum(color) + 1
-        i_norm = (1/get_settings('igbr_i_weight', float)) * get_settings('igbr_i_norm', float)
-        c = np.array([s/(i_norm), color[0]/s, color[1]/s, color[2]/s])
+        i_norm = (old_div(1,get_settings('igbr_i_weight', float))) * get_settings('igbr_i_norm', float)
+        c = np.array([old_div(s,(i_norm)), old_div(color[0],s), old_div(color[1],s), old_div(color[2],s)])
 
         self.color_igbr_ = c
 
@@ -101,7 +106,7 @@ def get_colormark(img, color, position, radius, colormark_radius=-1):
     if len(regions) == 0:
         return None, -1, -1, dist_im
 
-    avg_intensity = [np.sum(dist_im[p.pts()[:, 0], p.pts()[:, 1]]) / p.area() for p in regions]
+    avg_intensity = [old_div(np.sum(dist_im[p.pts()[:, 0], p.pts()[:, 1]]), p.area()) for p in regions]
     avg_radius = get_settings('colormarks_avg_radius', float)
     darkest_neighbour = [darkest_neighbour_square(img_crop, r.centroid(), avg_radius*2) for r in regions]
 
@@ -143,7 +148,7 @@ def darkest_neighbour_square(im, pt, square_size):
     #     position = 'bottom-right'
 
     squares = []
-    start = [pt[0] - square_size - (square_size / 2), pt[1] - square_size - (square_size / 2)]
+    start = [pt[0] - square_size - (old_div(square_size, 2)), pt[1] - square_size - (old_div(square_size, 2))]
 
     for i in range(3):
         for j in range(3):
@@ -160,7 +165,7 @@ def darkest_neighbour_square(im, pt, square_size):
     id = np.argmin(squares)
 
 
-    return squares[id] / square_size ** 2
+    return old_div(squares[id], square_size ** 2)
 
 
 

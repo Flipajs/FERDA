@@ -1,3 +1,9 @@
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import zip
+from builtins import str
+from builtins import range
+from past.utils import old_div
 from core.project.project import Project
 from utils.video_manager import get_auto_video_manager
 from matplotlib import pyplot as plt
@@ -11,7 +17,7 @@ from core.graph.region_chunk import RegionChunk
 
 
 def dataset1():
-    frames = range(100, 150)
+    frames = list(range(100, 150))
 
     return frames
 
@@ -43,7 +49,7 @@ def get_curvature_kp(cont, plot=False):
             d_ = (np.linalg.norm(a) * np.linalg.norm(b))
             x_ = 1
             if d_ > 0:
-                x_ = np.dot(a.T, b) / (np.linalg.norm(a) * np.linalg.norm(b))
+                x_ = old_div(np.dot(a.T, b), (np.linalg.norm(a) * np.linalg.norm(b)))
 
             # numerical errors fix
             x_ = min(1, max(-1, x_))
@@ -55,7 +61,7 @@ def get_curvature_kp(cont, plot=False):
         for i in range(100):
             id_ = np.argmax(thetas)
 
-            if thetas[id_] < np.pi/6:
+            if thetas[id_] < old_div(np.pi,6):
                 break
 
             p = cont[id_]

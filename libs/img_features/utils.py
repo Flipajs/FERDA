@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+from builtins import range
 import numpy as np
 
 def feature_descriptor(data, block_division=(2, 2), pyramid_levels=3, histogram_num_bins=8, histogram_density=False):

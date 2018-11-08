@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 from numpy import *
 
 data = {0: [array([793, 984.5417]), array([1078, 737.1379]), array([1069, 378.1667]), array([896, 640.9333]), array([1387, 772.825]), ],

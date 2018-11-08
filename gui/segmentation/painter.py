@@ -1,5 +1,8 @@
 from __future__ import print_function
 from __future__ import absolute_import
+from __future__ import division
+from __future__ import unicode_literals
+from past.utils import old_div
 import sys
 from .my_view import MyView
 from .my_scene import MyScene
@@ -50,7 +53,7 @@ class Painter(QtGui.QWidget):
         self.overlay2_pixmap = None
 
         # PAINT SETUP
-        self.pen_size = pen_size / 2
+        self.pen_size = old_div(pen_size, 2)
         self.eraser = 1  # 1 for painting (eraser off), 0 for erasing
 
         self.colors = {}  # dictionary: [name] : (mask, color, pixmap)
@@ -71,7 +74,7 @@ class Painter(QtGui.QWidget):
         self.overlay_pixmap = self.scene.addPixmap(QtGui.QPixmap.fromImage(overlay_image))
         self.overlay2_pixmap = self.scene.addPixmap(QtGui.QPixmap.fromImage(overlay_image))
 
-        for color in self.colors.itervalues():
+        for color in self.colors.values():
             if color[0] is None:
                 color[0] = np.zeros((self.h, self.w))
 
@@ -110,7 +113,7 @@ class Painter(QtGui.QWidget):
         :param visibility: new visibility (True/False)
         :return: None
         """
-        for color, data in self.colors.iteritems():
+        for color, data in self.colors.items():
             if data[2]:
                 data[2].setVisible(visibility)
 
@@ -120,7 +123,7 @@ class Painter(QtGui.QWidget):
         :param img: a new image to use, None to delete overlay completely.
         :return: None
         """
-        if self.overlay_pixmap and self.overlay_pixmap in self.scene.items():
+        if self.overlay_pixmap and self.overlay_pixmap in list(self.scene.items()):
             self.scene.removeItem(self.overlay_pixmap)
         if img:
             self.overlay_pixmap = self.scene.addPixmap(QtGui.QPixmap.fromImage(img))
@@ -132,7 +135,7 @@ class Painter(QtGui.QWidget):
         :param img: a new image to use, None to delete overlay completely.
         :return: None
         """
-        if self.overlay2_pixmap and self.overlay2_pixmap in self.scene.items():
+        if self.overlay2_pixmap and self.overlay2_pixmap in list(self.scene.items()):
             self.scene.removeItem(self.overlay2_pixmap)
         if img:
             self.overlay2_pixmap = self.scene.addPixmap(QtGui.QPixmap.fromImage(img))
@@ -150,7 +153,7 @@ class Painter(QtGui.QWidget):
         self.colors[name][2].setZValue(20)
 
     def reset_masks(self):
-        for name, data in self.colors.iteritems():
+        for name, data in self.colors.items():
 
             # reset mask
             mask = np.zeros((self.h, self.w))
@@ -198,7 +201,7 @@ class Painter(QtGui.QWidget):
         :return: None
         """
         # change pen size
-        self.pen_size = value / 2
+        self.pen_size = old_div(value, 2)
 
     def set_pen_color(self, name):
         """ Change pen size

@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 from __future__ import print_function
+from __future__ import unicode_literals
+from builtins import range
 from multiprocessing import Lock, Process, Queue, current_process
 
 def worker(work_queue, done_queue):
@@ -38,7 +40,7 @@ def main():
     for url in sites:
         work_queue.put(url)
 
-    for w in xrange(workers):
+    for w in range(workers):
         p = Process(target=worker, args=(work_queue, done_queue))
         p.start()
         processes.append(p)

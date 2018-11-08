@@ -1,3 +1,6 @@
+from __future__ import division
+from __future__ import unicode_literals
+from past.utils import old_div
 import numpy as np
 import cv2
 from math import ceil, floor
@@ -21,7 +24,7 @@ def create_collage_rows(data, cols, item_h, item_w, upscale=False, fill=False):
     row = 0
     col = 0
 
-    rows = int(ceil(len(data) / float(cols)))
+    rows = int(ceil(old_div(len(data), float(cols))))
     result = np.zeros((rows * item_h, cols*item_w, 3), dtype=np.uint8)
 
     for im in data:
@@ -29,7 +32,7 @@ def create_collage_rows(data, cols, item_h, item_w, upscale=False, fill=False):
 
         new_h, new_w = item_h, item_w
         if not fill:
-            f = min(item_h / float(h), item_w / float(w))
+            f = min(old_div(item_h, float(h)), old_div(item_w, float(w)))
 
             new_h = int(floor(h * f))
             new_w = int( floor(w * f))

@@ -20,6 +20,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import str
+from builtins import object
+from past.utils import old_div
 from operator import attrgetter
 from math import floor, log
 
@@ -548,7 +553,7 @@ class Node(object):
 
         # dopt is the optimal maximum depth of the tree
         dopt = 1 + int(floor(l2(m)))
-        f = 1 / float(1 + n - dopt)
+        f = old_div(1, float(1 + n - dopt))
         return f * self.depth_score_helper(1, dopt)
 
     def depth_score_helper(self, d, dopt):

@@ -1,4 +1,8 @@
 from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import str
+from past.utils import old_div
 __author__ = 'filip@naiser.cz'
 
 import pickle
@@ -110,8 +114,8 @@ for frame in e_regions_vals:
     reg_i = 0
     for reg in frame:
         if e_regions_labels[frame_i][reg_i] == 1:
-            x_id = int(math.floor((reg[0] - x_start) / step))
-            y_id = int(math.floor((reg[1] - y_start) / step))
+            x_id = int(math.floor(old_div((reg[0] - x_start), step)))
+            y_id = int(math.floor(old_div((reg[1] - y_start), step)))
 
             if x_id > 0 and y_id > 0:
                 if x_id < max_x and y_id < max_y:
@@ -127,8 +131,8 @@ for frame in n_regions_vals:
         if n_regions_labels[frame_i][reg_i] == 1:
             plt.plot(reg[0], reg[1], 'mx')
 
-            x_id = int(math.floor((reg[0] - x_start) / step))
-            y_id = int(math.floor((reg[1] - y_start) / step))
+            x_id = int(math.floor(old_div((reg[0] - x_start), step)))
+            y_id = int(math.floor(old_div((reg[1] - y_start), step)))
 
             if x_id > 0 and y_id > 0:
                 if x_id < max_x and y_id < max_y:

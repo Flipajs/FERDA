@@ -15,7 +15,11 @@ If V2 reading fails, this will be called as a fail-over.
 
 """
 from __future__ import print_function
+from __future__ import unicode_literals
 
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
 import os
 import exceptions
 import numpy as np
@@ -208,7 +212,7 @@ def dump_none(obj, h5f, **kwargs):
 
 def dump_unicode(obj, h5f, **kwargs):
     """ dumps a list object to h5py file"""
-    dt = h5.special_dtype(vlen=unicode)
+    dt = h5.special_dtype(vlen=str)
     ll = len(obj)
     dset = h5f.create_dataset('data', shape=(ll, ), dtype=dt, **kwargs)
     dset[:ll] = obj
@@ -217,10 +221,10 @@ def dump_unicode(obj, h5f, **kwargs):
 
 def _dump_dict(dd, hgroup, **kwargs):
     for key in dd:
-        if type(dd[key]) in (str, int, float, unicode, bool):
+        if type(dd[key]) in (str, int, float, str, bool):
             # Figure out type to be stored
             types = {str: 'str', int: 'int', float: 'float',
-                     unicode: 'unicode', bool: 'bool', NoneType: 'none'}
+                     str: 'unicode', bool: 'bool', NoneType: 'none'}
             _key = types.get(type(dd[key]))
 
             # Store along with dtype info
@@ -280,9 +284,9 @@ def dump_dict(obj, h5f='', **kwargs):
 
 def no_match(obj, h5f, *args, **kwargs):
     """ If no match is made, raise an exception """
-    import cPickle
+    import pickle
 
-    pickled_obj = cPickle.dumps(obj)
+    pickled_obj = pickle.dumps(obj)
     h5f.create_dataset('type', data=['pickle'])
     h5f.create_dataset('data', data=[pickled_obj])
 
@@ -304,7 +308,7 @@ def dumper_lookup(obj):
         set: dump_set,
         dict: dump_dict,
         str: dump_string,
-        unicode: dump_unicode,
+        str: dump_unicode,
         NoneType: dump_none,
         np.ndarray: dump_ndarray,
         np.ma.core.MaskedArray: dump_masked,
@@ -409,7 +413,7 @@ def load(file, safe=True):
             types = {
                 'list': list,
                 'set': set,
-                'unicode': unicode,
+                'unicode': str,
                 'string': str,
                 'ndarray': load_ndarray,
                 'np_dtype': load_np_dtype
@@ -438,10 +442,10 @@ def load_pickle(h5f, safe=True):
   """
 
     if not safe:
-        import cPickle
+        import pickle
 
         data = h5f["data"][:]
-        data = cPickle.loads(data[0])
+        data = pickle.loads(data[0])
         return data
     else:
         print("\nWarning: Object is of an unknown type, and has not been loaded")
@@ -479,7 +483,7 @@ def load_dict(group):
     """ Load dictionary """
 
     dd = {}
-    for key in group.keys():
+    for key in list(group.keys()):
         if isinstance(group[key], h5._hl.group.Group):
             new_group = group[key]
             dd[key] = load_dict(new_group)
@@ -499,7 +503,7 @@ def load_dict(group):
             # Convert numpy constructs back to string
             dtype = group[_key][0]
             types = {'str': str, 'int': int, 'float': float,
-                     'unicode': unicode, 'bool': bool, 'list': list, 'none' : NoneType}
+                     'unicode': str, 'bool': bool, 'list': list, 'none' : NoneType}
             try:
                 mod = types.get(dtype)
                 if dtype == 'none':

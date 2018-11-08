@@ -1,4 +1,8 @@
 from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import range
+from past.utils import old_div
 __author__ = 'filip@naiser.cz'
 
 import os
@@ -20,7 +24,7 @@ ant_num = len(certainty[0])
 ants_c = np.zeros((ant_num, len(certainty)))
 for key in certainty:
     for i in range(len(certainty[key])):
-        ants_c[i][key] = certainty[key][i] / 2
+        ants_c[i][key] = old_div(certainty[key][i], 2)
 
 print(ants_c[0])
 

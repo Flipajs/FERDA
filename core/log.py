@@ -1,11 +1,14 @@
 from __future__ import print_function
+from __future__ import unicode_literals
+from builtins import str
+from builtins import object
 __author__ = 'flipajs'
 
 import time
 from core.config import config
 
 
-class LogCategories:
+class LogCategories(object):
     GRAPH_EDIT = 0
     USER_ACTION = 1
     OTHERS = 2
@@ -23,7 +26,7 @@ class LogCategories:
             return 'debug info'
 
 
-class ActionNames:
+class ActionNames(object):
     # GRAPH_EDIT
     ADD_NODE = 'add_node'
     REMOVE_NODE = 'remove_node'
@@ -58,7 +61,7 @@ class ActionNames:
     MARK_JOIN_AND_SPLIT = 'mark_join_and_split'
 
 
-class LogEntry:
+class LogEntry(object):
     def __init__(self, category, action_name, data=None):
         self.category = category
         self.action_name = action_name
@@ -73,7 +76,7 @@ class LogEntry:
         return s
 
 
-class Log:
+class Log(object):
     def __init__(self):
         self.data_ = []
 

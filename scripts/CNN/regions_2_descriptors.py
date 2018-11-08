@@ -1,5 +1,7 @@
 from __future__ import absolute_import
 from __future__ import print_function
+from __future__ import unicode_literals
+from builtins import range
 import numpy as np
 
 import random
@@ -70,7 +72,7 @@ if __name__ == '__main__':
 
     vm = p.get_video_manager()
     last = None
-    for frame in tqdm(range(vm.total_frame_count())):
+    for frame in tqdm(list(range(vm.total_frame_count()))):
         img = None
         for tracklet in p.chm.tracklets_in_frame(frame):
             if tracklet.is_single():

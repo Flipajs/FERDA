@@ -1,3 +1,6 @@
+from __future__ import division
+from __future__ import unicode_literals
+from past.utils import old_div
 import numpy as np
 import matplotlib.cm as cm
 from PyQt4 import QtGui
@@ -14,10 +17,10 @@ def get_color(id, ant_num):
 
 
 def get_opacity(current_depth, max_depth):
-    return float((max_depth - current_depth) + float(current_depth/max_depth))/max_depth/2
+    return float((max_depth - current_depth) + float(old_div(current_depth,max_depth)))/max_depth/2
 
 
 def get_contrast_color(r, g, b):
-    if (r+g+b)/3 < 128:
+    if old_div((r+g+b),3) < 128:
         return 250, 250, 255
     return 5, 0, 5

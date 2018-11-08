@@ -1,3 +1,8 @@
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import str
+from builtins import range
+from past.utils import old_div
 import os
 import sys
 
@@ -33,7 +38,7 @@ def make_web(DIR, data=''):
             continue
 
         fnames = sorted(os.listdir(DIR + '/' + d))
-        for i in range(len(fnames)/LIMIT):
+        for i in range(old_div(len(fnames),LIMIT)):
             str_i = str(i)
             if len(str_i) == 1:
                 str_i = "0"+str_i

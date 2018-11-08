@@ -1,5 +1,7 @@
+from __future__ import unicode_literals
 
-class TrackletCompleteSet:
+from builtins import object
+class TrackletCompleteSet(object):
     def __init__(self, tracklets, id, left_neighbour=None, right_neighbour=None):
         self.tracklets = tracklets
         self.id = id

@@ -1,4 +1,11 @@
 from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
+from builtins import range
+from past.utils import old_div
 from core.id_detection.learning_process import LearningProcess
 from core.project.project import Project
 from utils.gt.gt import GT
@@ -35,7 +42,7 @@ def get_coverage(project, undecided=False, lp=None):
         end_f_ = t.end_frame(project.gm)
         max_ = max(max_, end_f_)
 
-    return coverage / float(max_ * len(project.animals))
+    return old_div(coverage, float(max_ * len(project.animals)))
 
 def check_gt(p, tracklet_gt_map, step, already_reported):
     for t in p.chm.chunk_gen():
@@ -108,7 +115,7 @@ def assign_ids(p, semistate='tracklets_s_classified',
     tracklet_gt_map = {}
 
     perm = gt.get_permutation_reversed()
-    for frame, vals in match.iteritems():
+    for frame, vals in match.items():
         for a_id, t_id in enumerate(vals):
             if t_id not in tracklet_gt_map:
                 tracklet_gt_map[t_id] = set()
@@ -260,7 +267,7 @@ def assign_ids_HIL_INIT(p,
     tracklet_gt_map_without_perm = {}
 
     perm_r = gt.get_permutation_reversed()
-    for frame, vals in match.iteritems():
+    for frame, vals in match.items():
         for a_id, t_id in enumerate(vals):
             if t_id not in tracklet_gt_map:
                 tracklet_gt_map[t_id] = set()
@@ -366,7 +373,7 @@ def assign_ids_HIL_INIT(p,
     return results
 
 def run_assign_id(ps, c):
-    for pname, p in ps.iteritems():
+    for pname, p in ps.items():
         print()
         print()
         print("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%")
@@ -397,7 +404,7 @@ def run_assign_id(ps, c):
             pickle.dump((c, result), f)
 
 def run_assign_id_HIL_INIT(ps, c):
-    for pname, p in ps.iteritems():
+    for pname, p in ps.items():
         print()
         print()
         print("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%")
@@ -429,7 +436,7 @@ def run_assign_id_HIL_INIT(ps, c):
 if __name__ == '__main__':
     from core.graph.region_chunk import RegionChunk
     from thesis.config import *
-    import cPickle as pickle
+    import pickle as pickle
     import datetime
     from thesis.thesis_utils import load_all_projects
 
@@ -502,12 +509,12 @@ if __name__ == '__main__':
 
 
     ps = load_all_projects()
-    for pname, p in ps.iteritems():
+    for pname, p in ps.items():
         print(pname, p.working_directory)
 
 
     ps2 = {}
-    for pname, p in ps.iteritems():
+    for pname, p in ps.items():
         if pname == 'Cam1':
             ps2[pname] = p
 

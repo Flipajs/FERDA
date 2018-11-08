@@ -1,5 +1,9 @@
 from __future__ import print_function
-import cPickle as pickle
+from __future__ import unicode_literals
+from future import standard_library
+standard_library.install_aliases()
+from builtins import range
+import pickle as pickle
 import numpy as np
 from core.project.project import Project
 

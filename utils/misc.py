@@ -1,4 +1,8 @@
 from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import str
+from past.utils import old_div
 __author__ = 'filip@naiser.cz'
 import os
 import pickle
@@ -74,7 +78,7 @@ def print_progress(iteration, total, prefix = '', suffix = '', decimals = 1, bar
     """
 
     formatStr       = "{0:." + str(decimals) + "f}"
-    percents        = formatStr.format(100 * (iteration / float(total)))
+    percents        = formatStr.format(100 * (old_div(iteration, float(total))))
     filledLength    = int(round(barLength * iteration / float(total)))
     bar             = '#' * filledLength + '-' * (barLength - filledLength)
     sys.stdout.write('\r%s |%s| %s%s %s' % (prefix, bar, percents, '%', suffix)),

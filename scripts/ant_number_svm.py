@@ -1,4 +1,10 @@
 from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import zip
+from builtins import str
+from builtins import range
+from past.utils import old_div
 __author__ = 'fnaiser'
 
 import pickle
@@ -39,7 +45,7 @@ def get_t_diff(r1, r2):
 
     t_ = max(t1, t2) - min(t1, t2)
 
-    if t_ > np.pi/2:
+    if t_ > old_div(np.pi,2):
         t_ = np.pi - t_
 
     return t_
@@ -49,7 +55,7 @@ def poly_area(p):
                          for ((x0, y0), (x1, y1)) in segments(p)))
 
 def segments(p):
-    return zip(p, p[1:] + [p[0]])
+    return list(zip(p, p[1:] + [p[0]]))
 
 def area_np(p):
     x = p[:, 0]
@@ -59,12 +65,12 @@ def area_np(p):
     shift_up = np.arange(-n+1, 1)
     shift_down = np.arange(-1, n-1)
 
-    return (x * (y.take(shift_up) - y.take(shift_down))).sum() / 2.0
+    return old_div((x * (y.take(shift_up) - y.take(shift_down))).sum(), 2.0)
 
 def get_x(r, AVG_AREA, AVG_MARGIN):
     x = []
-    x.append(r.area() / float(AVG_AREA))
-    x.append(r.ellipse_major_axis_length() / r.ellipse_minor_axis_length())
+    x.append(old_div(r.area(), float(AVG_AREA)))
+    x.append(old_div(r.ellipse_major_axis_length(), r.ellipse_minor_axis_length()))
 
     c1 = len(r.contour())
     roi_ = r.roi()
@@ -79,9 +85,9 @@ def get_x(r, AVG_AREA, AVG_MARGIN):
             h_area = r.area()
             pass
 
-    x.append(h_area / float(AVG_AREA))
+    x.append(old_div(h_area, float(AVG_AREA)))
     x.append((r.margin_-AVG_MARGIN)**2)
-    x.append(c1 / (r.area()**0.5))
+    x.append(old_div(c1, (r.area()**0.5)))
 
     return x
 

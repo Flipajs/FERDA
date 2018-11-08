@@ -1,4 +1,10 @@
 from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import zip
+from builtins import range
+from builtins import object
+from past.utils import old_div
 import cv2
 import numpy as np
 from skimage.transform import pyramid_gaussian
@@ -7,7 +13,7 @@ from skimage.color import label2rgb
 import time
 
 
-class SegmentationHelper:
+class SegmentationHelper(object):
     def __init__(self, image, num=2, scale=2):
         self.pyramid = None
         self.images = None
@@ -426,7 +432,7 @@ class SegmentationHelper:
             shift_right = get_shift_im(self.pyramid[i], shift_x=0, shift_y=1)
             img = cv2.cvtColor(self.pyramid[i], cv2.COLOR_BGR2GRAY)
             img_sum = shift_up + shift_down + shift_left + shift_right + img
-            result.append(self.get_scaled(img_sum / 5, i))
+            result.append(self.get_scaled(old_div(img_sum, 5), i))
         return result
 
     def get_dif(self):
@@ -570,7 +576,7 @@ def get_lbp(image, method="uniform"):
     lbp = local_binary_pattern(gray_image, n_points, radius, method)
 
     # get edge_labels
-    edge_labels = range(n_points // 2 - w, n_points // 2 + w + 1)
+    edge_labels = list(range(n_points // 2 - w, n_points // 2 + w + 1))
     flat_labels = list(range(0, w + 1)) + list(range(n_points - w, n_points + 2))
     i_14 = n_points // 4            # 1/4th of the histogram
     i_34 = 3 * (n_points // 4)      # 3/4th of the histogram
@@ -606,8 +612,8 @@ def pyramid(image, scale=1.5, minSize=(30, 30), num=-1):
     while True and (num < 0 or i < num):
         i += 1
         # compute the new dimensions of the image and resize it
-        w = int(image.shape[1] / scale)
-        h = int(image.shape[0] / scale)
+        w = int(old_div(image.shape[1], scale))
+        h = int(old_div(image.shape[0], scale))
         image = cv2.resize(image, (w, h))
 
         # if the resized image does not meet the supplied minimum
@@ -625,12 +631,12 @@ if __name__ == "__main__":
     # image = cv2.imread("/home/dita/img_67.png")
     image = cv2.imread("/home/dita/lbp_test.png")
     np.set_printoptions(threshold=np.inf)
-    print(image[:, :, 0] / 255)
+    print(old_div(image[:, :, 0], 255))
     methods = ["nri_uniform", "default", "ror", "uniform", "var"]
 
     lbp = get_lbp(image)
     print(lbp)
-    cv2.imwrite("/home/dita/lbp_test_out.png", lbp*(255/lbp.max()))
+    cv2.imwrite("/home/dita/lbp_test_out.png", lbp*(old_div(255,lbp.max())))
 
     print(lbp.shape)
 

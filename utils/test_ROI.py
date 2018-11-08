@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 from unittest import TestCase
 from utils.roi import ROI
 

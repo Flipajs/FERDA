@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 from PyQt4 import QtGui
 
 from gui.img_grid.img_grid_widget import ImgGridWidget

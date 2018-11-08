@@ -1,3 +1,7 @@
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import zip
+from past.utils import old_div
 import sys
 sys.path.append('/Users/flipajs/Documents/dev/fastext/toolbox')
 from ft import FASTex
@@ -42,7 +46,7 @@ def show_next():
     scales = ft.getImageScales()
     scs_ = []
     for i, kp in enumerate(keypoints):
-        s_ = ft.getKeypointStrokes(i) * (1.0 / scales[kp[2]])
+        s_ = ft.getKeypointStrokes(i) * (old_div(1.0, scales[kp[2]]))
         if len(s_) < 5:
             continue
         scs_.append(kp[2])
@@ -94,7 +98,7 @@ if __name__ == "__main__":
     minCompSize = 4
     process_color = 0
     segmDeltaInt = 1
-    min_tupple_top_bottom_angle = math.pi / 2
+    min_tupple_top_bottom_angle = old_div(math.pi, 2)
     maxSpaceHeightRatio = -1
     createKeypointSegmenter = 1
 

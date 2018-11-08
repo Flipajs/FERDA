@@ -1,3 +1,7 @@
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import object
+from past.utils import old_div
 import cv2
 import numpy as np
 
@@ -17,8 +21,8 @@ class Ellipse(object):
         r = Region(is_origin_interaction=True, frame=self.frame)
         r.centroid_ = self.xy[::-1]
         r.theta_ = -np.deg2rad(self.angle_deg)
-        r.major_axis_ = self.major / 2
-        r.minor_axis_ = self.minor / 2
+        r.major_axis_ = old_div(self.major, 2)
+        r.minor_axis_ = old_div(self.minor, 2)
         return r
 
     @classmethod
@@ -61,7 +65,7 @@ class Ellipse(object):
         return cv2.contourArea(self.to_poly())
 
     def to_poly(self):
-        return cv2.ellipse2Poly((int(self.x), int(self.y)), (int(self.major / 2.), int(self.minor / 2.)),
+        return cv2.ellipse2Poly((int(self.x), int(self.y)), (int(old_div(self.major, 2.)), int(old_div(self.minor, 2.))),
                                 int(self.angle_deg), 0, 360, 30)
 
     def get_overlap(self, el_region):
@@ -97,7 +101,7 @@ class Ellipse(object):
         """
         assert self.minor > 2
         assert self.major > 2, ''
-        pts = cv2.ellipse2Poly(tuple(self.xy.astype(int)), (int(self.major / 2.), int(self.minor / 2.)),
+        pts = cv2.ellipse2Poly(tuple(self.xy.astype(int)), (int(old_div(self.major, 2.)), int(old_div(self.minor, 2.))),
                                int(self.angle_deg), int(round(angle_deg)) - 2, int(round(angle_deg)) + 2, 1)
         return pts.mean(axis=0)
 

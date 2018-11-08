@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+from builtins import str
 from PIL import ImageQt
 
 from utils.drawing.points import get_contour, draw_points_crop

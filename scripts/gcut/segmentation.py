@@ -1,5 +1,11 @@
 from __future__ import print_function
 from __future__ import absolute_import
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import str
+from builtins import range
+from builtins import object
+from past.utils import old_div
 __author__ = 'flipajs'
 
 from . import cyMaxflow
@@ -11,7 +17,7 @@ import numpy as np
 INT32_INFINITY = 2**31 - 1
 
 
-class Segmentation:
+class Segmentation(object):
     def __init__(self, img):
         self.img = img
         self.edges = None
@@ -34,12 +40,12 @@ class Segmentation:
         import math
 
         # TODDO: must be normalized to img size
-        val = math.log(((x-self.img.shape[1]/2)**2 + (y-self.img.shape[0]/2)**2)**0.5 + 1, 3)
+        val = math.log(((x-old_div(self.img.shape[1],2))**2 + (y-old_div(self.img.shape[0],2))**2)**0.5 + 1, 3)
         return val
 
     def bg_dist(self, x, y):
         val = max(0, self.bg_median - self.img[y, x])
-        return val / 2
+        return old_div(val, 2)
 
     def segmentation(self):
         p_i = 0
@@ -77,7 +83,7 @@ class Segmentation:
 
         mask = np.zeros((self.img.shape[0], self.img.shape[1]), dtype=np.bool)
         for id in new_alpha_ids:
-            i = id / self.img.shape[1]
+            i = old_div(id, self.img.shape[1])
             j = id % self.img.shape[1]
 
             mask[i, j] = True
@@ -96,7 +102,7 @@ class Segmentation:
         old_labelling = {}
 
         id_px_mapping = {}
-        for px, px_id in rel_pxs.iteritems():
+        for px, px_id in rel_pxs.items():
             id_px_mapping[px_id] = px
 
         for id in new_alpha_ids:
@@ -121,10 +127,10 @@ class Segmentation:
         self.y_nodes_num = 0
 
         unique_labels = {}
-        for px, p_i in rel_pxs.iteritems():
+        for px, p_i in rel_pxs.items():
             unique_labels.setdefault(px.label(), []).append((px, p_i))
 
-        for label, ul in unique_labels.iteritems():
+        for label, ul in unique_labels.items():
             if self.label_cost[label] > 0:
                 k = len(ul)
 
@@ -133,12 +139,12 @@ class Segmentation:
                     continue
 
                 h = self.label_cost[label]
-                h2 = h/2
+                h2 = old_div(h,2)
 
                 y_i = len(rel_pxs) + self.y_nodes_num
                 self.y_nodes_num += 1
 
-                self.node_tweights.add(y_i, (h*k)/2 - h, 0)
+                self.node_tweights.add(y_i, old_div((h*k),2) - h, 0)
 
                 for px, p_i in ul:
                     self.node_tweights.plus_weights(p_i, -h2, 0)
@@ -152,10 +158,10 @@ class Segmentation:
             y_i = len(rel_pxs) + self.y_nodes_num
             self.y_nodes_num += 1
 
-            M2 = self.infinity_substitution/2.0
+            M2 = old_div(self.infinity_substitution,2.0)
             self.node_tweights.add(y_i, h - M2 * len(rel_pxs), 0)
 
-            for px, p_i in rel_pxs.iteritems():
+            for px, p_i in rel_pxs.items():
                 self.node_tweights.plus_weights(p_i, M2, 0)
                 self.edges.add(p_i, y_i, M2)
 
@@ -221,8 +227,8 @@ class Segmentation:
         # i2 = int(self.img[q[0], q[1]])
         import math
 
-        i1 = -math.log((self.img[p[0], p[1]]+1)/256.0)
-        i2 = -math.log((self.img[q[0], q[1]]+1)/256.0)
+        i1 = -math.log(old_div((self.img[p[0], p[1]]+1),256.0))
+        i2 = -math.log(old_div((self.img[q[0], q[1]]+1),256.0))
 
         v11 = 0
         v10 = abs(i1 - i2)
@@ -235,10 +241,10 @@ class Segmentation:
 
         delta = b - a
 
-        u11 = (c - delta)/2.0
-        u21 = (c + delta)/2.0
+        u11 = old_div((c - delta),2.0)
+        u21 = old_div((c + delta),2.0)
 
-        new_edge_cost = (v01 + v10 - v00 - v11)/2.0
+        new_edge_cost = old_div((v01 + v10 - v00 - v11),2.0)
 
         return new_edge_cost, u11, u21
 
@@ -252,7 +258,7 @@ class Segmentation:
         return False
 
     def prepare_edges_(self, rel_pxs, alpha):
-        for p, p_i in rel_pxs.iteritems():
+        for p, p_i in rel_pxs.items():
             for q in self.region.pixel_neighbours(p):
                 if self.edge_already_visited_(p, q):
                     continue

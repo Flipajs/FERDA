@@ -1,5 +1,10 @@
 from __future__ import print_function
 from __future__ import absolute_import
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import str
+from builtins import range
+from past.utils import old_div
 import sys
 import os
 sys.path.append (os.path.dirname(os.path.abspath("aa.tx")));
@@ -107,7 +112,7 @@ def prepareForCluster(local_working_directory,cluster_working_directory,cluster_
 	scriptFile.close()
 
 	#EXPORT create bash script
-	num_exportedParts=int(np.ceil(float(numLines)/sizeMats))
+	num_exportedParts=int(np.ceil(old_div(float(numLines),sizeMats)))
 	clusterScriptBody = '\n#$ -N '+project_name+'EXPORT  \n#$ -t 1-'+str(num_exportedParts)+':1\n'
 	clusterScriptBody += 'LIMIT=$(awk \"NR==$SGE_TASK_ID\" '+ cluster_working_directory+'copy_for_cluster/exportLimits.txt)\n'
 	clusterScriptBody +='module load graph-tool/2.12 \n'
@@ -140,7 +145,7 @@ def write_exportLimits (local_temp_path, numLines,sizeMats=1):
     min_tracklet_length=1
     pts_export=1
 
-    num_exportedParts=int(np.ceil(float(numLines)/sizeMats))
+    num_exportedParts=int(np.ceil(old_div(float(numLines),sizeMats)))
     current_start=0
     for i in range (num_exportedParts):
         if (i+1)*sizeMats<=numLines:

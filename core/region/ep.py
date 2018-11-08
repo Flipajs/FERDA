@@ -1,3 +1,6 @@
+from __future__ import division
+from __future__ import unicode_literals
+from past.utils import old_div
 import numpy as np
 
 
@@ -14,9 +17,9 @@ def p2e(projective):
     assert type(projective) == np.ndarray
     assert projective.ndim == 1 or (projective.ndim == 2 and (projective.shape[0] == 4) or (projective.shape[0] == 3))
     if projective.ndim == 1:
-        return (projective / projective[-1])[0:-1]
+        return (old_div(projective, projective[-1]))[0:-1]
     else:
-        return (projective / projective[-1, :])[0:-1, :]
+        return (old_div(projective, projective[-1, :]))[0:-1, :]
 
 
 def e2p(euclidean):

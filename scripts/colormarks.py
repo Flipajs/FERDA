@@ -1,4 +1,10 @@
 from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import input
+from builtins import str
+from builtins import range
+from past.utils import old_div
 __author__ = 'filip@naiser.cz'
 
 """
@@ -119,9 +125,9 @@ def igr_transformation(im):
     # +1 to avoid dividing by zero in future
     igr[:, :, 0] = np.sum(igr, axis=2) + 1
 
-    igr[:, :, 1] = igr[:, :, 1] / (igr[:, :, 0])
-    igr[:, :, 2] = igr[:, :, 2] / (igr[:, :, 0])
-    igr[:, :, 0] = im[:, :, 0] / (igr[:, :, 0])
+    igr[:, :, 1] = old_div(igr[:, :, 1], (igr[:, :, 0]))
+    igr[:, :, 2] = old_div(igr[:, :, 2], (igr[:, :, 0]))
+    igr[:, :, 0] = old_div(im[:, :, 0], (igr[:, :, 0]))
 
     return igr
 
@@ -129,11 +135,11 @@ def igbr_transformation(im):
     igbr = np.zeros((im.shape[0], im.shape[1], 4), dtype=np.double)
 
     igbr[:,:,0] = np.sum(im,axis=2) + 1
-    igbr[:, :, 1] = im[:,:,0] / igbr[:,:,0]
-    igbr[:,:,2] = im[:,:,1] / igbr[:,:,0]
-    igbr[:,:,3] = im[:,:,2] / igbr[:,:,0]
+    igbr[:, :, 1] = old_div(im[:,:,0], igbr[:,:,0])
+    igbr[:,:,2] = old_div(im[:,:,1], igbr[:,:,0])
+    igbr[:,:,3] = old_div(im[:,:,2], igbr[:,:,0])
 
-    igbr[:,:,0] = igbr[:,:,0] / I_NORM
+    igbr[:,:,0] = old_div(igbr[:,:,0], I_NORM)
 
     return igbr
 
@@ -164,7 +170,7 @@ def on_mouse_scaled(event, x, y, flag, param):
     global init_positions
 
     if event == cv2.EVENT_LBUTTONDOWN:
-        clicked_pos = (scale_offset[0] + (x / 2), scale_offset[1] + (y / 2));
+        clicked_pos = (scale_offset[0] + (old_div(x, 2)), scale_offset[1] + (old_div(y, 2)));
         c2 = get_color_around(im, clicked_pos, radius)
         c2 = np.asarray(c2, dtype=np.uint8)
         print(c2)
@@ -182,7 +188,7 @@ def on_mouse_scaled(event, x, y, flag, param):
 
         h_ = CROP_SIZE
         w_ = CROP_SIZE
-        x, y = np.array(clicked_pos) - np.array([CROP_SIZE / 2, CROP_SIZE / 2])
+        x, y = np.array(clicked_pos) - np.array([old_div(CROP_SIZE, 2), old_div(CROP_SIZE, 2)])
 
         crop_im = utils.img.get_safe_selection(im, y, x, h_, w_)
         crop_ibg = utils.img.get_safe_selection(ibg_norm, y, x, h_, w_)
@@ -197,8 +203,8 @@ def on_mouse_scaled(event, x, y, flag, param):
         init_regions[ant_id] = colormark
         init_scores[ant_id] = [cmark_i, neigh_i]
 
-        r = (colormark.area() / 3.14)**0.5
-        avg_i = np.sum(d_map[colormark.pts()[:, 0], colormark.pts()[:, 1]]) / float(colormark.area())
+        r = (old_div(colormark.area(), 3.14))**0.5
+        avg_i = old_div(np.sum(d_map[colormark.pts()[:, 0], colormark.pts()[:, 1]]), float(colormark.area()))
         min_neigh = darkest_neighbour_square(crop_im, colormark.centroid(), NEIGH_SQUARE_SIZE)
 
         init_means[ant_id] = {'intensity': avg_i, 'neigh': min_neigh, 'radius': r}
@@ -236,7 +242,7 @@ def init(path):
     cv2.imshow('img', im)
     cv2.moveWindow('img', 0, 0)
 
-    ant_number = int(raw_input('What is the number of ants? '))
+    ant_number = int(input('What is the number of ants? '))
     ant_colors = np.zeros((ant_number, 3), dtype=np.uint8)
     init_regions = [None for i in range(ant_number)]
     init_scores = [None for i in range(ant_number)]
@@ -269,10 +275,10 @@ def color2irg(color, i_max):
     # color comes in BGR format
     color = np.array(color, dtype=np.float)
     s = np.sum(color) + 1
-    c = np.array([color[0] / s, color[1] / s, color[2] / s])
+    c = np.array([old_div(color[0], s), old_div(color[1], s), old_div(color[2], s)])
     c[0] /= i_max
 
-    c = np.array([s/I_NORM, color[0]/s, color[1]/s, color[2]/s])
+    c = np.array([old_div(s,I_NORM), old_div(color[0],s), old_div(color[1],s), old_div(color[2],s)])
 
     return c
 
@@ -291,7 +297,7 @@ def normalized_ibg(im):
 
 def darkest_neighbour_square(im, pt, square_size):
     squares = []
-    start = [pt[0] - square_size - (square_size / 2), pt[1] - square_size - (square_size / 2)]
+    start = [pt[0] - square_size - (old_div(square_size, 2)), pt[1] - square_size - (old_div(square_size, 2))]
 
     for i in range(3):
         for j in range(3):
@@ -327,7 +333,7 @@ def darkest_neighbour_square(im, pt, square_size):
         position = 'bottom-right'
 
     # return position, squares[id]
-    return squares[id] / square_size ** 2
+    return old_div(squares[id], square_size ** 2)
 
 
 def get_colormark(im, ibg_norm, i_max, c, ant_id = -1):
@@ -340,7 +346,7 @@ def get_colormark(im, ibg_norm, i_max, c, ant_id = -1):
     dist_im /= np.max(dist_im)
     dist_im = np.asarray(dist_im * 255, dtype=np.uint8)
 
-    mser.set_max_area_relative(MSER_MAX_SIZE / float(im.shape[0] * im.shape[1]))
+    mser.set_max_area_relative(old_div(MSER_MAX_SIZE, float(im.shape[0] * im.shape[1])))
     regions = mser.process_image(dist_im)
     groups = mser_operations.get_region_groups(regions)
     ids = mser_operations.margin_filter(regions, groups)
@@ -354,11 +360,11 @@ def get_colormark(im, ibg_norm, i_max, c, ant_id = -1):
 
     # areas = [(COLORMARK_AREA / float(p.area())) if p.area() > COLORMARK_AREA else (COLORMARK_AREA / float(p.area())) for p in regions]
     # areas = [(COLORMARK_AREA_SQROOT / float(p.area())**0.5) if p.area()**0.5 > COLORMARK_AREA_SQROOT else (float(p.area())**0.5 / COLORMARK_AREA_SQROOT) for p in regions]
-    areas = [(float(p.area()) / 3.14)**0.5 for p in regions]
+    areas = [(old_div(float(p.area()), 3.14))**0.5 for p in regions]
     # areas = [a if a < 1.0 else 0 for a in areas]
 
     # print areas_, areas
-    avg_intensity = [np.sum(dist_im[p.pts()[:, 0], p.pts()[:, 1]]) / p.area() for p in regions];
+    avg_intensity = [old_div(np.sum(dist_im[p.pts()[:, 0], p.pts()[:, 1]]), p.area()) for p in regions];
     darkest_neighbour = [darkest_neighbour_square(im, r.centroid(), NEIGH_SQUARE_SIZE) for r in regions];
 
     # val = np.array(avg_intensity) + np.array(darkest_neighbour)
@@ -378,14 +384,14 @@ def get_colormark(im, ibg_norm, i_max, c, ant_id = -1):
 
     norm_area_ = mlab.normpdf(r_mean, r_mean, COLORMARK_S)
 
-    val_i = mlab.normpdf(np.array(avg_intensity), i_mean, INTENSITY_S) / norm_i_
-    val_n = mlab.normpdf(np.array(darkest_neighbour), n_mean, NEIHG_S) / norm_neigh_
-    val_a = mlab.normpdf(np.array(areas), r_mean, COLORMARK_S) / norm_area_
+    val_i = old_div(mlab.normpdf(np.array(avg_intensity), i_mean, INTENSITY_S), norm_i_)
+    val_n = old_div(mlab.normpdf(np.array(darkest_neighbour), n_mean, NEIHG_S), norm_neigh_)
+    val_a = old_div(mlab.normpdf(np.array(areas), r_mean, COLORMARK_S), norm_area_)
 
     val = val_i * val_n * val_a
 
     print(areas)
-    print(mlab.normpdf(np.array(areas), r_mean, COLORMARK_S) / norm_area_)
+    print(old_div(mlab.normpdf(np.array(areas), r_mean, COLORMARK_S), norm_area_))
     print(val)
     # val = np.array(areas)
     order = np.argsort(-val)
@@ -393,7 +399,7 @@ def get_colormark(im, ibg_norm, i_max, c, ant_id = -1):
 
     print("REGIONS", len(regions))
     cols = collection_cols
-    rows = len(regions) / cols + 1
+    rows = old_div(len(regions), cols) + 1
     msers = np.zeros((collection_cell_size*rows, collection_cell_size*cols, 3), dtype=np.uint8)
     i = 0
     for r in regions:
@@ -436,7 +442,7 @@ def get_colormark(im, ibg_norm, i_max, c, ant_id = -1):
 def visualize(img, frame_i, collection, colormark, fill_color=np.array([255, 0, 255])):
     id_in_collection = frame_i % (collection_cols * collection_rows)
     c = np.asarray(colormark.centroid(), dtype=np.int32)
-    cell_half = collection_cell_size / 2
+    cell_half = old_div(collection_cell_size, 2)
 
     img = np.copy(img)
     pts = colormark.pts()
@@ -448,7 +454,7 @@ def visualize(img, frame_i, collection, colormark, fill_color=np.array([255, 0, 
 
     # crop_[pts[:, 0] - int(c[0]) + cell_half, pts[:, 1] - int(c[1]) + cell_half, :] = fill_color
 
-    y = (id_in_collection / collection_cols) * collection_cell_size
+    y = (old_div(id_in_collection, collection_cols)) * collection_cell_size
     x = (id_in_collection % collection_cols) * collection_cell_size
 
     collection[y:y + collection_cell_size, x:x + collection_cell_size, :] = crop
@@ -459,7 +465,7 @@ def visualize(img, frame_i, collection, colormark, fill_color=np.array([255, 0, 
 def visualize2(img, frame_i, collection, colormark, collection_rows, a, va, i, vi, n, vn, fill_color=np.array([255, 0, 255])):
     id_in_collection = frame_i % (collection_cols * collection_rows)
     c = np.asarray(colormark.centroid(), dtype=np.int32)
-    cell_half = collection_cell_size / 2
+    cell_half = old_div(collection_cell_size, 2)
 
     img = np.copy(img)
     pts = colormark.pts()
@@ -483,7 +489,7 @@ def visualize2(img, frame_i, collection, colormark, collection_rows, a, va, i, v
     cv2.putText(crop, str(va*vi*vn)[0:5], (3, 10+4*vstep), cv2.FONT_HERSHEY_PLAIN, 0.65, (125, 255, 0), 1, cv2.CV_AA)
     # crop_[pts[:, 0] - int(c[0]) + cell_half, pts[:, 1] - int(c[1]) + cell_half, :] = fill_color
 
-    y = (id_in_collection / collection_cols) * collection_cell_size
+    y = (old_div(id_in_collection, collection_cols)) * collection_cell_size
     x = (id_in_collection % collection_cols) * collection_cell_size
 
     collection[y:y + collection_cell_size, x:x + collection_cell_size, :] = crop
@@ -571,7 +577,7 @@ if __name__ == "__main__":
         i_max = 1
 
         id_in_collection = frame_i % (collection_cols * collection_rows)
-        collection_id = frame_i / (collection_cols * collection_rows)
+        collection_id = old_div(frame_i, (collection_cols * collection_rows))
 
         if id_in_collection == 0 and frame_i > 0:
             for a_id in range(ant_number):
@@ -590,7 +596,7 @@ if __name__ == "__main__":
         for ant_id in range(ant_number):
             h_ = CROP_SIZE
             w_ = CROP_SIZE
-            y, x = previous_position[ant_id] - np.array([h_ / 2, w_ / 2])
+            y, x = previous_position[ant_id] - np.array([old_div(h_, 2), old_div(w_, 2)])
 
             crop_im = utils.img.get_safe_selection(im, y, x, h_, w_)
 

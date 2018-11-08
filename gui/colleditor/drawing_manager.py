@@ -1,7 +1,9 @@
+from __future__ import unicode_literals
+from builtins import object
 __author__ = 'filip@naiser.cz'
 
 
-class DrawingManager:
+class DrawingManager(object):
     # class which holds multiple EditablePixmaps and manages
     # which one will be used
 

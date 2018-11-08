@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+from builtins import range
 __author__ = 'filip@naiser.cz'
 
 from gui.img_controls.my_view import MyView

@@ -1,5 +1,10 @@
 from __future__ import print_function
-import cPickle as pickle
+from __future__ import unicode_literals
+from future import standard_library
+standard_library.install_aliases()
+from builtins import zip
+from builtins import object
+import pickle as pickle
 import os.path
 import numpy as np
 from sklearn.neighbors import KNeighborsClassifier
@@ -42,7 +47,7 @@ class RegionSample(object):
 
     @staticmethod
     def compute_features(region):
-        return [fun(region) for fun in region_features.values()]
+        return [fun(region) for fun in list(region_features.values())]
 
     def _draw_region(self, frame_img):
         img_copy = frame_img.copy()
@@ -52,7 +57,7 @@ class RegionSample(object):
         self.image = img_copy[roi.slices()].copy()
 
 
-class RegionCardinality:
+class RegionCardinality(object):
     def __init__(self):
         # self.storage_directory = os.path.join(project.working_directory, 'temp')
         # self.samples_filename = os.path.join(self.storage_directory, 'region_cardinality_samples.pkl')

@@ -1,5 +1,11 @@
 from __future__ import print_function
 from __future__ import absolute_import
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import str
+from builtins import range
+from builtins import object
+from past.utils import old_div
 __author__ = 'fnaiser'
 
 import numpy as np
@@ -10,7 +16,7 @@ from core.region.region import Region
 from random import randint
 
 
-class Chunk:
+class Chunk(object):
     def __init__(self, vertices_ids, id_, gm, color=None, origin_interaction=False):
         assert color is None or isinstance(color, np.ndarray)
         # if not isinstance(vertices_ids, list):
@@ -82,7 +88,7 @@ class Chunk:
             if step is None:
                 step = 1
 
-            ids = range(start, stop, step)
+            ids = list(range(start, stop, step))
         elif isinstance(key, list):
             ids = key
 
@@ -252,7 +258,7 @@ class Chunk:
             ch2start_region = gm.region(ch2.start_node())
             ch1end_region = gm.region(self.end_node())
 
-            c_diff_part = (ch2start_region.centroid() - ch1end_region.centroid()) / gap_len
+            c_diff_part = old_div((ch2start_region.centroid() - ch1end_region.centroid()), gap_len)
 
             i = 1
             for f in range(self.end_frame(gm)+1, ch2.start_frame(gm)):

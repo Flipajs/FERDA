@@ -1,3 +1,6 @@
+from __future__ import division
+from __future__ import unicode_literals
+from past.utils import old_div
 import unittest
 
 import core.region.ep
@@ -16,7 +19,7 @@ class EuclideanProjectiveTestCase(unittest.TestCase):
         proj2d = np.array([[1., 2., 3.]]).T
         eucl2d = core.region.ep.p2e(proj2d)
         self.assertEqual(eucl2d.size, 2)
-        self.assertEqual(eucl2d[0], 1. / 3)
+        self.assertEqual(eucl2d[0], old_div(1., 3))
 
         eucl2d_2x = core.region.ep.p2e(np.hstack((proj2d, proj2d)))
         self.assertEqual(eucl2d_2x.shape, (2, 2))
@@ -24,7 +27,7 @@ class EuclideanProjectiveTestCase(unittest.TestCase):
         proj3d = np.array([[1., 2., 3., 4.]]).T
         eucl3d = core.region.ep.p2e(proj3d)
         self.assertEqual(eucl3d.size, 3)
-        self.assertEqual(eucl3d[0], 1. / 4)
+        self.assertEqual(eucl3d[0], old_div(1., 4))
 
         eucl3d_2x = core.region.ep.p2e(np.hstack((proj3d, proj3d)))
         self.assertEqual(eucl3d_2x.shape, (3, 2))
@@ -49,7 +52,7 @@ class EuclideanProjectiveTestCase(unittest.TestCase):
 class TransformableRegionTestCase(unittest.TestCase):
     def setUp(self):
         img = plt.imread('test/ferda.png')
-        self.center_yx = np.array(img.shape[:2][::-1]) / 2
+        self.center_yx = old_div(np.array(img.shape[:2][::-1]), 2)
         self.tr = tr.TransformableRegion(img)
 
     def check_get_transformed_angle(self, angle):

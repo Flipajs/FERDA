@@ -1,5 +1,8 @@
 from __future__ import division
 from __future__ import print_function
+from __future__ import unicode_literals
+from builtins import range
+from builtins import object
 import math
 import cv2
 import matplotlib.cm as cmx
@@ -240,7 +243,7 @@ def replace_everything_but_pts(img, pts, fill_color=[0, 0, 0]):
     return new_img
 
 
-class DistinguishableColors():
+class DistinguishableColors(object):
     def __init__(self, N, step=5, cmap='hsv'):
         self.step = step
         self.N = math.ceil(N/step) * step

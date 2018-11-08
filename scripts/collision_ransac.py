@@ -1,5 +1,11 @@
 from __future__ import print_function
 from __future__ import absolute_import
+from __future__ import division
+from __future__ import unicode_literals
+from future import standard_library
+standard_library.install_aliases()
+from builtins import range
+from past.utils import old_div
 from .features import get_curvature_kp
 from core.project.project import Project
 from utils.video_manager import get_auto_video_manager, VideoManager
@@ -10,7 +16,7 @@ from core.region.mser import get_filtered_msers
 import scipy.ndimage as ndimage
 from utils.geometry import rotate
 from scipy.spatial.distance import cdist
-import cPickle as pickle
+import pickle as pickle
 
 
 def data_cam2():
@@ -33,10 +39,10 @@ def __get_rts(a1, a2, b1, b2):
     if a_n == 0 or b_n == 0:
         return None, None, None, None
 
-    t = (b1+b2) / 2 - (a1+a2) / 2
-    s = b_n / a_n
+    t = old_div((b1+b2), 2) - old_div((a1+a2), 2)
+    s = old_div(b_n, a_n)
 
-    x_ = np.dot(a_.T, b_) / (a_n * b_n)
+    x_ = old_div(np.dot(a_.T, b_), (a_n * b_n))
     # numerical errors fix
     x_ = min(1, max(-1, x_))
 
@@ -50,7 +56,7 @@ def __get_rts(a1, a2, b1, b2):
     if np.linalg.det(U) < 0:
         theta = -theta % 2*np.pi
 
-    return t, theta, s, (a1+a2) / 2
+    return t, theta, s, old_div((a1+a2), 2)
 
 def __transform_pts(pts, r, t, rot_center):
     pts = np.array(rotate(pts, r, rot_center))
@@ -203,7 +209,7 @@ if __name__ == '__main__':
     plt.scatter(ptsm[:, 0], ptsm[:, 1], c='k', s=30, alpha=.90)
     plt.hold(True)
     # plt.scatter(pts1[:, 0], pts1[:, 1], c='r', s=30, alpha=.70)
-    for i in reversed(xrange(len(best_t))):
+    for i in reversed(range(len(best_t))):
         plt.cla()
         plt.scatter(ptsm[:, 0], ptsm[:, 1], c='k', s=30, alpha=.90)
 

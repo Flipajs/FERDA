@@ -1,3 +1,6 @@
+from __future__ import division
+from __future__ import unicode_literals
+from past.utils import old_div
 __author__ = 'flipajs'
 
 
@@ -42,7 +45,7 @@ def call_visualizer(t_start, t_end, project, solver, min_chunk_len, update_callb
 
     i = 0
     num_parts = 100
-    part_ = len(optimized) / num_parts + 1
+    part_ = old_div(len(optimized), num_parts) + 1
 
     # TODO: optimize for same frames...
     cache = {}
@@ -59,7 +62,7 @@ def call_visualizer(t_start, t_end, project, solver, min_chunk_len, update_callb
             sf = project.other_parameters.img_subsample_factor
             if sf > 1.0:
                 if n.frame_ not in cache:
-                    im = np.asarray(rescale(im, 1/sf) * 255, dtype=np.uint8)
+                    im = np.asarray(rescale(im, old_div(1,sf)) * 255, dtype=np.uint8)
                     cache[n.frame_] = im
                 else:
                     im = cache[n.frame_]
@@ -73,7 +76,7 @@ def call_visualizer(t_start, t_end, project, solver, min_chunk_len, update_callb
         i += 1
 
         if update_callback is not None and i % part_ == 0:
-            update_callback(i / float(len(optimized)))
+            update_callback(old_div(i, float(len(optimized))))
 
     ngv = NodeGraphVisualizer(solver, project.gm.g, regions, list(chunks), node_size=node_size, show_in_visualize_callback=show_in_visualizer_callback, show_vertically=show_vertically)
     ngv.visualize()

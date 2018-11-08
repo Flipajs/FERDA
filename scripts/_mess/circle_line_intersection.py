@@ -1,4 +1,7 @@
 from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
+from past.utils import old_div
 __author__ = 'filip@naiser.cz'
 
 import math
@@ -24,8 +27,8 @@ c_ += p[1]**2 - 2*p[1]*m[1] + m[1]**2
 c_ -= r**2
 
 d_ = math.sqrt(b_**2 - 4*a_*c_)
-alpha1 = (-b_ + d_) / (2*a_)
-alpha2 = (-b_ - d_) / (2*a_)
+alpha1 = old_div((-b_ + d_), (2*a_))
+alpha2 = old_div((-b_ - d_), (2*a_))
 
 alpha = 0
 if 0 <= alpha1 <= 1:

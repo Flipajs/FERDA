@@ -1,5 +1,12 @@
 from __future__ import print_function
 from __future__ import absolute_import
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import str
+from builtins import zip
+from builtins import range
+from builtins import object
+from past.utils import old_div
 import pickle
 import sys
 import warnings
@@ -8,7 +15,7 @@ import tqdm
 from scipy.spatial.distance import cdist
 
 
-class GT:
+class GT(object):
     """
     None means not defined
 
@@ -64,7 +71,7 @@ class GT:
     def set_permutation_reversed(self, data):
         self.__permutation = self.get_permutation(data)
         temp = dict(self.__permutation)
-        for key, val in temp.iteritems():
+        for key, val in temp.items():
             self.__permutation[val] = key
             self.__gt_id_to_real_permutation[key] = val
 
@@ -81,7 +88,7 @@ class GT:
         """
 
         self.__permutation = self.get_permutation(data)
-        for key, val in self.__permutation.iteritems():
+        for key, val in self.__permutation.items():
             self.__gt_id_to_real_permutation[val] = key
 
     def get_permutation_reversed(self):
@@ -184,7 +191,7 @@ class GT:
 
     def get_clear_positions_dict(self):
         positions = {}
-        for f in self.__positions.iterkeys():
+        for f in self.__positions.keys():
             positions[f] = self.get_clear_positions(f)
 
         return positions
@@ -379,7 +386,7 @@ class GT:
 
     def check_none_occurence(self):
         print("Checking None occurence")
-        for frame, vals in self.__positions.iteritems():
+        for frame, vals in self.__positions.items():
             for it in vals:
                 if it is None:
                     print(frame)
@@ -403,7 +410,7 @@ class GT:
         :param permute:
         :return: match, match[frame][gt position id]: chunk or region id
         """
-        from itertools import izip
+        
 
         # num_frames = self.max_frame() - self.min_frame()
 
@@ -412,7 +419,7 @@ class GT:
         i = 0
 
         if frames is None:
-            frames = range(self.min_frame(), self.max_frame())
+            frames = list(range(self.min_frame(), self.max_frame()))
 
         for frame in tqdm.tqdm(frames, disable=not progress):
             match[frame] = [None for _ in range(len(project.animals))]
@@ -449,7 +456,7 @@ class GT:
                 print(centroids, regions, frame)
 
             m1_i = np.argmin(dists, axis=1)
-            m1 = dists[range(pos.shape[0]), m1_i]
+            m1 = dists[list(range(pos.shape[0])), m1_i]
 
             for a_id, id_ in enumerate(m1_i):
                 if permute:
@@ -458,7 +465,7 @@ class GT:
                 if m1[a_id] > max_d:
                     # try if inside region...
                     if match_on == 'tracklets':
-                        for r, t_id in izip(regions, ch_ids):
+                        for r, t_id in zip(regions, ch_ids):
                             if r.is_inside(pos[a_id], tolerance=max_d):
                                 match[frame][a_id] = t_id
                                 break
@@ -495,10 +502,10 @@ class GT:
         return match
 
     def tracklet_id_set_without_checks(self, tracklet, project):
-        match = self.match_on_data(project, range(tracklet.start_frame(project.gm),
-                                                  tracklet.end_frame(project.gm) + 1, 10))
+        match = self.match_on_data(project, list(range(tracklet.start_frame(project.gm),
+                                                  tracklet.end_frame(project.gm) + 1, 10)))
 
-        keys = sorted([k for k in match.iterkeys()])
+        keys = sorted([k for k in match.keys()])
         match = [match[k] for k in keys]
 
         ids = self.__get_ids_from_match(match[0], tracklet.id())
@@ -515,10 +522,10 @@ class GT:
         Returns:
 
         """
-        match = self.match_on_data(project, range(tracklet.start_frame(project.gm),
-                                                  tracklet.end_frame(project.gm) + 1))
+        match = self.match_on_data(project, list(range(tracklet.start_frame(project.gm),
+                                                  tracklet.end_frame(project.gm) + 1)))
 
-        keys = sorted([k for k in match.iterkeys()])
+        keys = sorted([k for k in match.keys()])
         match = [match[k] for k in keys]
 
         ids = self.__get_ids_from_match(match[0], tracklet.id())
@@ -572,13 +579,13 @@ class GT:
 
         frame = tracklet.start_frame(project.gm) - 1
         if frame > 0:
-            match = [x for x in self.match_on_data(project, [frame]).itervalues()][0]
+            match = [x for x in self.match_on_data(project, [frame]).values()][0]
             if self.__match_mapping_possible(match, ids):
                 return False
 
         frame = tracklet.end_frame(project.gm) + 1
         if frame < self.__max_frame:
-            match = [x for x in self.match_on_data(project, [frame]).itervalues()][0]
+            match = [x for x in self.match_on_data(project, [frame]).values()][0]
             if self.__match_mapping_possible(match, ids):
                 return False
 
@@ -596,7 +603,7 @@ class GT:
         not_consistent_list = []
         singles_splits = set()
 
-        matches = self.match_on_data(p, frames=range(0, p.gm.end_t + 1))
+        matches = self.match_on_data(p, frames=list(range(0, p.gm.end_t + 1)))
 
         for t in p.chm.chunk_gen():
             single = False
@@ -624,10 +631,10 @@ class GT:
 
         num_t = len(p.chm)
         print("#max_len singles: {}({:.2%}) all: {}({:.2%}), #not consitent: {}".format(num_max_len_singles,
-                                                                                        num_max_len_singles / float(
-                                                                                            num_singles),
+                                                                                        old_div(num_max_len_singles, float(
+                                                                                            num_singles)),
                                                                                         num_max_len,
-                                                                                        num_max_len / float(num_t),
+                                                                                        old_div(num_max_len, float(num_t)),
                                                                                         not_consistent)  \
             + "single nonmax splits:"  \
             + sorted(list(singles_splits)))
@@ -637,7 +644,7 @@ class GT:
         animal_ids = []
         match = self.match_on_data(project, match_on='regions')
 
-        for frame in match.iterkeys():
+        for frame in match.keys():
             if frame > max_frame:
                 continue
 
@@ -827,10 +834,10 @@ if __name__ == '__main__':
                 B = es[1]
                 t = time.time()
                 if gt.test_edge(p.gm.get_chunk(e[0].source()), p.gm.get_chunk(e[0].target()), p):
-                    eps = (A / theta) - (A + B)
+                    eps = (old_div(A, theta)) - (A + B)
                     variant.append(0)
                 else:
-                    eps = (A + B) / ((1/theta) - 1)
+                    eps = old_div((A + B), ((old_div(1,theta)) - 1))
                     variant.append(1)
 
                 test_t += time.time() - t

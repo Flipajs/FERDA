@@ -1,4 +1,9 @@
 from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import map
+from builtins import object
+from past.utils import old_div
 __author__ = 'fnaiser'
 
 from core.graph.graph_utils import *
@@ -9,7 +14,7 @@ import pickle
 from tqdm import tqdm
 
 
-class Solver:
+class Solver(object):
     SPLIT_JOIN_THRESHOLD = 0.5
 
     def __init__(self, project):
@@ -170,7 +175,7 @@ class Solver:
         node_groups = {}
         self.get_cc_rec(n, 0, node_groups)
 
-        keys = node_groups.keys()
+        keys = list(node_groups.keys())
         keys = sorted(keys)
 
         g = []
@@ -206,12 +211,12 @@ class Solver:
             if len(scores) == 1:
                 n_ = float(len(s1))
                 # to power of 2 because we want to multiply it by difference to second best, which is 0
-                cert = abs(scores[0] / n_)**2
+                cert = abs(old_div(scores[0], n_))**2
             else:
                 sc1 = scores[0]
                 sc2 = scores[1]
                 n_ = float(len(s1))
-                cert = abs(sc1 / n_) * (abs(sc1-sc2))
+                cert = abs(old_div(sc1, n_)) * (abs(sc1-sc2))
 
             if cert >= self.project.solver_parameters.certainty_threshold:
                 for n1, n2 in matchings[0]:
@@ -320,9 +325,9 @@ class Solver:
         return affected
 
     def assignment_score(self, r1, r2, pred=0):
-        d = np.linalg.norm(r1.centroid() + pred - r2.centroid()) / float(self.major_axis_median)
+        d = old_div(np.linalg.norm(r1.centroid() + pred - r2.centroid()), float(self.major_axis_median))
         max_d = self.project.solver_parameters.max_edge_distance_in_ant_length
-        ds = max(0, (max_d-d) / max_d)
+        ds = max(0, old_div((max_d-d), max_d))
 
         s = ds
 
@@ -339,7 +344,7 @@ class Solver:
             if area_diff > self.project.stats.area_median * 0.5:
                 # when regions are big...
                 if a1 > self.project.stats.area_median * 5:
-                    if area_diff/float(a1) > 0.15:
+                    if old_div(area_diff,float(a1)) > 0.15:
                         s = 0
                 else:
                     s = 0
@@ -359,12 +364,12 @@ class Solver:
 
         """
 
-        d = np.linalg.norm(r1.centroid() - r2.centroid()) / float(self.major_axis_median)
+        d = old_div(np.linalg.norm(r1.centroid() - r2.centroid()), float(self.major_axis_median))
         max_d = self.project.solver_parameters.max_edge_distance_in_ant_length
-        ds = max(0, (max_d-d) / max_d)
+        ds = max(0, old_div((max_d-d), max_d))
 
         dt = (r1.theta_ - r2.theta_) % np.pi
-        dt = max(0, (np.pi/2-dt) / (np.pi/2))
+        dt = max(0, old_div((old_div(np.pi,2)-dt), (old_div(np.pi,2))))
 
         return ds*dt, ds, dt
 
@@ -498,7 +503,7 @@ class Solver:
             elif v2_ch and not v1_ch:
                 v2_ch.append_left(v1, self.project.gm)
             else:
-                self.project.chm.new_chunk(map(int, [v1, v2]), self.project.gm)
+                self.project.chm.new_chunk(list(map(int, [v1, v2])), self.project.gm)
 
         affected = list(affected)
         # all_affected = list(self.simplify(affected[:], return_affected=True))

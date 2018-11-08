@@ -1,4 +1,8 @@
 from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import next
+from past.utils import old_div
 import unittest
 
 import h5py
@@ -114,14 +118,14 @@ class LossFunctionsTestCase(unittest.TestCase):
         import skimage.io as io
         size = 200
         x, y = np.mgrid[0:size, 0:size]
-        mask = np.exp(- 0.0002 * ((x - size / 2) ** 2 + (y - size / 2) ** 2))
+        mask = np.exp(- 0.0002 * ((x - old_div(size, 2)) ** 2 + (y - old_div(size, 2)) ** 2))
         io.imshow(np.uint8(mask * 255))
 
 
         X_train = LossFunctionsTestCase.load_images()
 
         tregion = tr.TransformableRegion(X_train[0])
-        tregion.rotate(20, np.array(tregion.img.shape[:2]) / 2)
+        tregion.rotate(20, old_div(np.array(tregion.img.shape[:2]), 2))
 
         def rotate(img):
             tregion.set_img(img)
@@ -131,7 +135,7 @@ class LossFunctionsTestCase(unittest.TestCase):
             return img * np.expand_dims(mask, 2)
 
         from keras.preprocessing.image import ImageDataGenerator
-        train_datagen = ImageDataGenerator(preprocessing_function=rotate, rescale=1./255)
+        train_datagen = ImageDataGenerator(preprocessing_function=rotate, rescale=old_div(1.,255))
         train_generator = train_datagen.flow(X_train[:10], shuffle=False, batch_size=1)
 
         io.imshow(X_train[0])
@@ -205,7 +209,7 @@ class TrainInteractionsTestCase(unittest.TestCase):
         n_images = 3
         m = self.ti.model_mobilenet()
         m.compile(loss=lambda x, y: self.ti.interaction_loss_angle(x, y, alpha=0.5), optimizer='adam')
-        train_datagen = ImageDataGenerator(rescale=1./255)
+        train_datagen = ImageDataGenerator(rescale=old_div(1.,255))
         train_generator = train_datagen.flow(self.X_train_, self.y_train[:self.n_images], batch_size=self.n_images)
 
         w1 = m.get_weights()
@@ -220,7 +224,7 @@ class TrainInteractionsTestCase(unittest.TestCase):
         n_images = 3
         m = self.ti.model_mobilenet()
         m.compile(loss=lambda x, y: self.ti.interaction_loss_angle(x, y, alpha=0.5), optimizer='adam')
-        test_datagen = ImageDataGenerator(rescale=1./255)
+        test_datagen = ImageDataGenerator(rescale=old_div(1.,255))
         test_generator = test_datagen.flow(self.X_test_, self.y_test, batch_size=self.n_images)
         results = self.ti.evaluate(m, test_generator, {'n_test': len(self.y_test)}, self.y_test)
 

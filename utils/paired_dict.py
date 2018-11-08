@@ -1,6 +1,8 @@
 from __future__ import print_function
+from __future__ import unicode_literals
 
-class PairedDict:
+from builtins import object
+class PairedDict(object):
     """
     Class behaving as dictionary but with bot direction search.
      e.g

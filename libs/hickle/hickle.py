@@ -23,7 +23,13 @@ h5py installed.
 """
 from __future__ import print_function
 from __future__ import absolute_import
+from __future__ import unicode_literals
 
+from future import standard_library
+standard_library.install_aliases()
+from builtins import next
+from builtins import str
+from builtins import zip
 import os
 import numpy as np
 import h5py as h5
@@ -138,7 +144,7 @@ def file_opener(f, mode='r', track_times=True):
         filename, mode = f.name, f.mode
         f.close()
         h5f = h5.File(filename, mode)
-    elif isinstance(f, str) or isinstance(f, unicode):
+    elif isinstance(f, str) or isinstance(f, str):
         filename = f
         h5f = h5.File(filename, mode)
     elif isinstance(f, H5FileWrapper) or isinstance(f, h5._hl.files.File):
@@ -171,7 +177,7 @@ def check_is_iterable(py_obj):
     Returns:
         iter_ok (bool): True if item is iterable, False is item is not
     """
-    if type(py_obj) in (str, unicode):
+    if type(py_obj) in (str, str):
         return False
     try:
         iter(py_obj)
@@ -224,7 +230,7 @@ def _dump(py_obj, h_group, call_id=0, **kwargs):
         call_id (int): index to identify object's relative location in the iterable.
     """
 
-    dumpable_dtypes = set([bool, int, float, long, complex, str, unicode])
+    dumpable_dtypes = set([bool, int, float, int, complex, str, str])
 
     # Firstly, check if item is a numpy array. If so, just dump it.
     if check_is_numpy_array(py_obj):
@@ -319,10 +325,10 @@ def create_dataset_lookup(py_obj):
         tuple: create_listlike_dataset,
         set: create_listlike_dataset,
         str: create_stringlike_dataset,
-        unicode: create_stringlike_dataset,
+        str: create_stringlike_dataset,
         int: create_python_dtype_dataset,
         float: create_python_dtype_dataset,
-        long: create_python_dtype_dataset,
+        int: create_python_dtype_dataset,
         bool: create_python_dtype_dataset,
         complex: create_python_dtype_dataset,
         NoneType: create_none_dataset,
@@ -427,7 +433,7 @@ def create_dict_dataset(py_obj, h_group, call_id=0, **kwargs):
     """
     h_dictgroup = h_group.create_group('data_%i' % call_id)
     h_dictgroup.attrs["type"] = ['dict']
-    for key, py_subobj in py_obj.items():
+    for key, py_subobj in list(py_obj.items()):
         h_subgroup = h_dictgroup.create_group(key)
         h_subgroup.attrs["type"] = ['dict_item']
         _dump(py_subobj, h_subgroup, call_id=0, **kwargs)
@@ -464,7 +470,7 @@ def create_stringlike_dataset(py_obj, h_group, call_id=0, **kwargs):
         d = h_group.create_dataset('data_%i' % call_id, data=[py_obj], **kwargs)
         d.attrs["type"] = ['string']
     else:
-        dt = h5.special_dtype(vlen=unicode)
+        dt = h5.special_dtype(vlen=str)
         dset = h_group.create_dataset('data_%i' % call_id, shape=(1, ), dtype=dt, **kwargs)
         dset[0] = py_obj
         dset.attrs['type'] = ['unicode']
@@ -490,9 +496,9 @@ def no_match(py_obj, h_group, call_id=0, **kwargs):
         h_group (h5.File.group): group to dump data into.
         call_id (int): index to identify object's relative location in the iterable.
     """
-    import cPickle
+    import pickle
 
-    pickled_obj = cPickle.dumps(py_obj)
+    pickled_obj = pickle.dumps(py_obj)
     d = h_group.create_dataset('data_%i' % call_id, data=[pickled_obj])
     d.attrs["type"] = ['pickle']
 
@@ -531,7 +537,7 @@ class PyContainer(list):
         if self.container_type == "dict":
             keys = [str(item.name.split('/')[-1]) for item in self]
             items = [item[0] for item in self]
-            return dict(zip(keys, items))
+            return dict(list(zip(keys, items)))
         else:
             return self
 
@@ -553,8 +559,8 @@ def load(fileobj, path='/', safe=True):
 
         h_root_group = h5f.get(path)
         try:
-            assert 'CLASS' in h5f.attrs.keys()
-            assert 'VERSION' in h5f.attrs.keys()
+            assert 'CLASS' in list(h5f.attrs.keys())
+            assert 'VERSION' in list(h5f.attrs.keys())
             py_container = PyContainer()
             py_container.container_type = 'hickle'
             py_container = _load(py_container, h_root_group)
@@ -612,7 +618,7 @@ def load_dataset(h_node):
         type_dict = {
             "<type 'int'>": int,
             "<type 'float'>": float,
-            "<type 'long'>": long,
+            "<type 'long'>": int,
             "<type 'bool'>": bool,
             "<type 'complex'>": complex
         }
@@ -621,11 +627,11 @@ def load_dataset(h_node):
     elif py_type == 'string':
         return str(data[0])
     elif py_type == 'unicode':
-        return unicode(data[0])
+        return str(data[0])
     elif py_type == 'none':
         return None
     else:
-        print((h_node.name, py_type, h_node.attrs.keys()))
+        print((h_node.name, py_type, list(h_node.attrs.keys())))
         return data
 
 
@@ -664,9 +670,9 @@ def _load(py_container, h_group):
         py_subcontainer.name = h_group.name
 
         if py_subcontainer.container_type != 'dict':
-            h_keys = sort_keys(h_group.keys())
+            h_keys = sort_keys(list(h_group.keys()))
         else:
-            h_keys = h_group.keys()
+            h_keys = list(h_group.keys())
 
         for h_name in h_keys:
             h_node = h_group[h_name]

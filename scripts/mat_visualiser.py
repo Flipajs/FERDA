@@ -1,4 +1,9 @@
 from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import str
+from builtins import range
+from past.utils import old_div
 import math
 
 from PyQt4 import QtGui, QtCore
@@ -51,7 +56,7 @@ class VideoSlider(QtGui.QSlider):
 
         if QMouseEvent.button() == QtCore.Qt.LeftButton and not sr.contains(QMouseEvent.pos()):
             if self.orientation() == QtCore.Qt.Vertical:
-                newVal = self.minimum() + ((self.maximum() - self.minimum()) * (self.height()-QMouseEvent.y()))/self.height()
+                newVal = self.minimum() + old_div(((self.maximum() - self.minimum()) * (self.height()-QMouseEvent.y())),self.height())
             else:
                 newVal = self.minimum() + (self.maximum() - self.minimum()) * QMouseEvent.x() / self.width()
             if self.invertedAppearance():
@@ -94,7 +99,7 @@ class ResultsWidget(QtGui.QWidget):
 
         self.frame_rate = 30
         self.timer = QtCore.QTimer()
-        self.timer.setInterval(1000 / self.frame_rate)
+        self.timer.setInterval(old_div(1000, self.frame_rate))
         self.scene = QtGui.QGraphicsScene()
         self.pixMap = None
         self.pixMapItem = None
@@ -241,13 +246,13 @@ class ResultsWidget(QtGui.QWidget):
             c[1] *= sf
 
         marker.setVisible(True)
-        marker.setPos(c[1] - MARKER_SIZE / 2, c[0] - MARKER_SIZE/2)
+        marker.setPos(c[1] - old_div(MARKER_SIZE, 2), c[0] - old_div(MARKER_SIZE,2))
 
     def highlight_area(self, data, radius=50):
         centroid = data['n1'].centroid()
         self.highlight_marker = markers.CenterMarker(0, 0, radius, QtGui.QColor(167, 255, 36), 0, print_id)
         self.highlight_marker.setOpacity(0.40)
-        self.highlight_marker.setPos(centroid[1]-radius/2, centroid[0]-radius/2)
+        self.highlight_marker.setPos(centroid[1]-old_div(radius,2), centroid[0]-old_div(radius,2))
         self.scene.addItem(self.highlight_marker)
         self.highlight_timer.start(50)
 
@@ -255,7 +260,7 @@ class ResultsWidget(QtGui.QWidget):
             self.highlight_marker2nd = markers.CenterMarker(0, 0, radius, QtGui.QColor(36, 255, 167), 0, print_id)
             self.highlight_marker2nd.setOpacity(0.40)
             centroid = data['n2'].centroid()
-            self.highlight_marker2nd.setPos(centroid[1]-radius/2, centroid[0]-radius/2)
+            self.highlight_marker2nd.setPos(centroid[1]-old_div(radius,2), centroid[0]-old_div(radius,2))
             self.highlight_marker2nd_frame = data['n2'].frame_
 
     def update_positions_optimized(self, frame):
@@ -299,7 +304,7 @@ class ResultsWidget(QtGui.QWidget):
     def init_speed_slider(self):
         """Initiates components associated with speed of viewing videos"""
         self.speedSlider.setValue(self.frame_rate)
-        self.timer.setInterval(1000 / self.frame_rate)
+        self.timer.setInterval(old_div(1000, self.frame_rate))
         self.fpsLabel.setText(str(self.frame_rate) + ' fps')
         self.speedSlider.setMinimum(1)
         self.speedSlider.setMaximum(120)
@@ -307,7 +312,7 @@ class ResultsWidget(QtGui.QWidget):
     def speed_slider_changed(self):
         """Method invoked when value of slider controlling speed of video changed it's value"""
         self.frame_rate = self.speedSlider.value()
-        self.timer.setInterval(1000 / self.frame_rate)
+        self.timer.setInterval(old_div(1000, self.frame_rate))
         self.fpsLabel.setText(str(self.frame_rate) + ' fps')
 
     def add_data(self, solver, just_around_frame=-1, margin=1000):
@@ -481,11 +486,11 @@ def view_add_bg_image(g_view, pix_map):
     m22 = g_view.transform().m22()
 
     if m11 and m22 == 1:
-        if gv_w / float(im_w) <= gv_h / float(im_h):
-            val = math.floor((gv_w / float(im_w))*100) / 100
+        if old_div(gv_w, float(im_w)) <= old_div(gv_h, float(im_h)):
+            val = old_div(math.floor((old_div(gv_w, float(im_w)))*100), 100)
             g_view.scale(val, val)
         else:
-            val = math.floor((gv_h / float(im_h))*100) / 100
+            val = old_div(math.floor((old_div(gv_h, float(im_h)))*100), 100)
             g_view.scale(val, val)
 
 def get_chunks_from_mat(mat):

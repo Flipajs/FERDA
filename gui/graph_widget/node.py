@@ -1,3 +1,7 @@
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import range
+from past.utils import old_div
 from PyQt4 import QtGui, QtCore
 import numpy as np
 from PyQt4.QtCore import Qt
@@ -68,8 +72,8 @@ class Node(QtGui.QGraphicsPixmapItem):
         longest, rows = get_longest_string_rows(text)
         width = metrics.width(longest)
         height = metrics.height() * (rows + 0.5)
-        multiplier_x = 0 if self.x < self.scene.width() / 2 else -1
-        multiplier_y = 0 if self.y < self.scene.height() / 2 else -1
+        multiplier_x = 0 if self.x < old_div(self.scene.width(), 2) else -1
+        multiplier_y = 0 if self.y < old_div(self.scene.height(), 2) else -1
         parent_x, parent_y = self.compute_info_rectangle_pos()
         x = parent_x + multiplier_x * width
         y = parent_y + multiplier_y * height
@@ -107,8 +111,8 @@ class Node(QtGui.QGraphicsPixmapItem):
 
     def compute_rectangle_size(self):
         width, height = self.scene.width(), self.scene.height()
-        multiplier_x = 1 if self.x < width / 2 else 0
-        multiplier_y = 1 if self.y < height / 2 else 0
+        multiplier_x = 1 if self.x < old_div(width, 2) else 0
+        multiplier_y = 1 if self.y < old_div(height, 2) else 0
         return multiplier_x, multiplier_y
 
     def compute_info_rectangle_pos(self):
@@ -128,7 +132,7 @@ class Node(QtGui.QGraphicsPixmapItem):
             self.x, self.y = x, y
             self.parent_pixmap.setPos(x, y)
             if self.pixmap_toggled is not None:
-                self.pixmap_toggled.setPos(x + WIDTH / 2, y + HEIGHT / 2)
+                self.pixmap_toggled.setPos(x + old_div(WIDTH, 2), y + old_div(HEIGHT, 2))
 
     def paint(self, painter, style_option_graphics_item, widget=None):
         # self.parent_pixmap.paint(painter, style_option_graphics_item, None)

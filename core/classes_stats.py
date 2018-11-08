@@ -1,9 +1,12 @@
+from __future__ import unicode_literals
+from builtins import zip
+from builtins import object
 __author__ = 'fnaiser'
 
 import numpy as np
 # from core.antlikeness import Antlikeness, DummyAntlikeness
 
-class ClassesStats():
+class ClassesStats(object):
     def __init__(self):
         self.area_median = -1
         self.major_axis_median = -1

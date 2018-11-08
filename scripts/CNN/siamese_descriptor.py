@@ -1,5 +1,7 @@
 from __future__ import absolute_import
 from __future__ import print_function
+from __future__ import unicode_literals
+from builtins import range
 import numpy as np
 import pickle
 from os.path import join
@@ -37,9 +39,9 @@ def compute_descriptors(project_dir, model_weights_path, add_missing=False):
     imgs = []
     r_ids = []
     batch_size = 300
-    for frame in tqdm(range(p.num_frames()), desc='computing re-identification descriptors'):
+    for frame in tqdm(list(range(p.num_frames())), desc='computing re-identification descriptors'):
         img = vm.get_frame(frame)
-        tracklets = filter(lambda x: x.is_single(), p.chm.tracklets_in_frame(frame))
+        tracklets = [x for x in p.chm.tracklets_in_frame(frame) if x.is_single()]
 
         for tracklet in tracklets:
             region = tracklet.get_region_in_frame(p.gm, frame)

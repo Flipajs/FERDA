@@ -1,4 +1,9 @@
 from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import next
+from builtins import str
+from past.utils import old_div
 from core.arena.paint_mask import PaintMask
 from gui.arena.arena_editor import ArenaEditor
 from utils.video_manager import get_auto_video_manager
@@ -154,8 +159,8 @@ class CircleArenaEditorWidget(QtGui.QWizardPage):
 
     def give_me_best_circle(self):
         gray = cv2.cvtColor(self.first_frame, cv2.COLOR_BGR2GRAY)
-        min_radius = min(self.first_frame.shape[0], self.first_frame.shape[1]) / 10
-        max_radius = min(self.first_frame.shape[0], self.first_frame.shape[1]) / 2
+        min_radius = old_div(min(self.first_frame.shape[0], self.first_frame.shape[1]), 10)
+        max_radius = old_div(min(self.first_frame.shape[0], self.first_frame.shape[1]), 2)
 
         canny_ = 100
         # 75% of min_radius points must vote
@@ -173,7 +178,7 @@ class CircleArenaEditorWidget(QtGui.QWizardPage):
             c = circles[0,0,:]
             return c[1], c[0], c[2]
         else:
-            return self.first_frame.shape[1]/2, self.first_frame.shape[0]/2, min(self.first_frame.shape[0], self.first_frame.shape[1])*0.45
+            return old_div(self.first_frame.shape[1],2), old_div(self.first_frame.shape[0],2), min(self.first_frame.shape[0], self.first_frame.shape[1])*0.45
 
     def skip_bg_clicked(self):
         print("SKIP")

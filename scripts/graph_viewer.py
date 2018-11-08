@@ -1,4 +1,11 @@
 from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
+from builtins import range
+from past.utils import old_div
 __author__ = 'flipajs'
 
 from core.project.project import Project
@@ -9,7 +16,7 @@ import sys
 from gui.results.case_widget import CaseWidget
 from gui.results.configurations_visualizer import ConfigurationsVisualizer
 from utils.video_manager import get_auto_video_manager
-import cPickle as pickle
+import pickle as pickle
 
 
 def draw_j_mark(node, ex, i):
@@ -33,7 +40,7 @@ def draw_s_mark(node, ex, i):
 def test_join(node, solver):
     if solver.g.in_degree(node) > 1:
         for n_in, _ in solver.g.in_edges(node):
-            a = (node.area() - n_in.area()) / float(n_in.area())
+            a = old_div((node.area() - n_in.area()), float(n_in.area()))
             if a > 0.7:
                 return True
 
@@ -42,7 +49,7 @@ def test_join(node, solver):
 def test_split(node, solver):
     if solver.g.out_degree(node) > 1:
         for _, n_out in solver.g.out_edges(node):
-            a = (node.area() - n_out.area()) / float(n_out.area())
+            a = old_div((node.area() - n_out.area()), float(n_out.area()))
             if a > 0.7:
                 return True
 
@@ -122,7 +129,7 @@ if __name__ == "__main__":
                         c = round(d['certainty'], 2)
                     s = -round(d['score'], 2)
 
-                    a = round((n.area() - n_in.area()) / float(n_in.area()), 2)
+                    a = round(old_div((n.area() - n_in.area()), float(n_in.area())), 2)
                     a = str(copysign(1, a) + a) + 'x'
 
                     print("\t%0.2f \t%0.2f\t %s" % (s, c, a))
@@ -134,7 +141,7 @@ if __name__ == "__main__":
                         c = round(d['certainty'], 2)
                     s = -round(d['score'], 2)
 
-                    a = round((n_out.area() - n.area()) / float(n.area()), 2)
+                    a = round(old_div((n_out.area() - n.area()), float(n.area())), 2)
                     a = str(copysign(1, a) + a) + 'x'
                     print("\t%0.2f \t%0.2f\t %s" % (s, c, a))
 

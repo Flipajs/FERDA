@@ -1,4 +1,7 @@
 from __future__ import print_function
+from __future__ import unicode_literals
+from builtins import str
+from builtins import range
 import numpy as np
 import sys, os, re, random
 import h5py
@@ -45,7 +48,7 @@ if __name__ == '__main__':
         print(e)
 
 
-    for i in tqdm.tqdm(range(200)):
+    for i in tqdm.tqdm(list(range(200))):
         frame = random.randint(0, vm.total_frame_count()-1)
 
         for r in p.gm.regions_in_t(frame):

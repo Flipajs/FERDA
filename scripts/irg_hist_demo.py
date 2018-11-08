@@ -1,4 +1,13 @@
 from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
+from future import standard_library
+standard_library.install_aliases()
+from builtins import zip
+from builtins import str
+from builtins import range
+from builtins import object
+from past.utils import old_div
 __author__ = 'flipajs'
 
 from utils.video_manager import VideoManager
@@ -21,12 +30,12 @@ import scipy
 from PyQt4 import QtGui, QtCore
 import sys
 from gui.arena.arena_editor import ArenaEditor
-import cPickle as pickle
+import pickle as pickle
 import time
 from scipy import ndimage
 
 
-class ColorHist3d():
+class ColorHist3d(object):
     def __init__(self, im, num_colors, num_bins1=32, num_bins2=32, num_bins3=32, theta=0.1, epsilon=0.3):
         self.theta = theta
         self.epsilon = epsilon
@@ -42,7 +51,7 @@ class ColorHist3d():
         self.num_colors = num_colors
         self.BG = num_colors
 
-        pos = np.asarray(im / self.num_bins_v, dtype=np.int)
+        pos = np.asarray(old_div(im, self.num_bins_v), dtype=np.int)
 
         # num_colors + 1 for background
         self.hist_ = np.zeros((self.num_bins1, self.num_bins2, self.num_bins3, num_colors + 1), dtype=np.int)
@@ -56,7 +65,7 @@ class ColorHist3d():
                 self.hist_[p[0], p[1], p[2], self.BG] += 1
 
     def swap_bg2color(self, pxs, color_id):
-        pos = np.asarray(pxs / self.num_bins_v, dtype=np.int)
+        pos = np.asarray(old_div(pxs, self.num_bins_v), dtype=np.int)
         for i in range(pxs.shape[0]):
             p = pos[i, :]
 
@@ -66,7 +75,7 @@ class ColorHist3d():
             self.hist_[p[0], p[1], p[2], color_id] += 1
 
     def remove_bg(self, pxs):
-        pos = np.asarray(pxs / self.num_bins_v, dtype=np.int)
+        pos = np.asarray(old_div(pxs, self.num_bins_v), dtype=np.int)
         for i in range(pxs.shape[0]):
             p = pos[i, :]
 
@@ -74,7 +83,7 @@ class ColorHist3d():
                 self.hist_[p[0], p[1], p[2], self.BG] -= 1
 
     def add_color(self, pxs, color_id):
-        pos = np.asarray(pxs / self.num_bins_v, dtype=np.int)
+        pos = np.asarray(old_div(pxs, self.num_bins_v), dtype=np.int)
         for i in range(pxs.shape[0]):
             p = pos[i, :]
 
@@ -87,14 +96,14 @@ class ColorHist3d():
                     num_bg = self.hist_bg_[i, j, k]
                     num_fg = self.hist_fg_[i, j, k]
                     if num_bg + num_fg > 0:
-                        self.p_fg_[i, j, k] = num_fg / float(num_bg + num_fg)
+                        self.p_fg_[i, j, k] = old_div(num_fg, float(num_bg + num_fg))
                         print(i, j, k, self.p_fg_[i, j, k])
 
     def get_p_k_x(self, k, x):
         a = self.hist_[x[0], x[1], x[2], k]
         n = np.sum(self.hist_[x[0], x[1], x[2], :])
 
-        return a / float(n)
+        return old_div(a, float(n))
 
     def get_p_x_k(self, x, k):
         a = self.hist_[x[0], x[1], x[2], k]
@@ -103,7 +112,7 @@ class ColorHist3d():
 
         n = np.sum(self.hist_[:, :, :, k])
 
-        return a / float(n)
+        return old_div(a, float(n))
 
     def assign_labels(self):
         for c_id in range(self.num_colors):
@@ -137,11 +146,11 @@ def irgb_transformation(im):
     irgb = np.zeros((im.shape[0], im.shape[1], 4), dtype=np.double)
 
     irgb[:, :, 0] = np.sum(im, axis=2) + 1
-    irgb[:, :, 1] = im[:, :, 0] / irgb[:, :, 0]
-    irgb[:, :, 2] = im[:, :, 1] / irgb[:, :, 0]
-    irgb[:, :, 3] = im[:, :, 2] / irgb[:, :, 0]
+    irgb[:, :, 1] = old_div(im[:, :, 0], irgb[:, :, 0])
+    irgb[:, :, 2] = old_div(im[:, :, 1], irgb[:, :, 0])
+    irgb[:, :, 3] = old_div(im[:, :, 2], irgb[:, :, 0])
 
-    irgb[:, :, 0] = irgb[:, :, 0] / I_NORM
+    irgb[:, :, 0] = old_div(irgb[:, :, 0], I_NORM)
 
     return irgb
 
@@ -163,9 +172,9 @@ def show_all_pixels_in_same_bin(y, x, fig=2, tolerance=0):
         irg = np.asarray(irg * 255, dtype=np.uint8)
         im_ = irg
 
-    my_pos = np.round(im_[y, x, :] / num_bins_v)
+    my_pos = np.round(old_div(im_[y, x, :], num_bins_v))
 
-    pos = np.round(im_ / num_bins_v)
+    pos = np.round(old_div(im_, num_bins_v))
     a_ = np.abs(pos[:, :, 0] - my_pos[0]) <= tolerance
     b_ = np.abs(pos[:, :, 1] - my_pos[1]) <= tolerance
     c_ = np.abs(pos[:, :, 2] - my_pos[2]) <= tolerance
@@ -207,7 +216,7 @@ def get_ccs(im, bg=0, min_a=1, max_a=5000):
 
     labeled, num = skimage.measure.label(im, background=bg, return_num=True)
 
-    sizes = ndimage.sum(np.ones((im.shape[0], im.shape[1])), labeled, range(1, num + 1))
+    sizes = ndimage.sum(np.ones((im.shape[0], im.shape[1])), labeled, list(range(1, num + 1)))
 
     ccs = []
     for i in range(num):
@@ -224,7 +233,7 @@ def get_mean_around(data, c):
     color += np.array(data[c[0] + 1, c[1]])
     color += np.array(data[c[0], c[1] + 1])
 
-    return np.asarray(color / 5.0, dtype=np.uint8)
+    return np.asarray(old_div(color, 5.0), dtype=np.uint8)
 
 
 def find_dist_thresholds(ccs, data, orig_img=None):
@@ -274,7 +283,7 @@ def show_foreground(CH3d, data, im):
     #           [0, 255, 57], [0, 189, 255], [255, 255, 0],
     #           [255, 107, 151], [0, 0, 0]]
 
-    pos = np.asarray(data / num_bins_v, dtype=np.int)
+    pos = np.asarray(old_div(data, num_bins_v), dtype=np.int)
 
     s = time.time()
 
@@ -305,9 +314,9 @@ def get_irg_255(im):
     # irg[:, :, 0] = irg[:, :, 0] ** 0.5
 
     irg_255 = np.zeros(irg.shape)
-    irg_255[:, :, 0] = irg[:, :, 0] / np.max(irg[:, :, 0])
-    irg_255[:, :, 1] = irg[:, :, 1] / np.max(irg[:, :, 1])
-    irg_255[:, :, 2] = irg[:, :, 2] / np.max(irg[:, :, 2])
+    irg_255[:, :, 0] = old_div(irg[:, :, 0], np.max(irg[:, :, 0]))
+    irg_255[:, :, 1] = old_div(irg[:, :, 1], np.max(irg[:, :, 1]))
+    irg_255[:, :, 2] = old_div(irg[:, :, 2], np.max(irg[:, :, 2]))
     irg_255 = np.asarray(irg_255 * 255, dtype=np.uint8)
 
     return irg_255
@@ -434,7 +443,7 @@ if __name__ == "__main__":
             CH3d = ColorHist3d(irg_255.copy(), 6, num_bins1=NUM_BINS1, num_bins2=NUM_BINS2, num_bins3=NUM_BINS3,
                                theta=0.3, epsilon=0.9)
 
-            for (picked_pxs, all_pxs), c_id in zip(color_samples, range(len(color_samples))):
+            for (picked_pxs, all_pxs), c_id in zip(color_samples, list(range(len(color_samples)))):
                 CH3d.remove_bg(all_pxs)
                 CH3d.add_color(picked_pxs, c_id)
 

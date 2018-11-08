@@ -1,6 +1,10 @@
+from __future__ import unicode_literals
+from future import standard_library
+standard_library.install_aliases()
+from builtins import range
 from core.project.project import Project
 from utils.video_manager import get_auto_video_manager
-import cPickle as pickle
+import pickle as pickle
 
 wd1 = '/Users/flipajs/Documents/wd/FERDA/Cam1_playground'
 wd2 = '/Users/flipajs/Documents/wd/FERDA/Camera3'

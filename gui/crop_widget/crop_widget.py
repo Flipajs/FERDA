@@ -1,3 +1,9 @@
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import zip
+from builtins import next
+from builtins import range
+from past.utils import old_div
 import threading
 from PyQt4 import QtGui, QtCore
 import cv2, sys
@@ -149,8 +155,8 @@ class CropWidget(QtGui.QWidget):
         # TODO: solve scale
         scales = ft.getImageScales()
         scs_ = []
-        for kp, i in zip(keypoints, range(len(keypoints))):
-            s_ = ft.getKeypointStrokes(i) * (1.0 / scales[kp[2]])
+        for kp, i in zip(keypoints, list(range(len(keypoints)))):
+            s_ = ft.getKeypointStrokes(i) * (old_div(1.0, scales[kp[2]]))
             scs_.append(kp[2])
             strokes.append(s_)
 
@@ -170,7 +176,7 @@ class CropWidget(QtGui.QWidget):
                     cv2.circle(img, (int(scale_factor * (pt[0] - border)), int(scale_factor * (pt[1]-border))), sizes_[i], c, -1)
 
         border = 700
-        img = get_safe_selection(img, scale_factor*region.centroid()[0] - border/2, scale_factor* region.centroid()[1] - border/2, border, border)
+        img = get_safe_selection(img, scale_factor*region.centroid()[0] - old_div(border,2), scale_factor* region.centroid()[1] - old_div(border,2), border, border)
 
         pixmap = cvimg2qtpixmap(img)
         return pixmap
@@ -213,7 +219,7 @@ if __name__ == '__main__':
     minCompSize = 4
     process_color = 0
     segmDeltaInt = 1
-    min_tupple_top_bottom_angle = math.pi / 2
+    min_tupple_top_bottom_angle = old_div(math.pi, 2)
     maxSpaceHeightRatio = -1
     createKeypointSegmenter = 1
 

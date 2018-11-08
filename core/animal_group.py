@@ -1,6 +1,8 @@
+from __future__ import unicode_literals
+from builtins import object
 __author__ = 'fnaiser'
 
-class AnimalGroup():
+class AnimalGroup(object):
     """
     Animal group is based on "functionality"... example infected, healthy, males, females...
     """

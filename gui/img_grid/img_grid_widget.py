@@ -1,3 +1,7 @@
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import range
+from past.utils import old_div
 from PyQt4 import QtGui
 from gui.gui_utils import SelectableQLabel
 
@@ -48,7 +52,7 @@ class ImgGridWidget(QtGui.QWidget):
         grid2 = QtGui.QGridLayout()
 
         for i, item in enumerate(self.items):
-            row = i / cols
+            row = old_div(i, cols)
             col = i % cols
             grid2.addWidget(self._widget(item), row, col)
 
@@ -70,7 +74,7 @@ class ImgGridWidget(QtGui.QWidget):
         if append:
             self.items.append(item)
 
-        row = self.id / self.cols
+        row = old_div(self.id, self.cols)
         col = self.id % self.cols
 
         self.grid.addWidget(self._widget(self.items[self.id]), row, col)
@@ -93,7 +97,7 @@ class ImgGridWidget(QtGui.QWidget):
 
     def redraw(self):
         # remove all widgets
-        for i in reversed(range(self.grid.count())):
+        for i in reversed(list(range(self.grid.count()))):
             widget_to_remove = self.grid.itemAt(i).widget()
             # remove it from the layout list
             self.grid.removeWidget(widget_to_remove)

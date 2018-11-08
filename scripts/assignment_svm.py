@@ -1,5 +1,9 @@
 from __future__ import print_function
 from __future__ import absolute_import
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import range
+from past.utils import old_div
 __author__ = 'fnaiser'
 
 import pickle
@@ -44,7 +48,7 @@ def get_t_diff(r1, r2):
 
     t_ = max(t1, t2) - min(t1, t2)
 
-    if t_ > np.pi/2:
+    if t_ > old_div(np.pi,2):
         t_ = np.pi - t_
 
     return t_
@@ -212,7 +216,7 @@ if __name__ == '__main__':
     cv2.imshow('r1', np.asarray(draw_points_crop_binary(r1.pts()) * 255, dtype=np.uint8))
     cv2.imshow('r2', np.asarray(draw_points_crop_binary(r2.pts()) * 255, dtype=np.uint8))
 
-    th = np.pi/2
+    th = old_div(np.pi,2)
     pts2_ = r2.pts()
     pts2_ -= r2.centroid()
     rot = np.array([[cos(th), -sin(th)],[sin(th), cos(th)]])
@@ -225,7 +229,7 @@ if __name__ == '__main__':
 
     x1 = get_x(r1, r2, np.array([0, 0]))
 
-    r2.theta_ += np.pi/2
+    r2.theta_ += old_div(np.pi,2)
     x2 = get_x(r1, r2, np.array([0, 0]))
 
     p = svm_model.predict_proba([x1, x2])

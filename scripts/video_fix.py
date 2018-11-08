@@ -1,5 +1,9 @@
 from __future__ import print_function
 from __future__ import absolute_import
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import str
+from past.utils import old_div
 __author__ = 'filip@naiser.cz'
 
 import cv2
@@ -78,7 +82,7 @@ while True:
     f, img = capture.read()
 
     if frame % 10 == 0:
-        s = "%.2f" % ((frame/frames) * 100) + " %"
+        s = "%.2f" % ((old_div(frame,frames)) * 100) + " %"
         print('Processing: {0}\r'.format(s), end=' ')
         # print frame, "%.2f" % ((frame/frames) * 100) + " % \r"
 

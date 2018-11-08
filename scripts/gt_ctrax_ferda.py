@@ -1,4 +1,8 @@
 from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import range
+from past.utils import old_div
 from utils import video_manager
 
 __author__ = 'filip@naiser.cz'
@@ -99,10 +103,10 @@ med_speed = [0] * a_num
 avg_speed100 = [0] * a_num
 avg_speed200 = [0] * a_num
 for i in range(a_num):
-    avg_speed[i] = sum(speed[i]) / float(frames-1)
+    avg_speed[i] = old_div(sum(speed[i]), float(frames-1))
     avg_speed[i] = np.median(speed[i])
-    avg_speed100[i] = sum(speed[i][0:100]) / float(100)
-    avg_speed200[i] = sum(speed[i][100:200]) / float(100)
+    avg_speed100[i] = old_div(sum(speed[i][0:100]), float(100))
+    avg_speed200[i] = old_div(sum(speed[i][100:200]), float(100))
 
 print(avg_speed)
 print(med_speed)

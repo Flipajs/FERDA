@@ -16,6 +16,11 @@ Gets to 97.2% test accuracy after 20 epochs.
 '''
 from __future__ import absolute_import
 from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import next
+from builtins import object
+from past.utils import old_div
 import numpy as np
 
 import random
@@ -489,7 +494,7 @@ class DataGenerator(object):
                                             ).flow(self.tr_pairs_1, self.tr_y, batch_size=batch_sz, shuffle=False)
 
         self.batch_sz = batch_sz
-        self.samples_per_train = (self.tr_pairs.shape[0]/self.batch_sz)
+        self.samples_per_train = (old_div(self.tr_pairs.shape[0],self.batch_sz))
 
         self.cur_train_index=0
         self.cur_val_index=0

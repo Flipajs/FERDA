@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+from __future__ import unicode_literals
 import logging, time
 from utils import get_logger, init_logging
 from . import module_one as one

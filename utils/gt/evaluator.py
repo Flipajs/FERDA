@@ -1,11 +1,17 @@
 from __future__ import print_function
 from __future__ import absolute_import
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import str
+from builtins import range
+from builtins import object
+from past.utils import old_div
 from .gt import GT
 from utils.clearmetrics.clearmetrics import ClearMetrics
 import numpy as np
 
 
-class Evaluator:
+class Evaluator(object):
     def __init__(self, config, gt):
         self.__config = config
         self._gt = gt
@@ -20,7 +26,7 @@ class Evaluator:
         t_id_map = {}
 
         max_f = 0
-        for frame, it in match.iteritems():
+        for frame, it in match.items():
             max_f = max(max_f, frame)
             for id_, t_id in enumerate(it):
                 if t_id not in t_id_map:
@@ -73,10 +79,10 @@ class Evaluator:
                     #
                     #         mistakes[t.id()] = gts
 
-        print("total correct coverage: {:.2%}".format(single_len / float(len(project.animals) * max_f)))
-        print("single correct coverage: {:.2%}".format(single_len / float(single_gt_len)))
-        print("total mistakes coverage: {:.2%}".format(mistakes_len / float(len(project.animals) * max_f)))
-        print("single mistakes coverage: {:.2%}".format(mistakes_len / float(single_gt_len)))
+        print("total correct coverage: {:.2%}".format(old_div(single_len, float(len(project.animals) * max_f))))
+        print("single correct coverage: {:.2%}".format(old_div(single_len, float(single_gt_len))))
+        print("total mistakes coverage: {:.2%}".format(old_div(mistakes_len, float(len(project.animals) * max_f))))
+        print("single mistakes coverage: {:.2%}".format(old_div(mistakes_len, float(single_gt_len))))
 
     # def eval_ids_from_match(self, project, match, perm, frames=None, max_d=5, verbose=0):
     #     # print "evaluation in progress..."
@@ -141,7 +147,7 @@ class Evaluator:
 
     def eval_ids_from_match(self, project, match, perm, frames=None, max_d=5, verbose=0):
         # print "evaluation in progress..."
-        max_f = max(match.iterkeys())
+        max_f = max(match.keys())
 
         single_gt_len = 0
         single_len = 0
@@ -153,7 +159,7 @@ class Evaluator:
 
         gts = perm
         frame = 0
-        for it in match.itervalues():
+        for it in match.values():
             not_m = False
             for i, tracklet_id in enumerate(it):
                 val = None
@@ -191,8 +197,8 @@ class Evaluator:
         for t in mistaken_tracklets:
             print(t)
 
-        c_coverage = single_len / float(len(project.animals) * max_f)
-        m_coverage = mistakes_len / float(len(project.animals) * max_f)
+        c_coverage = old_div(single_len, float(len(project.animals) * max_f))
+        m_coverage = old_div(mistakes_len, float(len(project.animals) * max_f))
         # print "correct pose: {:.2%}".format(c_coverage)
         # # print "single correct coverage: {:.2%} ({})".format(single_len/float(single_gt_len), single_len)
         # print "wrong pose: {:.2%}".format(m_coverage)
@@ -346,11 +352,11 @@ def draw_id_t_img(p, matches, perms, name=None, col_w=1, gt_h=5, gt_border=1, ro
                 gt_color = colors_[id_]
 
         if num_trackers == 2:
-            y = id_ * row_h * num_trackers + row_h / 2
+            y = id_ * row_h * num_trackers + old_div(row_h, 2)
         else:
             y = id_ * row_h * num_trackers
 
-        yy = y + ((row_h - gt_h) / 2)
+        yy = y + (old_div((row_h - gt_h), 2))
         yy2 = yy + gt_h
         # black margin
         im[yy - gt_border:yy, :, :] = [0, 0, 0]
@@ -376,11 +382,11 @@ def draw_id_t_img(p, matches, perms, name=None, col_w=1, gt_h=5, gt_border=1, ro
 
     h_ = num_trackers * row_h
     fsize = 6
-    ax.set_yticks((np.arange(num_objects) * h_) + h_ / 2 - 2)
+    ax.set_yticks((np.arange(num_objects) * h_) + old_div(h_, 2) - 2)
     # starting from 1
-    ax.set_yticklabels(range(1, num_objects + 1), fontsize=fsize)
+    ax.set_yticklabels(list(range(1, num_objects + 1)), fontsize=fsize)
 
-    xt = np.array(range(0, num_frames, 1000))
+    xt = np.array(list(range(0, num_frames, 1000)))
     ax.set_xticks(xt)
     ax.set_xticklabels(xt, fontsize=fsize)
     # plt.xlabel('frame', fontsize=fsize)
@@ -404,7 +410,7 @@ def eval_centroids(p, gt, match=None):
     if match is None:
         # TODO: max_d is an important parameter. Document it and put it into GUI!
         # match = gt.match_on_data(p, data_centroids=data, match_on='centroids', max_d=25, frames=range(len(data)))
-        match = gt.match_on_data(p, match_on='tracklets', max_d=5, frames=range(len(data)))
+        match = gt.match_on_data(p, match_on='tracklets', max_d=5, frames=list(range(len(data))))
 
     # freq = np.zeros((len(p.animals), len(p.animals)), dtype=np.int)
     # for it in match.itervalues():
@@ -444,9 +450,9 @@ def compare_trackers(p, idtracker_path=None, impath=None, name=None, skip_idtrac
         data[:, :, 0], data[:, :, 1] = data[:, :, 1].copy(), data[:, :, 0].copy()
 
         # idTracker
-        match = gt.match_on_data(p, data_centroids=data, match_on='centroids', max_d=25, frames=range(len(data)))
+        match = gt.match_on_data(p, data_centroids=data, match_on='centroids', max_d=25, frames=list(range(len(data))))
         freq = np.zeros((len(p.animals), len(p.animals)), dtype=np.int)
-        for it in match.itervalues():
+        for it in match.values():
             for i, val in enumerate(it):
                 freq[i][val] += 1
 
@@ -530,7 +536,7 @@ def evaluate_project(project_path, gt_path):
     best_cs_score = 0
 
     for cs in project.chm.complete_set_gen(project):
-        cs = filter(lambda x: x.is_id_decided(), cs)
+        cs = [x for x in cs if x.is_id_decided()]
         if len(cs) == num_animals:
             cs_score = 0
             frame = 0

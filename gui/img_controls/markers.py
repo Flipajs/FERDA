@@ -1,3 +1,6 @@
+from __future__ import division
+from __future__ import unicode_literals
+from past.utils import old_div
 from PyQt4 import QtCore, QtGui
 
 import utils
@@ -24,7 +27,7 @@ class BaseMarker(QtGui.QGraphicsEllipseItem, object):
         self.changeHandler = changeHandler
         self.recently_changed = False
 
-        darkness = 1-(0.299*color.red() + 0.587*color.green() + 0.114*color.blue())/255
+        darkness = 1-old_div((0.299*color.red() + 0.587*color.green() + 0.114*color.blue()),255)
         if darkness > 0.5:
             pen = QtGui.QPen(QtGui.QColor(0xFF, 0xFF, 0xFF, 0xFF))
         else:
@@ -34,7 +37,7 @@ class BaseMarker(QtGui.QGraphicsEllipseItem, object):
         self.setPen(pen)
 
         dotsize = float(2)
-        self.dot = QtGui.QGraphicsEllipseItem(self.rect().center().x() - dotsize/2, self.rect().center().y() - dotsize/2, dotsize, dotsize, self)
+        self.dot = QtGui.QGraphicsEllipseItem(self.rect().center().x() - old_div(dotsize,2), self.rect().center().y() - old_div(dotsize,2), dotsize, dotsize, self)
         self.dot.setBrush(brush)
         # self.dot.setPen(pen)
         self.dot.setFlag(QtGui.QGraphicsItem.ItemIgnoresParentOpacity, True)
@@ -60,10 +63,10 @@ class BaseMarker(QtGui.QGraphicsEllipseItem, object):
         return super(BaseMarker, self).itemChange(change, value)
 
     def centerPos(self):
-        return QtCore.QPointF(self.pos().x() + self.rect().width()/2, self.pos().y() + self.rect().height()/2)
+        return QtCore.QPointF(self.pos().x() + old_div(self.rect().width(),2), self.pos().y() + old_div(self.rect().height(),2))
 
     def setCenterPos(self, x, y):
-        self.setPos(x - self.rect().width()/2, y - self.rect().height()/2)
+        self.setPos(x - old_div(self.rect().width(),2), y - old_div(self.rect().height(),2))
 
 
 class CenterMarker(BaseMarker):
@@ -132,8 +135,8 @@ class HeadMarker(TailHeadMarker):
 
         r, g, b = utils.visualization_utils.get_contrast_color(color.red(), color.green(), color.blue())
 
-        dotsize = float(size)/2
-        self.head_circle = QtGui.QGraphicsEllipseItem(self.rect().center().x() - dotsize/2, self.rect().center().y() - dotsize/2, dotsize, dotsize, self)
+        dotsize = old_div(float(size),2)
+        self.head_circle = QtGui.QGraphicsEllipseItem(self.rect().center().x() - old_div(dotsize,2), self.rect().center().y() - old_div(dotsize,2), dotsize, dotsize, self)
         brush = QtGui.QBrush(QtCore.Qt.SolidPattern)
         brush.setColor(QtGui.QColor(r, g, b))
         self.head_circle.setBrush(brush)

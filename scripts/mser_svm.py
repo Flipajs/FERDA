@@ -1,4 +1,9 @@
 from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import str
+from builtins import range
+from past.utils import old_div
 __author__ = 'fnaiser'
 
 from PyQt4 import QtCore, QtGui
@@ -119,11 +124,11 @@ def get_x(im_gray, m):
     intensities = im_gray[m.pts()[:, 0], m.pts()[:, 1]]
     min_i10 = np.percentile(intensities, perc)
 
-    return [m.margin_, cl/m.area()**0.5, min_i10]
+    return [m.margin_, old_div(cl,m.area()**0.5), min_i10]
 
 def get_x_minI(m):
     cl = len(get_contour(m.pts()))
-    return [m.margin_, cl/m.area()**0.5, m.min_intensity_]
+    return [m.margin_, old_div(cl,m.area()**0.5), m.min_intensity_]
 
 def get_svm_model():
     vid = get_auto_video_manager(vid_path)

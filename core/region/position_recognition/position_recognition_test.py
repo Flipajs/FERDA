@@ -1,4 +1,10 @@
 from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import zip
+from builtins import str
+from builtins import range
+from past.utils import old_div
 import numpy
 from numpy import transpose
 from core.project.project import Project
@@ -56,8 +62,8 @@ def find_closest_angle_pos(beam_angle, number_of_data):
     right = number_of_data - 1
     while left < right:
         #TODO - precision!
-        middle = int((left + right) / 2)
-        if abs(beam_angle - (middle * step)) <= (step / 2) + 0.000001:
+        middle = int(old_div((left + right), 2))
+        if abs(beam_angle - (middle * step)) <= (old_div(step, 2)) + 0.000001:
             return middle
         elif (middle * step) < beam_angle:
             left = middle + 1
@@ -75,7 +81,7 @@ def get_region_vector_curve(region, number_of_data):
     if size < number_of_data:
         print("Number of data should be smaller than contours length")
     curve_length = compute_contour_perimeter(contour)
-    step = curve_length / number_of_data - 1
+    step = old_div(curve_length, number_of_data) - 1
     result = []
     current = 0
     length = 0
@@ -107,7 +113,7 @@ def get_region_vector_curve(region, number_of_data):
 
 
 def get_interpolation_curve(distance_a, distance_b, length_a, length_b):
-    return (distance_a * length_a + distance_b * length_b) / (length_a + length_b)
+    return old_div((distance_a * length_a + distance_b * length_b), (length_a + length_b))
 
 def compute_contour_perimeter(contour):
     length = len(contour)
@@ -176,12 +182,12 @@ def get_region_vector_angle(region, number_of_data):
             results[i][1] = (step * i, 0)
 
     for i in range(number_of_data):
-        print (step * i * (180 / math.pi))
+        print (step * i * (old_div(180, math.pi)))
         print (results[i][0])
         print (results[i][1])
 
     results = [interpolation(h_l[0], l_h[0], h_l[1], l_h[1]) for h_l, l_h in results]
-    plt.scatter(range(100, number_of_data + 100), [results[x] for x in range(number_of_data)], c='r')
+    plt.scatter(list(range(100, number_of_data + 100)), [results[x] for x in range(number_of_data)], c='r')
 
     plt.hold(True)
     plt.axis('equal')
@@ -227,7 +233,7 @@ def interpolation(first_angle, sec_angle, first_dist, second_dist):
     if first_dist > second_dist:
         first_dist, second_dist = second_dist, first_dist
         first_angle, sec_angle = sec_angle, first_angle
-    return first_dist + ((second_dist - first_dist) / (2 * (first_angle / sec_angle)))
+    return first_dist + (old_div((second_dist - first_dist), (2 * (old_div(first_angle, sec_angle)))))
 
 
 if __name__ == '__main__':

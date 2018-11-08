@@ -1,4 +1,9 @@
+from __future__ import division
+from __future__ import unicode_literals
 # based on... https://chrisalbon.com/python/data_visualization/matplotlib_percentage_stacked_bar_plot/
+from builtins import zip
+from builtins import range
+from past.utils import old_div
 import pandas as pd
 import matplotlib.pyplot as plt
 #
@@ -38,11 +43,11 @@ f, ax = plt.subplots(1, figsize=(10,5))
 bar_width = 1
 
 # positions of the left bar-boundaries
-bar_l = range(len(df['correct']))
+bar_l = list(range(len(df['correct'])))
 
 from math import floor
 # positions of the x-axis ticks (center of the bars as bar labels)
-tick_pos = [i+(bar_width/2) + 0.2*(floor(i/2)) for i in bar_l]
+tick_pos = [i+(old_div(bar_width,2)) + 0.2*(floor(old_div(i,2))) for i in bar_l]
 
 # Create the total score for each participant
 totals = [i+j+k for i,j,k in zip(df['correct'], df['wrong'], df['unknown'])]

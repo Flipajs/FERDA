@@ -1,6 +1,8 @@
+from __future__ import unicode_literals
 
 
 
-class EvaluatorConfig:
+from builtins import object
+class EvaluatorConfig(object):
     def __init__(self):
         pass

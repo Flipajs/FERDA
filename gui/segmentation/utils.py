@@ -1,3 +1,6 @@
+from __future__ import division
+from __future__ import unicode_literals
+from past.utils import old_div
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
@@ -31,7 +34,7 @@ def get_avg(image):
     img = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         
     img_sum = shift_up + shift_down + shift_left + shift_right + img
-    avg = img_sum / 5
+    avg = old_div(img_sum, 5)
     return avg
 
 

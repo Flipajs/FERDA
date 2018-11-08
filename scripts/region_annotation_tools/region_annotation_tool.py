@@ -1,4 +1,6 @@
 from __future__ import absolute_import
+from __future__ import unicode_literals
+from builtins import object
 import sys
 import logging
 from PyQt4 import QtGui

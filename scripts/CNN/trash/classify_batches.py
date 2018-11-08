@@ -1,4 +1,6 @@
 from __future__ import print_function
+from __future__ import unicode_literals
+from builtins import range
 import sys, os, re, random
 from scipy import misc
 import tqdm

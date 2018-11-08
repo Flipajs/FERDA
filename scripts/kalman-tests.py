@@ -1,4 +1,5 @@
 from __future__ import print_function
+from __future__ import unicode_literals
 from pykalman import KalmanFilter
 from core.project.project import Project
 from core.graph.region_chunk import RegionChunk

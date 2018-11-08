@@ -1,5 +1,8 @@
+from __future__ import unicode_literals
+from future import standard_library
+standard_library.install_aliases()
 import sys
-import cPickle as pickle
+import pickle as pickle
 import random
 from PyQt4 import QtGui
 

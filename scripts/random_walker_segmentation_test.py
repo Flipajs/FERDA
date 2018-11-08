@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 from core.project.project import Project
 from core.graph.region_chunk import RegionChunk
 import numpy as np

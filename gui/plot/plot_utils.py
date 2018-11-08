@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 __author__ = 'flipajs'
 
 import numpy as np

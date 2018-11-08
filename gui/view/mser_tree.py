@@ -1,4 +1,8 @@
 from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import range
+from past.utils import old_div
 __author__ = 'flipajs'
 
 import sys
@@ -142,14 +146,14 @@ class MSERTree(QtGui.QWidget):
 
             # move the view so that the first point is there
             if center_pt.x() > item.x():
-                new_x = item.x() + self.view.width()/2
+                new_x = item.x() + old_div(self.view.width(),2)
             else:
-                new_x = item.x() - self.view.width()/2 + item.pixmap().width()
+                new_x = item.x() - old_div(self.view.width(),2) + item.pixmap().width()
 
             if center_pt.y() > item.y():
-                new_y = item.y() + self.view.height()/2
+                new_y = item.y() + old_div(self.view.height(),2)
             else:
-                new_y = item.y() - self.view.height()/2 + item.pixmap().height()
+                new_y = item.y() - old_div(self.view.height(),2) + item.pixmap().height()
 
             text = QtCore.QString("x")
             text_item = QtGui.QGraphicsSimpleTextItem(text, scene=self.scene)

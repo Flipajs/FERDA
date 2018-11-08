@@ -8,6 +8,13 @@ Multi object tracking results and ground truth
 For more help run this file as a script with --help parameter.
 """
 from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import next
+from builtins import zip
+from builtins import str
+from builtins import range
+from past.utils import old_div
 import pandas as pd
 import errno
 import numpy as np
@@ -157,7 +164,7 @@ def visualize_mot(video_file, out_video_file, df_mots, names=None,
         :return:
         """
         if id_to_gt is None:
-            id_to_gt = range(len(markers))  # identity mapping
+            id_to_gt = list(range(len(markers)))  # identity mapping
         img = img.copy()
         frame = next(counter)
         if frame + 1 in df.index.levels[0]:
@@ -167,7 +174,7 @@ def visualize_mot(video_file, out_video_file, df_mots, names=None,
                     img = blit(marker['img'], img, (int(row.x) - marker_pos[0], int(row.y) - marker_pos[1]),
                          mask=marker['mask'])
         if name is not None:
-            cv2.putText(img, name, (img.shape[1] / 2, 60), cv2.FONT_HERSHEY_PLAIN, 3, (255, 255, 255), 3)
+            cv2.putText(img, name, (old_div(img.shape[1], 2), 60), cv2.FONT_HERSHEY_PLAIN, 3, (255, 255, 255), 3)
         cv2.putText(img, str(frame), (30, 30), cv2.FONT_HERSHEY_PLAIN, 1, (255, 255, 255))
         return img
 
@@ -176,7 +183,7 @@ def visualize_mot(video_file, out_video_file, df_mots, names=None,
         Draw multiple trackers data on a frame.
         """
         if id_to_gt is None:
-            id_to_gt = range(len(markers))  # identity mapping
+            id_to_gt = list(range(len(markers)))  # identity mapping
         frame = next(counter)
         for i, df in enumerate(df_mots):
             for _, row in df[df.frame - 1 == frame].iterrows():
@@ -199,12 +206,12 @@ def visualize_mot(video_file, out_video_file, df_mots, names=None,
         :return: newsize suitable for moviepy.video.fx.all.resize
         """
         wh = np.array(wh, dtype=float)
-        size_ratio = wh / max_wh
+        size_ratio = old_div(wh, max_wh)
         if np.count_nonzero(size_ratio > 1) == 0:
             newsize = None  # keep original size
         else:
             # rescale according to most exceeding dimension to fit into max_wh
-            newsize = 1. / size_ratio.max()
+            newsize = old_div(1., size_ratio.max())
             assert np.all(wh * newsize <= max_wh)
         return newsize
 
@@ -249,12 +256,12 @@ def visualize_mot(video_file, out_video_file, df_mots, names=None,
         ii, jj = scipy.optimize.linear_sum_assignment(distance_matrix)
         if np.count_nonzero(distance_matrix[ii, jj] > 10):
             warnings.warn('large distance beween detection and gt ' + str(distance_matrix[ii, jj]))
-        id_to_gt = dict(zip(ids, jj))
+        id_to_gt = dict(list(zip(ids, jj)))
         # add identity mappings for ids not present in the selected frame
         all_ids = df.index.get_level_values(1).unique()
         if len(ids) < len(all_ids):
             ids_without_gt_match = set(all_ids) - set(ids)
-            id_to_gt.update(zip(ids_without_gt_match, ids_without_gt_match))  # add identity mapping
+            id_to_gt.update(list(zip(ids_without_gt_match, ids_without_gt_match)))  # add identity mapping
         return id_to_gt
 
     MONTAGE_GRID_WH = [(0, 0), (1, 1), (2, 1), (3, 1), (2, 2), (5, 1), (3, 2)]  # montage grid sizes for 0-6 number of images
@@ -416,7 +423,7 @@ def results_to_mot(results):
     objs = []
     for i in range(results.shape[1]):
         df = pd.DataFrame(results[:, i, ::-1], columns=['x', 'y'])
-        df['frame'] = range(1, results.shape[0] + 1)
+        df['frame'] = list(range(1, results.shape[0] + 1))
         df = df[~(df.x.isna() | df.y.isna())]
         df['id'] = i + 1
         df = df[['frame', 'id', 'x', 'y']]

@@ -1,7 +1,9 @@
+from __future__ import unicode_literals
+from builtins import object
 __author__ = 'flipajs'
 
 
-class TWeights:
+class TWeights(object):
     def __init__(self):
         self.nodes = []
         self.capacities_source = []
@@ -24,7 +26,7 @@ class TWeights:
     def sink_edges_sum(self):
         return sum(self.capacities_sink)
 
-class Edges:
+class Edges(object):
     def __init__(self):
         self.n1 = []
         self.n2 = []

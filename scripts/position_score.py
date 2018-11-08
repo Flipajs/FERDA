@@ -1,4 +1,8 @@
 from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import range
+from past.utils import old_div
 __author__ = 'fnaiser'
 
 import numpy as np
@@ -61,15 +65,15 @@ if __name__ == '__main__':
 
         print("no deformation")
     else:
-        w = v*(MAX_SPEED / v_size)
+        w = v*(old_div(MAX_SPEED, v_size))
         a = M + w
 
-        q = (MAX_SPEED - v_size) / v_size
+        q = old_div((MAX_SPEED - v_size), v_size)
         b = M + np.array([-q*v[1], q*v[0]])
         c = M - q*v
         d = M + np.array([q*v[1], -q*v[0]])
 
-        std = MAX_SPEED / 3
+        std = old_div(MAX_SPEED, 3)
         a_ = [std, 0]
         b_ = [0, std]
         c_ = [-std, 0]

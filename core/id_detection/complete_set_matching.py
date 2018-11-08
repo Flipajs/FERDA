@@ -1,5 +1,13 @@
 from __future__ import print_function
 from __future__ import absolute_import
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import zip
+from builtins import map
+from builtins import str
+from builtins import range
+from builtins import object
+from past.utils import old_div
 import random
 import matplotlib.pyplot as plt
 import numpy as np
@@ -14,7 +22,7 @@ from core.region.ellipse import Ellipse
 logger = logging.getLogger(__name__)
 
 
-class CompleteSetMatching:
+class CompleteSetMatching(object):
     def __init__(self, project, lp, descriptors, quality_threshold=0.1, quality_threshold2=0.01, tracks={},
                  tracklets_2_tracks={}, prototypes={}):
         self.prototype_distance_threshold = np.inf # ignore
@@ -88,7 +96,7 @@ class CompleteSetMatching:
                 pass
 
         # update N sets for unassigned tracklets in relations to best_CS track ids
-        for tracklet, track_id in self.tracklets_2_tracks.iteritems():
+        for tracklet, track_id in self.tracklets_2_tracks.items():
             self.add_to_N_set(track_id, tracklet)
 
         # go through tracklets, find biggest set and do matching..
@@ -177,7 +185,7 @@ class CompleteSetMatching:
                 perm.append((best_set[rid], best_CS[cid]))
 
             x_ = 1 - P[row_ind, col_ind]
-            quality = (x_.min(), x_.sum() / float(len(x_)))
+            quality = (x_.min(), old_div(x_.sum(), float(len(x_))))
 
             # np.set_printoptions(precision=3)
             # print P
@@ -273,7 +281,7 @@ class CompleteSetMatching:
         # for id_, mean in tracks_mean_desc.iteritems():
         #     mean_ds.append(mean/float(support[id]))
 
-        logger.debug("track ids order: {}, length: {}".format(list(tracks_mean_desc.iterkeys()), len(tracks)))
+        logger.debug("track ids order: {}, length: {}".format(list(tracks_mean_desc.keys()), len(tracks)))
         # from scipy.spatial.distance import pdist, squareform
         # plt.imshow(squareform(pdist(mean_ds)), interpolation='nearest')
         # plt.show()
@@ -305,7 +313,7 @@ class CompleteSetMatching:
     def find_biggest_undecided_tracklet_set(self, t):
         all_intersecting_t = list(self.p.chm.singleid_tracklets_intersecting_t_gen(t, self.p.gm))
         # skip already decided...
-        all_intersecting_t = filter(lambda x: len(x.P) == 0, all_intersecting_t)
+        all_intersecting_t = [x for x in all_intersecting_t if len(x.P) == 0]
         t_start = t.start_frame(self.p.gm)
         t_end = t.end_frame(self.p.gm)
         #       for simplicity - find frame with biggest # of intersecting undecided tracklets
@@ -328,7 +336,7 @@ class CompleteSetMatching:
         best_frame = -1
         best_val = 0
         best_score = 0
-        for frame, val in important_frames.iteritems():
+        for frame, val in important_frames.items():
             if val >= best_val:
                 if important_frames_score[frame] > best_score:
                     best_frame = frame
@@ -339,7 +347,7 @@ class CompleteSetMatching:
 
     def single_track_assignment(self, best_CS, prototypes, tracklets_2_tracks):
         # update N sets for unassigned tracklets in relations to best_CS track ids
-        for tracklet, track_id in tracklets_2_tracks.iteritems():
+        for tracklet, track_id in tracklets_2_tracks.items():
             self.add_to_N_set(track_id, tracklet)
         probabilities = {}
         decisioins = {}
@@ -419,7 +427,7 @@ class CompleteSetMatching:
             if prob > best_p:
                 best_p = prob
                 best_track = track_id
-        prob_vec = np.array(prob_vec) / np.sum(prob_vec)
+        prob_vec = old_div(np.array(prob_vec), np.sum(prob_vec))
         probs2.append(max(prob_vec))
         return best_p, best_track
 
@@ -442,7 +450,7 @@ class CompleteSetMatching:
             track_CSs[-1].append(track)
 
         qualities = []
-        for i in tqdm(range(len(CSs) - 1), desc='sequential matching'):
+        for i in tqdm(list(range(len(CSs) - 1)), desc='sequential matching'):
             logger.debug("CS {}, CS {}".format(i, i + 1))
 
             # done previously...
@@ -517,7 +525,7 @@ class CompleteSetMatching:
                 tracks_unassigned_len += len(t)
                 tracks_unassigned_num += 1
         num_prototypes = 0
-        for prots in self.prototypes.itervalues():
+        for prots in self.prototypes.values():
             num_prototypes += len(prots)
         logger.info("sequential CS matching done...")
         logger.debug("#tracks: {}, #tracklets2tracks: {}, unassigned #{} len: {}, #prototypes: {}".format(
@@ -692,7 +700,7 @@ class CompleteSetMatching:
 
             values.append(val)
 
-        values_i = reversed(sorted(range(len(values)), key=values.__getitem__))
+        values_i = reversed(sorted(list(range(len(values))), key=values.__getitem__))
         CS_sorted = []
         for i in values_i:
             logger.debug('%s, %s', str(track_CSs[i]), str(values[i]))
@@ -736,11 +744,11 @@ class CompleteSetMatching:
                 if len(group) == 0:
                     break
 
-                singles_group = filter(lambda x: x.is_single(), group)
+                singles_group = [x for x in group if x.is_single()]
 
                 if len(singles_group) == len(self.p.animals) and min([len(t) for t in singles_group]) >= 1:
                     # tracklets to tracks
-                    singles_group = map(lambda x: self.tracklets_2_tracks[x], singles_group)
+                    singles_group = [self.tracklets_2_tracks[x] for x in singles_group]
                     if len(CSs) == 0 or singles_group != CSs[-1]:
                         CSs.append(singles_group)
 
@@ -790,7 +798,7 @@ class CompleteSetMatching:
                 perm.append((cs1[rid], cs2[cid]))
 
             x_ = 1 - P[row_ind, col_ind]
-            quality = (x_.min(), x_.sum() / float(len(x_)))
+            quality = (x_.min(), old_div(x_.sum(), float(len(x_))))
 
         for t in cs_shared:
             perm.append((t, t))
@@ -823,7 +831,7 @@ class CompleteSetMatching:
                 perm.append((cs1[rid], cs2[cid]))
 
             x_ = 1 - P[row_ind, col_ind]
-            quality = (x_.min(), x_.sum() / float(len(x_)))
+            quality = (x_.min(), old_div(x_.sum(), float(len(x_))))
 
         for t in cs_shared:
             perm.append((t, t))
@@ -862,7 +870,7 @@ class CompleteSetMatching:
                 perm.append((cs1[rid], cs2[cid]))
 
             x_ = 1 - P[row_ind, col_ind]
-            quality = (x_.min(), x_.sum() / float(len(x_)))
+            quality = (x_.min(), old_div(x_.sum(), float(len(x_))))
 
         for t in cs_shared:
             perm.append((t, t))
@@ -922,7 +930,7 @@ class CompleteSetMatching:
                         spatial_d = np.linalg.norm(t1_end_r.centroid() - t2_start_r.centroid())
 
                         # should be there any weight?
-                        spatial_d = spatial_d / float(max_d)
+                        spatial_d = old_div(spatial_d, float(max_d))
 
                         # TODO: what if it just makes something strange out of luck? E.G. Two distant CS with one tracklet which has perfect distance thus p~1.0and all others have ~0.5
                         if (1 - spatial_d) < 0:
@@ -1015,7 +1023,7 @@ class CompleteSetMatching:
         C = cdist(cs1_descriptors, cs2_descriptors)
 
         max_d = 3.0
-        C = C / max_d
+        C = old_div(C, max_d)
         C = 1 - C
 
         return C
@@ -1062,7 +1070,7 @@ class CompleteSetMatching:
         for p1 in ps1:
             for p2 in ps2:
                 d = p1.distance(p2)
-                probability += (p1.weight / W_ps1) * (p2.weight / W_ps2) * np.exp(-lambda_ * d)
+                probability += (old_div(p1.weight, W_ps1)) * (old_div(p2.weight, W_ps2)) * np.exp(-lambda_ * d)
 
         # probability /= len(ps1)
 
@@ -1078,7 +1086,7 @@ class CompleteSetMatching:
         for p2 in ps2:
             best_d, _, _ = self.best_prototype(ps1, p2)
 
-            alpha = final_w / float(final_w + p2.weight)
+            alpha = old_div(final_w, float(final_w + p2.weight))
             final_d = alpha * final_d + (1 - alpha) * best_d
             final_w += p2.weight
 
@@ -1126,7 +1134,7 @@ class CompleteSetMatching:
 
         Y = []
         X = []
-        for y, x in tqdm(self.descriptors.iteritems()):
+        for y, x in tqdm(iter(self.descriptors.items())):
             Y.append(y)
             X.append(x)
 
@@ -1291,7 +1299,7 @@ class CompleteSetMatching:
 
     def solve_interactions_regression(self, dense_sections_tracklets):
         # first register new new chunks
-        for _, dense in tqdm(dense_sections_tracklets.iteritems(), desc='dense sections',
+        for _, dense in tqdm(iter(dense_sections_tracklets.items()), desc='dense sections',
                              total=len(dense_sections_tracklets)):
             for path in dense:
                 in_tracklet = path['in_tracklet']
@@ -1322,7 +1330,7 @@ class CompleteSetMatching:
 
                 assert (in_tracklet is not None) and (out_tracklet is not None)
                 print('max_d: {}'.format(max_d))
-                if max_d < self.p.stats.major_axis_median / 2.0:
+                if max_d < old_div(self.p.stats.major_axis_median, 2.0):
                     print("merging")
                     self.merge_tracklets(in_tracklet, new_t)
                     self.merge_tracklets(new_t, out_tracklet)
@@ -1379,7 +1387,7 @@ class CompleteSetMatching:
                     r.theta_ = np.deg2rad(results["{}_angle_deg".format(id_)])
 
                     r.major_axis_ = self.p.stats.major_axis_median
-                    r.minor_axis_ = r.major_axis_ / 3
+                    r.minor_axis_ = old_div(r.major_axis_, 3)
 
                     rs[id_].append(r)
 
@@ -1406,7 +1414,7 @@ class CompleteSetMatching:
                     # PRE tracklets
                     pre_tracklets = self.p.chm.tracklets_in_frame(start_frame - 1)
                     # only tracklets which end before interaction are possible options
-                    pre_tracklets = filter(lambda x: x.end_frame(self.p.gm) == start_frame - 1 and x.is_single(), pre_tracklets)
+                    pre_tracklets = [x for x in pre_tracklets if x.end_frame(self.p.gm) == start_frame - 1 and x.is_single()]
 
                     # TODO: do optimization instead of greedy approach
                     best_start_t = None
@@ -1421,7 +1429,7 @@ class CompleteSetMatching:
 
                     # POST tracklets
                     post_tracklets = self.p.chm.tracklets_in_frame(end_frame + 1)
-                    post_tracklets = filter(lambda x: x.start_frame(self.p.gm) == end_frame + 1 and x.is_single(), post_tracklets)
+                    post_tracklets = [x for x in post_tracklets if x.start_frame(self.p.gm) == end_frame + 1 and x.is_single()]
 
                     best_end_t = None
                     best_d = np.inf
@@ -1471,11 +1479,11 @@ class CompleteSetMatching:
 
 def _get_ids_from_folder(wd, n):
     # .DS_Store...
-    files = list(filter(lambda x: x[0] != '.', os.listdir(wd)))
+    files = list([x for x in os.listdir(wd) if x[0] != '.'])
     rids = random.sample(files, n)
 
-    rids = map(lambda x: x[:-4], rids)
-    return np.array(map(int, rids))
+    rids = [x[:-4] for x in rids]
+    return np.array(list(map(int, rids)))
 
 
 def _get_distances(ids1, ids2, descriptors):
@@ -1509,7 +1517,7 @@ def test_descriptors_distance(descriptors, n=2000):
             if id_ == opponent_id:
                 continue
 
-            rids3 = _get_ids_from_folder(WD+str(opponent_id), n/NUM_ANIMALS)
+            rids3 = _get_ids_from_folder(WD+str(opponent_id), old_div(n,NUM_ANIMALS))
             ds = _get_distances(rids1, rids3, descriptors)
             neg_distances.extend(ds)
 
@@ -1530,8 +1538,8 @@ def test_descriptors_distance(descriptors, n=2000):
     negative = plt.hist(neg_distances, bins=bins, alpha=0.6, color='r', density=True, label='negative')
 
     x = np.linspace(0., 3., 100)
-    print("lambda: {:.3f}".format(1./np.mean(pos_distances)))
-    for lam in [1./np.mean(pos_distances)]:
+    print("lambda: {:.3f}".format(old_div(1.,np.mean(pos_distances))))
+    for lam in [old_div(1.,np.mean(pos_distances))]:
         y = lam * np.exp(-lam * x)
         pdf, = plt.plot(x, y)
         y = np.exp(-lam * x)
@@ -1558,7 +1566,7 @@ def prob_prototype_represantion_being_same_id_set(prot1, prot2):
     p1 = prototypes_distribution_probability(prot1, prot2)
     p2 = prototypes_distribution_probability(prot2, prot1)
 
-    p = (p1 + p2) / 2.
+    p = old_div((p1 + p2), 2.)
     return p
 
 
@@ -1575,7 +1583,7 @@ def prototypes_distribution_probability(prot1, prot2):
             n = norm(0, p1.std)
             # n = multivariate_normal(p1.descriptor, p1.cov, allow_singular=True)
             # p = (p1.weight/W1) * n.pdf(np.linalg.norm(p2.descriptor-p1.descriptor)) / n.pdf(0)
-            p = (p1.weight / W1) * 2 * n.cdf(-np.linalg.norm(p2.descriptor - p1.descriptor))
+            p = (old_div(p1.weight, W1)) * 2 * n.cdf(-np.linalg.norm(p2.descriptor - p1.descriptor))
 
             if p > best_p:
                 best_p = p

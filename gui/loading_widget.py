@@ -1,4 +1,5 @@
 from __future__ import print_function
+from __future__ import unicode_literals
 __author__ = 'fnaiser'
 from PyQt4 import QtGui
 

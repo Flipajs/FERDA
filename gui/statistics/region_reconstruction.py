@@ -1,4 +1,9 @@
 from __future__ import print_function
+from __future__ import unicode_literals
+from future import standard_library
+standard_library.install_aliases()
+from builtins import map
+from builtins import range
 __author__ = 'flipajs'
 
 
@@ -69,7 +74,7 @@ class RegionReconstruction(QtGui.QWidget):
         #     sio.savemat(f, {'FERDA_regions': reconstructed})
 
         if self.save_gt.isChecked():
-            import cPickle as pickle
+            import pickle as pickle
             with open(self.project.working_directory+'/'+self.out_name.text()+'.pkl', 'wb') as f:
                 pickle.dump(get_trajectories(self.project, frames), f, -1)
 
@@ -185,18 +190,18 @@ class RegionReconstruction(QtGui.QWidget):
             if len(query) == 2:
                 start_t = int(query[0])
                 end_t = int(query[1]) + 1
-                frames = range(start_t, end_t)
+                frames = list(range(start_t, end_t))
             elif len(query) == 3:
                 start_t = int(query[0])
                 step = int(query[1])
                 end_t = int(query[2]) + 1
-                frames = range(start_t, end_t, step)
+                frames = list(range(start_t, end_t, step))
         else:
             frames = s.split(',')
             if len(frames) == 1:
                 frames = s.split(' ')
 
-            frames = map(int, frames)
+            frames = list(map(int, frames))
 
         return frames
 
@@ -204,7 +209,7 @@ class RegionReconstruction(QtGui.QWidget):
 def get_trajectories(project, frames):
     trajectories = {}
 
-    chunks = map(project.chm.__getitem__, project.gm.chunk_list())
+    chunks = list(map(project.chm.__getitem__, project.gm.chunk_list()))
     chunks = sorted(chunks, key=lambda x:x.id_)
 
     mapping = {}

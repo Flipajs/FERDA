@@ -1,4 +1,8 @@
 from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import range
+from past.utils import old_div
 import multiprocessing
 from utils.video_manager import get_auto_video_manager
 from core.project.project import Project
@@ -48,4 +52,4 @@ if __name__ == '__main__':
     t = time.time()
     video_read(0, cc*len_)
     t2 = time.time() - t
-    print("MP time: {:.2f}, SP time: {:.2f}, ratio: {:.2%}".format(t1, t2, t2/t1))
+    print("MP time: {:.2f}, SP time: {:.2f}, ratio: {:.2%}".format(t1, t2, old_div(t2,t1)))

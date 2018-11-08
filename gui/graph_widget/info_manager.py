@@ -1,3 +1,7 @@
+from __future__ import unicode_literals
+from builtins import str
+from builtins import range
+from builtins import object
 import random
 from PyQt4 import QtGui
 from matplotlib import colors
@@ -7,7 +11,7 @@ from PyQt4.QtGui import QApplication
 from gui.graph_widget_loader import OPACITY
 
 
-class InfoManager():
+class InfoManager(object):
 
     def __init__(self, loader):
         self.clipped = []

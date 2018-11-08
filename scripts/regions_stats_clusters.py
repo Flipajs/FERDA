@@ -1,4 +1,13 @@
 from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
+from future import standard_library
+standard_library.install_aliases()
+from builtins import zip
+from builtins import str
+from builtins import map
+from builtins import range
+from past.utils import old_div
 from core.project.project import Project
 from core.graph.region_chunk import RegionChunk
 import numpy as np
@@ -10,7 +19,7 @@ from skimage.data import binary_blobs
 import skimage
 import math
 from functools import partial
-import cPickle as pickle
+import pickle as pickle
 import json
 from libs.hickle import hickle
 # import hickle
@@ -32,8 +41,8 @@ EXP = 'exp1'
 
 def get_mu_moments(img):
     m = moments(img)
-    cr = m[0, 1] / m[0, 0]
-    cc = m[1, 0] / m[0, 0]
+    cr = old_div(m[0, 1], m[0, 0])
+    cc = old_div(m[1, 0], m[0, 0])
 
     mu = moments_central(img, cr, cc)
     return mu
@@ -105,15 +114,15 @@ def display_head_pairs(project):
     # sort by d2
     pairs = sorted(pairs, key=lambda x: -x[2])
     # d1 > 0.5major_axes_mean
-    pairs = filter(lambda x: project.gm.region(x[0][0]).vector_on_major_axis_projection_head_unknown(
-        project.gm.region(x[0][1])) > major_axes_mean, pairs)
+    pairs = [x for x in pairs if project.gm.region(x[0][0]).vector_on_major_axis_projection_head_unknown(
+        project.gm.region(x[0][1])) > major_axes_mean]
     d2s = [x[2] for x in pairs]
 
     plt.hist(d2s, bins=20)
     plt.ion()
     plt.show()
 
-    pairs = filter(lambda x: x[2] > D2_COEF * major_axes_mean, pairs)
+    pairs = [x for x in pairs if x[2] > D2_COEF * major_axes_mean]
 
     hickle.dump(pairs, '/Users/flipajs/Desktop/temp/pairs/head_pairs.pkl')
 
@@ -226,9 +235,9 @@ def head_features(r, swap=False):
     features = []
     nu = __get_mu_moments_pick(img)
     features.extend(nu)
-    nu = __get_mu_moments_pick(img[:, :img.shape[1] / 2])
+    nu = __get_mu_moments_pick(img[:, :old_div(img.shape[1], 2)])
     features.extend(nu)
-    nu = __get_mu_moments_pick(img[:, img.shape[1] / 2:])
+    nu = __get_mu_moments_pick(img[:, old_div(img.shape[1], 2):])
     features.extend(nu)
 
     # cv2.imshow('test', img*255)
@@ -516,7 +525,7 @@ def get_movement_histogram(p):
                     cases.append([])
                     for x in w.out_neighbors():
                         data2[-1].append(get_movement_descriptor(p, v, w, x))
-                        cases[-1].append(map(int, (v, w, x)))
+                        cases[-1].append(list(map(int, (v, w, x))))
 
     with open('/home/simon/FERDA/projects/Cam1_/temp/movement_data.pkl', 'wb') as f:
         pickle.dump(data, f)
@@ -529,16 +538,16 @@ def get_movement_histogram(p):
     H, edges = np.histogramdd(data, bins=10)
     data = data[::5, :]
 
-    ax.scatter(data[:, 1], data[:, 2], data[:, 0], c=data[:, 0] / data[:, 0].max())
+    ax.scatter(data[:, 1], data[:, 2], data[:, 0], c=old_div(data[:, 0], data[:, 0].max()))
     DEFAULT_H_DENSITY = 1e-10
 
     data2 = np.array(data2)
-    from itertools import izip
+    
 
     cases_p = []
     cases_n = []
 
-    for it, case in izip(data2, cases):
+    for it, case in zip(data2, cases):
         it = np.array(it)
 
         # if np.linalg.norm(it[0, :] - it[1, :]) > 60:
@@ -580,7 +589,7 @@ def observe_cases(project, type='case_p'):
     from utils.video_manager import get_auto_video_manager
     import cv2
     from utils.drawing.points import draw_points
-    from itertools import izip
+    
 
     BORDER = 150
     COLS = 1
@@ -593,7 +602,7 @@ def observe_cases(project, type='case_p'):
     part = 0
     data = []
     for vals, case in cases:
-        for val, (v, x, w) in izip(vals, case):
+        for val, (v, x, w) in zip(vals, case):
             c = QColor(0, 255, 0, 70)
             if val <= 1e-10:
                 c = QColor(255, 0, 0, 70)
@@ -693,7 +702,7 @@ if __name__ == '__main__':
     chunks_with_clusters = [6, 10, 12, 13, 17, 18, 26, 28, 29, 32, 37, 39, 40, 41, 43, 47, 51, 54, 57, 58, 60, 61, 65,
                             67, 69, 73, 75, 78, 81, 84, 87, 90, 93, 94, 96, 99, 102, 105]
     chunks_with_clusters = chunks_with_clusters[:3]
-    chunks_with_clusters = map(lambda x: chunks[x], chunks_with_clusters)
+    chunks_with_clusters = [chunks[x] for x in chunks_with_clusters]
 
     #
     # from core.region.region_manager import RegionManager

@@ -1,3 +1,9 @@
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import zip
+from builtins import range
+from builtins import object
+from past.utils import old_div
 import matplotlib.pylab as plt
 import numpy as np
 import cv2
@@ -31,7 +37,7 @@ class Montage(object):
             self.cell_size = None
         else:
             self.nm = np.array(nm, dtype=int)
-            self.cell_size = self.montage_size / self.nm
+            self.cell_size = old_div(self.montage_size, self.nm)
         self.shape = None
         self.sizes = None
 
@@ -39,11 +45,11 @@ class Montage(object):
         """
         Compute a new size for an image to fit into the montage.
         """
-        ratio = img_size[0] / float(img_size[1])
-        sizes_ratio = self.cell_size.astype(float) / img_size
+        ratio = old_div(img_size[0], float(img_size[1]))
+        sizes_ratio = old_div(self.cell_size.astype(float), img_size)
         if sizes_ratio[0] < sizes_ratio[1]:
             # horizontally tight
-            dst_size = [self.cell_size[0], self.cell_size[0] / ratio]
+            dst_size = [self.cell_size[0], old_div(self.cell_size[0], ratio)]
         else:
             # vertically tight
             dst_size = [self.cell_size[1] * ratio, self.cell_size[1]]
@@ -111,9 +117,9 @@ class Montage(object):
 
         images_resized = [cv2.resize(f, (tuple(np.round(s).astype(int)))) for f, s in zip(images, self.sizes)]
         out = np.zeros(self.shape, dtype=np.uint8)
-        for i in xrange(len(images)):
+        for i in range(len(images)):
             x = (i % self.nm[0]) * int(self.cell_size[0])
-            y = (i / self.nm[0]) * int(self.cell_size[1])
+            y = (old_div(i, self.nm[0])) * int(self.cell_size[1])
             imgw, imgh = self.sizes[i]
             out[y: y + imgh, x: x + imgw] = images_resized[i]
         return out
@@ -134,7 +140,7 @@ def save_figure_as_image(file_name, fig, size_px=None):
     if size_px is not None:
         display_dpi = 96
         fig.set_dpi(display_dpi)
-        fig.set_size_inches([size_px[0] / display_dpi, size_px[1] / display_dpi])
+        fig.set_size_inches([old_div(size_px[0], display_dpi), old_div(size_px[1], display_dpi)])
         dpi = display_dpi
     else:
         dpi = None

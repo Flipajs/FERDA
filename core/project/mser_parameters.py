@@ -1,7 +1,10 @@
+from __future__ import unicode_literals
+from builtins import str
+from builtins import object
 __author__ = 'flipajs'
 
 
-class MSERParameters():
+class MSERParameters(object):
     def __init__(self, initial_data=None):
         self.max_area = 50000
         self.min_area = 50

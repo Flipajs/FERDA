@@ -1,4 +1,9 @@
 from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import str
+from builtins import range
+from past.utils import old_div
 from scipy.misc import imsave
 import numpy as np
 import time
@@ -55,7 +60,7 @@ for i, filters in enumerate([32, 32, 32, 32, 32, 16, 8]):
 
     def normalize(x):
         # utility function to normalize a tensor by its L2 norm
-        return x / (K.sqrt(K.mean(K.square(x))) + K.epsilon())
+        return old_div(x, (K.sqrt(K.mean(K.square(x))) + K.epsilon()))
 
 
     kept_filters = []

@@ -1,5 +1,11 @@
 from __future__ import print_function
 from __future__ import absolute_import
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import str
+from builtins import range
+from builtins import object
+from past.utils import old_div
 __author__ = 'fnaiser'
 
 import errno
@@ -17,7 +23,7 @@ from utils.video_manager import get_auto_video_manager
 from core.graph.solver import Solver
 
 
-class BackgroundComputer:
+class BackgroundComputer(object):
     WAITING = 0
     RUNNING = 1
     FINISHED = 2
@@ -63,7 +69,7 @@ class BackgroundComputer:
             if not config['general']['log_in_bg_computation']:
                 config['general']['log_graph_edits'] = False
 
-            self.n_parts = len(range(0, self.frame_num, config['segmentation']['frames_in_row']))
+            self.n_parts = len(list(range(0, self.frame_num, config['segmentation']['frames_in_row'])))
             self.start = [0] * self.n_parts
 
             for i, frame_start in enumerate(range(0, self.frame_num, config['segmentation']['frames_in_row'])):
@@ -147,11 +153,11 @@ class BackgroundComputer:
                     if i:
                         num_finished += 1
 
-                self.update_callback(num_finished / float(self.n_parts))
+                self.update_callback(old_div(num_finished, float(self.n_parts)))
 
                 print("PART " + str(p_id + 1) + "/" + str(self.n_parts) + " FINISHED MSERS, takes ", round(
-                    end - self.start[p_id], 2), " seconds which is ", round((end - self.start[p_id]) / (
-                    self.process_n * self.frames_in_row), 4), " seconds per frame")
+                    end - self.start[p_id], 2), " seconds which is ", round(old_div((end - self.start[p_id]), (
+                    self.process_n * self.frames_in_row)), 4), " seconds per frame")
 
                 self.processes[p_id][2] = self.FINISHED
 

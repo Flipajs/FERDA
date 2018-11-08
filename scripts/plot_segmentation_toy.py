@@ -1,4 +1,7 @@
 from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
+from past.utils import old_div
 import cv2
 
 print(__doc__)
@@ -51,7 +54,7 @@ print("GRAPH done")
 
 # Take a decreasing function of the gradient: we take it weakly
 # dependent from the gradient the segmentation is close to a voronoi
-graph.data = np.exp(-graph.data / graph.data.std())
+graph.data = np.exp(old_div(-graph.data, graph.data.std()))
 print("graph data")
 
 # Force the solver to be arpack, since amg is numerically

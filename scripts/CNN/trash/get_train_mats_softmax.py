@@ -1,4 +1,7 @@
 from __future__ import print_function
+from __future__ import unicode_literals
+from builtins import str
+from builtins import range
 import numpy as np
 import sys, os, re, random
 import h5py
@@ -44,7 +47,7 @@ if __name__ == '__main__':
     split_idx = int((1-TRAIN_TEST_RATIO) * NUM_EXAMPLES)
     print("SPLIT: ", split_idx)
 
-    for k in tqdm.tqdm(range(NUM_EXAMPLES)):
+    for k in tqdm.tqdm(list(range(NUM_EXAMPLES))):
         for i in range(NUM_ANIMALS):
             ai = k
 

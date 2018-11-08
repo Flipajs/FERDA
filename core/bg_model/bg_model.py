@@ -1,9 +1,11 @@
+from __future__ import unicode_literals
+from builtins import object
 __author__ = 'fnaiser'
 
 import numpy as np
 
 
-class BGModel():
+class BGModel(object):
     def __init__(self, bg):
         self.bg_model_ = bg
 

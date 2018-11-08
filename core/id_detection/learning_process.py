@@ -1,12 +1,22 @@
 from __future__ import print_function
 from __future__ import absolute_import
-import cPickle as pickle
+from __future__ import division
+from __future__ import unicode_literals
+from future import standard_library
+standard_library.install_aliases()
+from builtins import map
+from builtins import zip
+from builtins import str
+from builtins import range
+from builtins import object
+from past.utils import old_div
+import pickle as pickle
 import operator
 import sys
 import time
 import warnings
 
-from itertools import izip
+
 from tqdm import tqdm, trange
 import numpy as np
 import os
@@ -28,7 +38,7 @@ CNN_SOFTMAX = 1
 RFC = 2
 
 
-class LearningProcess:
+class LearningProcess(object):
     """
     each tracklet has 2 id sets.
     P - ids are present for sure
@@ -339,7 +349,7 @@ class LearningProcess:
             min_weighted_difs[i, :] += difs
 
         for i in range(num_a):
-            print(i, min_weighted_difs[i, :] / total_len[i])
+            print(i, old_div(min_weighted_difs[i, :], total_len[i]))
 
         print(self.classifier.feature_importances_)
 
@@ -536,7 +546,7 @@ class LearningProcess:
 
         if len(probs) == 0:
             print("probs len == 0, setting probs to uniform")
-            probs.append([1/float(len(self.p.animals)) for i in range(len(self.p.animals))])
+            probs.append([old_div(1,float(len(self.p.animals))) for i in range(len(self.p.animals))])
 
         probs = np.array(probs)
 
@@ -689,7 +699,7 @@ class LearningProcess:
 
                     # area_mean = sum/float(ch.length())
 
-                    area_mean = sum/float(ch.length())
+                    area_mean = old_div(sum,float(ch.length()))
                     c = 'C' if ch.id() in self.collision_chunks else ' '
 
                     p = 'C' if area_mean > area_mean_thr else ' '
@@ -750,7 +760,7 @@ class LearningProcess:
         Returns:
         """
 
-        vertices = map(self.p.gm.g.vertex, self.p.gm.get_vertices_in_t(0))
+        vertices = list(map(self.p.gm.g.vertex, self.p.gm.get_vertices_in_t(0)))
         return set(range(len(vertices)))
 
     def _reset_chunk_PN_sets(self):
@@ -769,7 +779,7 @@ class LearningProcess:
             # print "ALL is done"
             return True
 
-        eps_certainty_learning = self._eps_certainty / 2
+        eps_certainty_learning = old_div(self._eps_certainty, 2)
 
         # if enough new data, retrain
         if len(self.X) - self.old_x_size > self.min_new_samples_to_retrain:
@@ -783,7 +793,7 @@ class LearningProcess:
         # pick one with best certainty
         # TODO: it is possible to improve speed (if necessary) implementing dynamic priority queue
         try:
-            best_tracklet_id = max(self.tracklet_certainty.iteritems(), key=operator.itemgetter(1))[0]
+            best_tracklet_id = max(iter(self.tracklet_certainty.items()), key=operator.itemgetter(1))[0]
         except ValueError:
             print(len(self.tracklet_certainty), len(self.undecided_tracklets))
 
@@ -833,7 +843,7 @@ class LearningProcess:
         return True
 
     def get_frequence_vector_(self):
-        return float(np.sum(self.class_frequences)) / self.class_frequences
+        return old_div(float(np.sum(self.class_frequences)), self.class_frequences)
 
     def _get_tracklet_proba(self, ch, debug=False):
         anomaly_probs = self.get_tracklet_anomaly_probs(ch)
@@ -1064,13 +1074,13 @@ class LearningProcess:
         for _ in range(K):
             p1s.append([])
 
-        k = int(math.ceil(x.shape[0] / float(N)))
+        k = int(math.ceil(old_div(x.shape[0], float(N))))
         for j in range(k):
             x__ = np.sum(x[j * N:(min((j + 1) * N, x.shape[0])), :], axis=0)
             sum1 = np.sum([2 ** a for a in x__])
 
             for i in range(K):
-                p1 = 2 ** x__[i] / sum1
+                p1 = old_div(2 ** x__[i], sum1)
                 p1s[i].append(p1)
 
         for i in range(K):
@@ -1088,12 +1098,12 @@ class LearningProcess:
         # some reasonable margin from 127... computation will be more precise.
         N = 120
         p1s = []
-        k = int(math.ceil(x.shape[0] / float(N)))
+        k = int(math.ceil(old_div(x.shape[0], float(N))))
         for j in range(k):
             x__ = np.sum(x[j*N:(min((j+1)*N, x.shape[0])), :], axis=0)
 
             sum1 = np.sum([2 ** a for a in x__])
-            p1 = 2 ** x__[i] / sum1
+            p1 = old_div(2 ** x__[i], sum1)
 
             p1s.append(p1)
 
@@ -1183,7 +1193,7 @@ class LearningProcess:
 
                 term2 += self.get_p1(x_, i) * term3
 
-            p2 = (p1 * term1) / term2
+            p2 = old_div((p1 * term1), term2)
 
             return p2, k
         else:
@@ -1207,7 +1217,7 @@ class LearningProcess:
         if len(P) == 0:
             x = self.tracklet_measurements[tracklet.id()]
 
-            uni_probs = np.ones((len(x),)) / float(len(x))
+            uni_probs = old_div(np.ones((len(x),)), float(len(x)))
             # TODO: why 0.99 and not 1.0? Maybe to give a small chance for each option independently on classifier
             # alpha = (min((tracklet.length() / self.k_) ** 2, 0.99))
             # x = (1 - alpha) * uni_probs + alpha * x
@@ -1259,7 +1269,7 @@ class LearningProcess:
 
                 term2 += self.get_p1(x_, i) * term3
 
-            p2 = (p1 * term1) / term2
+            p2 = old_div((p1 * term1), term2)
             self.tracklet_certainty[tracklet.id()] = p2
 
             return
@@ -1273,7 +1283,7 @@ class LearningProcess:
             id2 = np.argmax(x_)
             m2 = min(1, x_[id2] + std[id2])
 
-            certainty = m1 / (m1 + m2 + 1e-6)
+            certainty = old_div(m1, (m1 + m2 + 1e-6))
 
             self.tracklet_certainty[tracklet.id()] = certainty
 
@@ -1534,7 +1544,7 @@ class LearningProcess:
             r.area(),
             r.ellipse_major_axis_length(),
             r.ellipse_minor_axis_length(),
-            (r.ellipse_major_axis_length() / r.ellipse_minor_axis_length()),
+            (old_div(r.ellipse_major_axis_length(), r.ellipse_minor_axis_length())),
             r.sxx_ ,
             r.syy_,
             r.sxy_ ,
@@ -1840,7 +1850,7 @@ class LearningProcess:
 
     def _presort_css(self, cs1, cs2):
         # presort... so the same tracklets have the same indices..
-        inter = set(cs1.keys()).intersection(cs2.keys())
+        inter = set(cs1.keys()).intersection(list(cs2.keys()))
         intersection = {}
         for root in inter:
             intersection[root] = cs1[root]
@@ -1848,12 +1858,12 @@ class LearningProcess:
         cs1_ = {}
         cs2_ = {}
 
-        for root_id in cs1.keys():
+        for root_id in list(cs1.keys()):
             if root_id in intersection:
                 continue
             cs1_[root_id] = cs1[root_id]
 
-        for root_id in cs2.keys():
+        for root_id in list(cs2.keys()):
             if root_id in intersection:
                 continue
             cs2_[root_id] = cs2[root_id]
@@ -1891,7 +1901,7 @@ class LearningProcess:
         ordering = [0] * len(group)
         certainty = {}
         used = set()
-        for t_id in group.iterkeys():
+        for t_id in group.keys():
             t = self.p.chm[t_id]
 
             certainty[t_id], k = self._get_certainty(t)
@@ -1931,9 +1941,9 @@ class LearningProcess:
             return [], np.inf
 
         if len(cs1) == 1:
-            matching = [[cs1[cs1.keys()[0]], cs2[cs2.keys()[0]]]]
+            matching = [[cs1[list(cs1.keys())[0]], cs2[list(cs2.keys())[0]]]]
 
-            print("\t 1on1", cs1.keys(), cs2.keys())
+            print("\t 1on1", list(cs1.keys()), list(cs2.keys()))
 
             return matching, 0
 
@@ -2003,7 +2013,7 @@ class LearningProcess:
 
                         frame_d = t2_start_f - t1_end_f
                         # d = np.linalg.norm(t1_end_r.centroid() - t2_start_r.centroid()) / float(frame_d * md)
-                        d = np.linalg.norm(t1_end_r.centroid() - t2_start_r.centroid()) / float(md)
+                        d = old_div(np.linalg.norm(t1_end_r.centroid() - t2_start_r.centroid()), float(md))
                         prob = max(0, 1 - d)
 
                         # TODO: raise uncertainty with frame_d
@@ -2020,7 +2030,7 @@ class LearningProcess:
         # use hungarian (nonnegative matrix)
         row_ind, col_ind = linear_sum_assignment(C)
         price = C[row_ind, col_ind].sum()
-        price_norm = price / float(len(cs1))
+        price_norm = old_div(price, float(len(cs1)))
 
         # TODO price - max
         # print price, price_norm, C[row_ind, col_ind].max()
@@ -2028,8 +2038,8 @@ class LearningProcess:
         # print C
 
         matching = []
-        for rid, cid in izip(row_ind, col_ind):
-            matching.append([cs1[cs1.keys()[rid]], cs2[cs2.keys()[cid]]])
+        for rid, cid in zip(row_ind, col_ind):
+            matching.append([cs1[list(cs1.keys())[rid]], cs2[list(cs2.keys())[cid]]])
 
         return matching, price_norm
 
@@ -2083,7 +2093,7 @@ class LearningProcess:
                 if len(group) == 0:
                     break
 
-                singles_group = filter(lambda x: x.is_single(), group)
+                singles_group = [x for x in group if x.is_single()]
 
                 if len(singles_group) == len(self.p.animals) and min([len(t) for t in singles_group]) >= 1:
                     groups.append(singles_group)
@@ -2256,17 +2266,17 @@ class LearningProcess:
 
 
 
-        for key in links.keys():
+        for key in list(links.keys()):
             links[key] = self._find_update_link(key, links)
 
-        lk = links.values()
+        lk = list(links.values())
         print("#links: {}, #UNIQUE keys: {}, keys: {}".format(len(lk), len(set(lk)), set(lk)))
 
         # TODO: add own support per root tracklets...
 
         # find biggest support:
         support = {}
-        for t_id, t_root_id in links.iteritems():
+        for t_id, t_root_id in links.items():
             if t_root_id in support:
                 support[t_root_id] += len(self.p.chm[t_id])
             else:
@@ -2274,7 +2284,7 @@ class LearningProcess:
 
         best_tcs = None
         best_support = 0
-        for tcs in TCS.itervalues():
+        for tcs in TCS.values():
             if tcs in invalid_TCS:
                 continue
 
@@ -2340,7 +2350,7 @@ class LearningProcess:
                 self.user_decisions.append({'tracklet_id_set': t.id(), 'type': 'P', 'ids': [id_]})
 
 
-        vals = TCS.values()
+        vals = list(TCS.values())
         for i, tcs in enumerate(vals):
             if tcs in invalid_TCS:
                 continue
@@ -2383,7 +2393,7 @@ class LearningProcess:
         self.update_undecided_tracklets()
         print("num undecided after: ", len(self.undecided_tracklets))
 
-        for cs in TCS.itervalues():
+        for cs in TCS.values():
             # g = sorted(g, key=lambda x: x.id())
             c = np.random.rand(3, 1)
 
@@ -2391,7 +2401,7 @@ class LearningProcess:
             plt.plot([frame, frame], [0, len(self.p.animals)], c=c)
             plt.hold(True)
 
-            free_pos = range(len(self.p.animals))
+            free_pos = list(range(len(self.p.animals)))
             for i, t in enumerate(g):
                 if t in used:
                     used[t] += 1
@@ -2405,7 +2415,7 @@ class LearningProcess:
                     free_pos.pop(0)
                     used[t] = 1
 
-                offset = (used[t]-1) / 10.
+                offset = old_div((used[t]-1), 10.)
                 pos = positions[t]
 
                 # offset = 0
@@ -2440,7 +2450,7 @@ class LearningProcess:
             plt.plot([frame, frame], [0, len(self.p.animals)], c=c)
             plt.hold(True)
 
-            free_pos = range(len(self.p.animals))
+            free_pos = list(range(len(self.p.animals)))
             for i, t in enumerate(g):
                 if t in used:
                     used[t] += 1
@@ -2454,7 +2464,7 @@ class LearningProcess:
                     free_pos.pop(0)
                     used[t] = 1
 
-                offset = (used[t]-1) / 10.
+                offset = old_div((used[t]-1), 10.)
                 pos = positions[t]
 
                 # offset = 0
@@ -2511,7 +2521,7 @@ class LearningProcess:
             pass
 
         from math import floor
-        half = int(floor(len(groups)/2))
+        half = int(floor(old_div(len(groups),2)))
 
         ok_min_sum = min(len(t) for t in groups[best_g_i])
         ok_total_sum = sum(len(t) for t in groups[best_g_i])
@@ -2530,7 +2540,7 @@ class LearningProcess:
             perm2 = self.predict_permutation(rfc2, g1)
 
             if self._test_stable_marriage(perm1, perm2):
-                for id_, t in izip(perm1, g2):
+                for id_, t in zip(perm1, g2):
                     if t.id() in tracklet_ids:
                         if id_ != tracklet_ids[t.id()]:
                             warnings.warn("auto init ids doesn't match. T_ID: {} firstly assigned with: {} now: {}".format(t.id(), tracklet_ids[t.id()], id_))
@@ -2568,8 +2578,8 @@ class LearningProcess:
         print("STATS:")
         print("\tnum groups: {}\n\ttotal length: {}/expected: {:.2%}/singles: {:.2%}\n\toverlap sum: {}/{:.2%}".format(
             len(groups),
-            total_len, total_len/float(expected_t_len), total_len/float(total_single_t_len),
-            overlap_sum, overlap_sum/float(total_frame_count)))
+            total_len, old_div(total_len,float(expected_t_len)), old_div(total_len,float(total_single_t_len)),
+            overlap_sum, old_div(overlap_sum,float(total_frame_count))))
 
     def auto_init(self, method='max_sum', use_xgboost=False):
         print(self._get_tracklet_proba(self.p.chm[54276]))
@@ -2592,7 +2602,7 @@ class LearningProcess:
             if len(group) == 0:
                 break
 
-            singles_group = filter(lambda x: x.is_single(), group)
+            singles_group = [x for x in group if x.is_single()]
 
             if len(singles_group) == len(self.p.animals):
                 m = min([t.length() for t in singles_group])
@@ -2619,7 +2629,7 @@ class LearningProcess:
             group = self.p.chm.tracklets_in_frame(best_frame)
             max_best_frame = best_frame
 
-        group = filter(lambda x: x.is_single(), group)
+        group = [x for x in group if x.is_single()]
 
         for id_, t in enumerate(group):
             print("id: {}, len: {}".format(t.id(), t.length()))
@@ -2706,7 +2716,7 @@ class LearningProcess:
             return None
 
         possibilities = []
-        for tid, id_ in tracklet_gt.iteritems():
+        for tid, id_ in tracklet_gt.items():
             if len(id_) == 1:
                 id_ = list(id_)[0]
             else:
@@ -2789,7 +2799,7 @@ class LearningProcess:
         threshold = 0.5
 
         rest_groups = []
-        for i in tqdm(range(len(orderings))):
+        for i in tqdm(list(range(len(orderings)))):
             ordering, certs = self._get_group_orderings(groups[i])
 
             min_c = 0

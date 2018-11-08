@@ -1,5 +1,13 @@
 from __future__ import print_function
-import cPickle as pickle
+from __future__ import division
+from __future__ import unicode_literals
+from future import standard_library
+standard_library.install_aliases()
+from builtins import zip
+from builtins import str
+from builtins import range
+from past.utils import old_div
+import pickle as pickle
 import sys
 import time
 
@@ -224,7 +232,7 @@ class SetupMSERsWizardPage(QtGui.QWizardPage):
 
         import math
         from gui.img_controls import markers
-        radius = math.ceil((self.project.mser_parameters.max_area/np.pi)**0.5)
+        radius = math.ceil((old_div(self.project.mser_parameters.max_area,np.pi))**0.5)
 
         c = QtGui.QColor(167, 255, 36)
         it = markers.CenterMarker(0, 0, 2*radius, c, 0, None)
@@ -233,7 +241,7 @@ class SetupMSERsWizardPage(QtGui.QWizardPage):
         it.setOpacity(0.2)
 
         text = QtGui.QGraphicsTextItem()
-        text.setPos(radius/3, radius/3)
+        text.setPos(old_div(radius,3), old_div(radius,3))
         text.setPlainText("max area helper")
 
         self.painter.scene.addItem(text)
@@ -346,7 +354,7 @@ class SetupMSERsWizardPage(QtGui.QWizardPage):
         groups = get_region_groups(msers)
         ids = margin_filter(msers, groups)
 
-        for r, r_id in zip(msers, range(len(msers))):
+        for r, r_id in zip(msers, list(range(len(msers)))):
             # get region contours
             cont = get_contour(r.pts())
 
@@ -359,10 +367,10 @@ class SetupMSERsWizardPage(QtGui.QWizardPage):
 
             if r_id in ids:
                 crop = draw_points_crop(img_vis, cont, (255, 0, 255,
-                                                        self.color_mser[3]/float(255)), square=True, fill_pts=fill_pts)
+                                                        old_div(self.color_mser[3],float(255))), square=True, fill_pts=fill_pts)
             else:
                 crop = draw_points_crop(img_vis, cont, (self.color_mser[2], self.color_mser[1], self.color_mser[0],
-                                                        self.color_mser[3] / float(255)), square=True,
+                                                        old_div(self.color_mser[3], float(255))), square=True,
                                         fill_pts=fill_pts)
 
             if crop.shape[1] < 100:
@@ -478,7 +486,7 @@ class SetupMSERsWizardPage(QtGui.QWizardPage):
             self.color_buttons["eraser"].setChecked(True)
         else:
             self.painter.set_pen_color(self.cur_color)
-            for color, btn in self.color_buttons.iteritems():
+            for color, btn in self.color_buttons.items():
                 if color == self.cur_color.lower():
                     btn.setChecked(True)
                 else:

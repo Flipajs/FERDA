@@ -1,8 +1,18 @@
 from __future__ import print_function
 from __future__ import absolute_import
+from __future__ import division
+from __future__ import unicode_literals
+from future import standard_library
+standard_library.install_aliases()
+from builtins import zip
+from builtins import next
+from builtins import map
+from builtins import str
+from builtins import range
+from past.utils import old_div
 __author__ = 'fnaiser'
 
-import cPickle as pickle
+import pickle as pickle
 from functools import partial
 
 import numpy as np
@@ -292,7 +302,7 @@ class ResultsWidget(QtGui.QWidget):
         self.show_results_flayout.addRow('start: ', self.show_results_summary_start_i)
 
         self.show_results_summary_steps_i = QtGui.QLineEdit()
-        self.show_results_summary_steps_i.setText(str(max(1, int(self.video_player.total_frame_count() / 200))))
+        self.show_results_summary_steps_i.setText(str(max(1, int(old_div(self.video_player.total_frame_count(), 200)))))
         self.show_results_flayout.addRow('step: ', self.show_results_summary_steps_i)
 
         self.show_results_summary_end_i = QtGui.QLineEdit()
@@ -777,7 +787,7 @@ class ResultsWidget(QtGui.QWidget):
             a = 50
             b = 17
 
-            item = QtGui.QGraphicsEllipseItem(-a/2, -b/2, a, b)
+            item = QtGui.QGraphicsEllipseItem(old_div(-a,2), old_div(-b,2), a, b)
             brush = QtGui.QBrush(QtCore.Qt.SolidPattern)
 
             opacity = 0.5
@@ -942,13 +952,13 @@ class ResultsWidget(QtGui.QWidget):
         if self.show_markers_ch.isChecked():
             marker.setVisible(True)
 
-        marker.setPos(c[1] - MARKER_SIZE / 2, c[0] - MARKER_SIZE/2)
+        marker.setPos(c[1] - old_div(MARKER_SIZE, 2), c[0] - old_div(MARKER_SIZE,2))
 
     def highlight_area(self, data, radius=50):
         centroid = data['n1'].centroid()
         self.highlight_marker = markers.CenterMarker(0, 0, radius, QtGui.QColor(167, 255, 36), 0, self.marker_changed)
         self.highlight_marker.setOpacity(0.40)
-        self.highlight_marker.setPos(centroid[1]-radius/2, centroid[0]-radius/2)
+        self.highlight_marker.setPos(centroid[1]-old_div(radius,2), centroid[0]-old_div(radius,2))
         self.scene.addItem(self.highlight_marker)
         self.highlight_timer.start(50)
 
@@ -956,7 +966,7 @@ class ResultsWidget(QtGui.QWidget):
             self.highlight_marker2nd = markers.CenterMarker(0, 0, radius, QtGui.QColor(36, 255, 167), 0, self.marker_changed)
             self.highlight_marker2nd.setOpacity(0.40)
             centroid = data['n2'].centroid()
-            self.highlight_marker2nd.setPos(centroid[1]-radius/2, centroid[0]-radius/2)
+            self.highlight_marker2nd.setPos(centroid[1]-old_div(radius,2), centroid[0]-old_div(radius,2))
             self.highlight_marker2nd_frame = data['n2'].frame_
 
     def __add_marker(self, x, y, c_, id_, z_value, type_, radius=13, alpha=None):
@@ -973,7 +983,7 @@ class ResultsWidget(QtGui.QWidget):
         if alpha:
             m.setOpacity(alpha)
 
-        m.setPos(x - radius/2, y-radius/2)
+        m.setPos(x - old_div(radius,2), y-old_div(radius,2))
         m.setZValue(z_value)
 
         if type_ == 'GT':
@@ -1025,7 +1035,7 @@ class ResultsWidget(QtGui.QWidget):
         h_depth = S_.visualization.history_depth
         for frame in range(max(0, current_frame - h_depth), current_frame, S_.visualization.history_depth_step):
             h = h_depth - (current_frame - frame)
-            h_ratio = (h / float(h_depth))
+            h_ratio = (old_div(h, float(h_depth)))
             a = S_.visualization.basic_marker_opacity
             exponent = S_.visualization.history_alpha
             alpha = a * (h_ratio) ** exponent
@@ -1133,7 +1143,7 @@ class ResultsWidget(QtGui.QWidget):
             for j in range(3):
                 s[:, :, j] = self.project.animals[id_].color_[j]
 
-            val_ = int((2*A) / 9)
+            val_ = int(old_div((2*A), 9))
             s[4*val_:5*val_, :, :] = 20
 
             pixmap = cvimg2qtpixmap(s)
@@ -1250,7 +1260,7 @@ class ResultsWidget(QtGui.QWidget):
                 item.setBrush(brush)
                 item.setOpacity(0.8)
                 item.setZValue(1.0)
-                item.setPos(x-w/2, y-w/2)
+                item.setPos(x-old_div(w,2), y-old_div(w,2))
 
                 self.video_player.visualise_temp(item, category=type_)
 
@@ -1286,7 +1296,7 @@ class ResultsWidget(QtGui.QWidget):
 
             m = markers.CenterMarker(0, 0, radius, QtGui.QColor(167, 255, 36), 0, self.marker_changed)
             m.setOpacity(0.20)
-            m.setPos(centroid[1]-radius/2, centroid[0]-radius/2)
+            m.setPos(centroid[1]-old_div(radius,2), centroid[0]-old_div(radius,2))
             self.scene.addItem(m)
             self.one_frame_items.append(m)
 
@@ -1299,7 +1309,7 @@ class ResultsWidget(QtGui.QWidget):
         params = default_params
         params['colors'] = []
 
-        ids_ = range(len(self.project.animals))
+        ids_ = list(range(len(self.project.animals)))
         for i, a in enumerate(self.project.animals):
             params['colors'].append([a.color_[0], a.color_[1], a.color_[2]])
 
@@ -1307,8 +1317,8 @@ class ResultsWidget(QtGui.QWidget):
         ptr = 0
         p_ = S_.visualization.tracklet_len_per_px
         if p_:
-            tlen = int(len(tracklet)/float(p_))
-            ptr = int((frame - tracklet.start_frame(self.project.gm)) / float(p_))
+            tlen = int(old_div(len(tracklet),float(p_)))
+            ptr = int(old_div((frame - tracklet.start_frame(self.project.gm)), float(p_)))
 
         c = self.get_tracklet_class_color(tracklet)
 
@@ -1390,11 +1400,11 @@ class ResultsWidget(QtGui.QWidget):
             s += "\n " + textwrap.fill(str(r), 35)
             s += " radius: {:.3}\n".format(self.__compute_radius(r))
             s += "\n"
-            s += "area/ellipse {:.2f}".format(r.area() / (4 * r.ellipse_major_axis_length() * r.ellipse_minor_axis_length()))
+            s += "area/ellipse {:.2f}".format(old_div(r.area(), (4 * r.ellipse_major_axis_length() * r.ellipse_minor_axis_length())))
             s += "\n"
-            s += "ellipse/area{:.2f}".format((4 * r.ellipse_major_axis_length() * r.ellipse_minor_axis_length())/ r.area())
+            s += "ellipse/area{:.2f}".format(old_div((4 * r.ellipse_major_axis_length() * r.ellipse_minor_axis_length()), r.area()))
             s += "\n"
-            s += "clen/area{:.2f}".format(len(r.contour()) / float(r.area()))
+            s += "clen/area{:.2f}".format(old_div(len(r.contour()), float(r.area())))
 
         # if self.tracklet_measurements is not None:
         #     s += "\nTracklet ID probs: \n"
@@ -1477,7 +1487,7 @@ class ResultsWidget(QtGui.QWidget):
 
             self.chunks = chs
         else:
-            import cPickle as pickle
+            import pickle as pickle
             chunk_available_ids = None
             try:
                 with open(self.project.working_directory+'/temp/chunk_available_ids.pkl', 'rb') as f_:
@@ -1598,7 +1608,7 @@ class ResultsWidget(QtGui.QWidget):
 
     def __get_gt_stats(self, gt):
         # TODO move to utils.gt.gt
-        frames = sorted(map(int, gt.iterkeys()))
+        frames = sorted(map(int, iter(gt.keys())))
 
         num_ids = len(gt[frames[0]])
         id_coverage = np.zeros((num_ids, ))
@@ -1612,7 +1622,7 @@ class ResultsWidget(QtGui.QWidget):
         print("#frames: ", len(frames))
         print("ID coverage: ")
         for i in range(num_ids):
-            print(" {}:{:.2%}".format(i, id_coverage[i] / float(len(frames))))
+            print(" {}:{:.2%}".format(i, old_div(id_coverage[i], float(len(frames)))))
 
     def __create_gt_from_results(self):
         from utils.gt.gt import GT
@@ -1671,7 +1681,7 @@ class ResultsWidget(QtGui.QWidget):
         warnings.warn("this method is outdated and assigns IDs also to multi-regions...")
 
         # for frame, data in self._gt.iteritems():
-        for frame, data in self._gt.get_clear_positions_dict().iteritems():
+        for frame, data in self._gt.get_clear_positions_dict().items():
             print(frame)
             matches = [list() for _ in range(len(self.project.animals))]
             for t in self.project.chm.tracklets_in_frame(frame):
@@ -1943,7 +1953,7 @@ class ResultsWidget(QtGui.QWidget):
                 found_in_frame[i] = frame + 1
 
         gt_pos = {}
-        for prev_frame in reversed(range(max(0, frame-max_history), frame)):
+        for prev_frame in reversed(list(range(max(0, frame-max_history), frame))):
             for i, a in enumerate(self._gt.get_clear_positions(prev_frame)):
                 if a is not None:
                     if found_in_frame[i] < 0:
@@ -2007,7 +2017,7 @@ class ResultsWidget(QtGui.QWidget):
             w_ = 200
             data = np.zeros((h_, w_), dtype=np.float)
 
-            offset = np.array([int(r2.centroid()[0] - h_/2), int(r2.centroid()[1] - w_/2)])
+            offset = np.array([int(r2.centroid()[0] - old_div(h_,2)), int(r2.centroid()[1] - old_div(w_,2))])
 
             for i in range(h_):
                 for j in range(w_):
@@ -2167,7 +2177,7 @@ class ResultsWidget(QtGui.QWidget):
                 if len(group) == 0:
                     break
 
-                singles_group = filter(lambda x: x.is_single(), group)
+                singles_group = [x for x in group if x.is_single()]
                 df = frame
 
                 # if len(singles_group) == len(self.p.animals) and min([len(t) for t in singles_group]) >= self.min_tracklet_len:
@@ -2206,8 +2216,8 @@ class ResultsWidget(QtGui.QWidget):
 
         print("Total tracklet length {}, coverage {:.2%}, single-ID coverage {:.2%}".format(
             total_len,
-            (total_len/float(len(self.p.animals)))/total_frame_count,
-            (single_len / float(len(self.p.animals))) / total_frame_count,
+            old_div((old_div(total_len,float(len(self.p.animals)))),total_frame_count),
+            old_div((old_div(single_len, float(len(self.p.animals)))), total_frame_count),
         ))
 
         min_lengths = []

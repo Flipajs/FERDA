@@ -3,6 +3,9 @@ Computes tracklet distance matrices based on CNN descriptors.
 
 For a visualization see the VAIB paper and experiments/tracking/180427_vaib_tracklet_reid_descriptor_distance_matrix.ipynb.
 """
+from __future__ import unicode_literals
+from builtins import zip
+from builtins import range
 from joblib import Parallel, delayed
 from core.project.project import Project
 from core.id_detection.learning_process import LearningProcess
@@ -23,9 +26,9 @@ def prototype_distances(tracklets, prototypes):
     tp = tracklet_prototypes_sorted_with_id
     num = len(tp)
     prob_ij = Parallel(n_jobs=-1, verbose=10)(delayed(prob_prototype_represantion_being_same_id_set)(tp[i][1], tp[j][1]) for i, j in 
-                                              list(itertools.product(range(num), range(num))))
+                                              list(itertools.product(list(range(num)), list(range(num)))))
     m = np.zeros((num, num))
-    for prob, (i, j) in zip(prob_ij, itertools.product(range(num), range(num))):
+    for prob, (i, j) in zip(prob_ij, itertools.product(list(range(num)), list(range(num)))):
         m[i, j] = prob
     return m, tp
 

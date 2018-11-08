@@ -1,3 +1,8 @@
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import str
+from builtins import object
+from past.utils import old_div
 import copy
 from PyQt4 import QtGui
 
@@ -13,7 +18,7 @@ from gui.img_controls.gui_utils import cvimg2qtpixmap
 __author__ = 'Simon Mandlik'
 
 
-class Column:
+class Column(object):
     def __init__(self, frame, scene, im_manager, relative_margin, width, height, empty=False):
         self.scene = scene
         self.im_manager = im_manager
@@ -185,12 +190,12 @@ class Column:
         position = self.get_position_item(node)
         if edge.type == LineType.PARTIAL_TRACKLET:
             pass
-        from_y = GAP + FROM_TOP + position * self.height + self.height / 2 + SPACE_BETWEEN_VER * position
+        from_y = GAP + FROM_TOP + position * self.height + old_div(self.height, 2) + SPACE_BETWEEN_VER * position
 
         column_left = frame_columns[edge.region_from.frame_]
         position = column_left.get_position_item(edge.region_from)
         to_x = column_left.x + self.width
-        to_y = GAP + FROM_TOP + position * self.height + self.height / 2 + SPACE_BETWEEN_VER * position
+        to_y = GAP + FROM_TOP + position * self.height + old_div(self.height, 2) + SPACE_BETWEEN_VER * position
 
         z_value = -1 if edge.type == LineType.TRACKLET or LineType.PARTIAL_TRACKLET else -3
 
@@ -200,10 +205,10 @@ class Column:
             z_value = -2
 
             if edge.overlaps_left():
-                self.draw_edge(column_left.x, from_y, column_left.x - SPACE_BETWEEN_HOR / 2.5, from_y, vertically, z_value, edge, partial=True)
+                self.draw_edge(column_left.x, from_y, column_left.x - old_div(SPACE_BETWEEN_HOR, 2.5), from_y, vertically, z_value, edge, partial=True)
 
             if edge.overlaps_right():
-                self.draw_edge(self.x + self.width, from_y, self.x + self.width + SPACE_BETWEEN_HOR / 2.5, from_y, vertically, z_value, edge, partial=True)
+                self.draw_edge(self.x + self.width, from_y, self.x + self.width + old_div(SPACE_BETWEEN_HOR, 2.5), from_y, vertically, z_value, edge, partial=True)
 
             # to_y = from_y
             # to_x = self.x - SPACE_BETWEEN_HOR / 2.5
@@ -223,7 +228,7 @@ class Column:
         self.scene.addItem(edge_obj.graphical_object)
 
     def delete_scene(self):
-        for key, object in self.edges.items():
+        for key, object in list(self.edges.items()):
             for o in object:
                 self.scene.removeItem(o.graphical_object)
             del self.edges[key]
@@ -254,11 +259,11 @@ class Column:
 
     def show_compress_marker(self, compress_axis, vertically):
         if isinstance(self.frame, tuple):
-            x = self.x + self.width / 4 - 12.5
+            x = self.x + old_div(self.width, 4) - 12.5
             y = FROM_TOP
             if vertically:
                 x, y = y, x - 17.5
-                string_len = len(str(self.frame[0] if isinstance(self.frame, tuple) else self.frame)) / 2
+                string_len = old_div(len(str(self.frame[0] if isinstance(self.frame, tuple) else self.frame)), 2)
                 self.compress_marker.setPlainText((" " * string_len + ".\n") * 3)
             else:
                 self.compress_marker.setPlainText(". . .")
@@ -277,7 +282,7 @@ class Column:
         y = FROM_TOP
         if empty:
             text_obj.setDefaultTextColor(QtGui.QColor(0, 0, 0, 120))
-        x = self.x + self.width / (4 if empty else 2)
+        x = self.x + old_div(self.width, (4 if empty else 2))
 
         if vertically:
             x, y = y, x - 10

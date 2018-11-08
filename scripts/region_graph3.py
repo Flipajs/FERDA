@@ -1,4 +1,9 @@
 from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import str
+from builtins import range
+from past.utils import old_div
 __author__ = 'simon'
 
 import random
@@ -406,8 +411,8 @@ class NodeGraphVisualizer(QtGui.QWidget):
         from_x = self.x_step * t1_framenum + self.node_size
         to_x = self.x_step * t2_framenums
 
-        from_y = self.y_step * self.positions[n1] + self.node_size / 2
-        to_y = self.y_step * self.positions[n2] + self.node_size / 2
+        from_y = self.y_step * self.positions[n1] + old_div(self.node_size, 2)
+        to_y = self.y_step * self.positions[n2] + old_div(self.node_size, 2)
 
         if self.show_vertically:
             from_x, from_y = from_y, from_x
@@ -493,7 +498,7 @@ class NodeGraphVisualizer(QtGui.QWidget):
         self.positions = {}
         self.used_rows = {}
 
-        k = np.array(self.regions.keys())
+        k = np.array(list(self.regions.keys()))
         self.frames = np.sort(k).tolist()
 
         nodes_queue = []
@@ -634,7 +639,7 @@ class NodeGraphVisualizer(QtGui.QWidget):
             from_x = to_x - 50
 
         n = n1 if outgoing else n2
-        from_y = self.y_step * self.positions[n] + self.node_size / 2
+        from_y = self.y_step * self.positions[n] + old_div(self.node_size, 2)
         to_y = from_y
 
         if self.show_vertically:
@@ -778,7 +783,7 @@ class NodeGraphVisualizer(QtGui.QWidget):
 
         it = self.scene.addPixmap(cvimg2qtpixmap(vis))
         pm = self.pixmaps[n]
-        ds2 = (ns - self.node_size) / 2
+        ds2 = old_div((ns - self.node_size), 2)
 
         x = pm.scenePos().x() - ds2
         y = pm.scenePos().y() - ds2

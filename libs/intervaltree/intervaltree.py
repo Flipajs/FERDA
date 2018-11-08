@@ -20,6 +20,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import zip
+from builtins import range
+from past.utils import old_div
 from .interval import Interval
 from .node import Node
 from numbers import Number
@@ -804,7 +809,7 @@ class IntervalTree(collections.MutableSet):
             bound_end = boundary_table.bisect_left(end)  # exclude final end bound
             result.update(root.search_overlap(
                 # slice notation is slightly slower
-                boundary_table.iloc[index] for index in xrange(bound_begin, bound_end)
+                boundary_table.iloc[index] for index in range(bound_begin, bound_end)
             ))
 
             # TODO: improve strict search to use node info instead of less-efficient filtering
@@ -927,7 +932,7 @@ class IntervalTree(collections.MutableSet):
 
             # For efficiency reasons this should be iteritems in Py2, but we
             # don't care much for efficiency in debug methods anyway.
-            for key, val in self.boundary_table.items():
+            for key, val in list(self.boundary_table.items()):
                 assert bound_check[key] == val, \
                     'Error: boundary_table[{0}] should be {1},' \
                     ' but is {2}!'.format(
@@ -964,7 +969,7 @@ class IntervalTree(collections.MutableSet):
             """
             raw = n - m
             maximum = n - 1
-            return raw / float(maximum)
+            return old_div(raw, float(maximum))
 
         report = {
             "depth": self.top_node.depth_score(n, m),

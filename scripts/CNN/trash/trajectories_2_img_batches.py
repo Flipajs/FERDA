@@ -1,4 +1,7 @@
 from __future__ import print_function
+from __future__ import unicode_literals
+from builtins import str
+from builtins import range
 import numpy as np
 import sys, os, re, random
 import h5py
@@ -78,7 +81,7 @@ if __name__ == '__main__':
     print(p.chm)
 
     t_ = time.time()
-    for frame in tqdm.tqdm(xrange(vm.total_frame_count())):
+    for frame in tqdm.tqdm(range(vm.total_frame_count())):
         for t in p.chm.tracklets_in_frame(frame):
             if t.is_single():
                 rch = RegionChunk(t, p.gm, p.rm)

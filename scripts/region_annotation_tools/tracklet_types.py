@@ -1,7 +1,10 @@
+from __future__ import unicode_literals
 
 
-class TrackletTypes:
-    BLOB, SINGLE, OTHER = range(3)
+from builtins import range
+from builtins import object
+class TrackletTypes(object):
+    BLOB, SINGLE, OTHER = list(range(3))
 
     def __init__(self):
         self.tracklet_types = {}

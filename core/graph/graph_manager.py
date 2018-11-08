@@ -1,4 +1,10 @@
 from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import zip
+from builtins import range
+from builtins import object
+from past.utils import old_div
 __author__ = 'flipajs'
 
 import graph_tool
@@ -7,7 +13,7 @@ import numpy as np
 from core.region.fitting_logger import FittingLogger
 
 
-class GraphManager:
+class GraphManager(object):
     def __init__(self, project, assignment_score):
         self.project = project
         self.rm = project.rm
@@ -166,7 +172,7 @@ class GraphManager:
         self.update_time_boundaries()
 
     def update_time_boundaries(self):
-        keys = [self.vertices_in_t.keys()]
+        keys = [list(self.vertices_in_t.keys())]
 
         self.end_t = np.max(keys)
         self.start_t = np.min(keys)
@@ -224,8 +230,8 @@ class GraphManager:
             # centroids_t2 = np.array([r.centroid() for r in regions_t2])
             #
             # dists = cdist(centroids_t1, centroids_t2)
-            for i, v_t1, r_t1 in zip(range(len(vertices_t1)), vertices_t1, regions_t1):
-                for j, v_t2, r_t2 in zip(range(len(vertices_t2)), vertices_t2, regions_t2):
+            for i, v_t1, r_t1 in zip(list(range(len(vertices_t1))), vertices_t1, regions_t1):
+                for j, v_t2, r_t2 in zip(list(range(len(vertices_t2))), vertices_t2, regions_t2):
                     # d = dists[i, j]
 
                     # if d < self.max_distance:
@@ -322,7 +328,7 @@ class GraphManager:
 
     def get_all_relevant_vertices(self):
         vertices = []
-        for _, vs_ in self.vertices_in_t.iteritems():
+        for _, vs_ in self.vertices_in_t.items():
             vertices.extend(vs_)
 
         return vertices
@@ -457,7 +463,7 @@ class GraphManager:
 
     def all_vertices_and_regions(self, start_frame=-1, end_frame=np.inf):
         l = []
-        for t, v_ids in self.vertices_in_t.iteritems():
+        for t, v_ids in self.vertices_in_t.items():
             if start_frame <= t <= end_frame:
                 for v_id in v_ids:
                     l.append((v_id, self.region(v_id)))
@@ -493,7 +499,7 @@ class GraphManager:
         node_groups = {}
         self.get_cc_rec(vertex, 0, node_groups)
 
-        keys = node_groups.keys()
+        keys = list(node_groups.keys())
         keys = sorted(keys)
 
         g = []
@@ -503,14 +509,14 @@ class GraphManager:
         return g
 
     def next_frame_after(self, frame):
-        for t in xrange(frame + 1, self.end_t):
+        for t in range(frame + 1, self.end_t):
             if t in self.vertices_in_t:
                 return t
 
         return None
 
     def prev_frame_before(self, frame):
-        for t in xrange(frame - 1, -1, -1):
+        for t in range(frame - 1, -1, -1):
             if t in self.vertices_in_t:
                 return t
 
@@ -617,7 +623,7 @@ class GraphManager:
         return self.get_2_best_out_edges_appearance_motion_mix(v, func=v.in_edges)
 
     def strongly_better(self, min_prob=0.9, better_n_times=10, score_type='appearance_motion_mix'):
-        from itertools import izip
+        
 
         strongly_better_e = []
 
@@ -628,7 +634,7 @@ class GraphManager:
                 e, s = self.get_2_best_out_edges(v)
             if e[0] is not None:
                 if s[0] > min_prob:
-                    if e[1] is None or s[1] == 0 or s[0] / s[1] > better_n_times:
+                    if e[1] is None or s[1] == 0 or old_div(s[0], s[1]) > better_n_times:
                         strongly_better_e.append(e[0])
 
         return strongly_better_e
@@ -646,7 +652,7 @@ class GraphManager:
                 e, s = self.get_2_best_out_edges(v)
 
             if e[0] is not None:
-                val = s[0] / (s[0] + s[1] + eps)
+                val = old_div(s[0], (s[0] + s[1] + eps))
 
                 if val > 0.5:
                     strongly_better_e.append(e[0])
@@ -666,7 +672,7 @@ class GraphManager:
                 e, s = self.get_2_best_out_edges(v)
 
             if e[0] is not None:
-                val = s[0] / (s[0] + s[1] + eps)
+                val = old_div(s[0], (s[0] + s[1] + eps))
 
                 if val > 0.5:
                     strongly_better_e.append((val, e[0]))

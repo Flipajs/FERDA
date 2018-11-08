@@ -1,4 +1,5 @@
 from __future__ import print_function
+from __future__ import unicode_literals
 from utils import video_manager
 
 __author__ = 'filip@naiser.cz'

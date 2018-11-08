@@ -1,6 +1,12 @@
 from __future__ import print_function
 from __future__ import absolute_import
+from __future__ import division
+from __future__ import unicode_literals
 
+from future import standard_library
+standard_library.install_aliases()
+from builtins import range
+from past.utils import old_div
 __author__ = 'fnaiser'
 import inspect
 import multiprocessing
@@ -22,7 +28,7 @@ from joblib import Parallel, delayed
 # sys.path.insert(0,parentdir)
 
 from utils.video_manager import get_auto_video_manager
-import cPickle as pickle
+import pickle as pickle
 from core.region.mser import get_filtered_msers
 from core.graph.solver import Solver
 from core.project.project import Project
@@ -261,7 +267,7 @@ def frame_segmentation(img, i, project, rois, border_px=3, full_segmentation_ref
                 new_im[h1:h2, w1:w2] = seg_img.copy()
 
             print("segmentation time: {:.3f}, #roi: {} roi area: {} roi coverage: {:.3f}".format(
-                time.time() - t, len(rois), area, area / float(img.shape[0] * img.shape[1])))
+                time.time() - t, len(rois), area, old_div(area, float(img.shape[0] * img.shape[1]))))
             # t = time.time()
             # segment(proj, img)
             # print "without ", time.time() - t

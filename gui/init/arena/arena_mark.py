@@ -1,9 +1,12 @@
+from __future__ import division
+from __future__ import unicode_literals
+from past.utils import old_div
 __author__ = 'filip@naiser.cz'
 from PyQt4 import QtGui, QtCore
 
 class ArenaMark(QtGui.QGraphicsEllipseItem):
     def __init__(self, ellipse, update_labels=None, radius=5.0):
-        super(ArenaMark, self).__init__(-radius/2, -radius/2, radius, radius)
+        super(ArenaMark, self).__init__(old_div(-radius,2), old_div(-radius,2), radius, radius)
         self.ellipse = ellipse
         self.setFlag(QtGui.QGraphicsItem.ItemIsMovable, True)
         self.setFlag(QtGui.QGraphicsItem.ItemIsSelectable, True)

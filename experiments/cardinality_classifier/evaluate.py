@@ -1,4 +1,7 @@
 from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
+from past.utils import old_div
 from core.project.project import Project
 from utils.gt.gt import GT
 import tqdm
@@ -27,9 +30,9 @@ def eval_cardinality_classification(p, gt):
 
     print("#wrong tracklets: {}({:.2%}), #wrong frames: {}({:.2%})".format(
         num_wrong_tracklets,
-        (num_wrong_tracklets / float(num_wrong_tracklets + num_correct_tracklets)),
+        (old_div(num_wrong_tracklets, float(num_wrong_tracklets + num_correct_tracklets))),
         num_wrong_frames,
-          (num_wrong_frames) / float(num_correct_frames + num_wrong_frames)
+          old_div((num_wrong_frames), float(num_correct_frames + num_wrong_frames))
     ))
 
     for t, c in wrong_tracklets:

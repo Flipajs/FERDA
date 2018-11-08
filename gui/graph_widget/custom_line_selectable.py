@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 __author__ = 'simon'
 
 from PyQt4 import QtGui, QtCore

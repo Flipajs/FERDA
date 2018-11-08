@@ -1,6 +1,7 @@
 """Sorted set implementation.
 
 """
+from __future__ import unicode_literals
 
 from collections import Set, MutableSet, Sequence
 from itertools import chain

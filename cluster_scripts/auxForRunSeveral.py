@@ -1,9 +1,12 @@
+from __future__ import unicode_literals
+from future import standard_library
+standard_library.install_aliases()
 import sys
 import subprocess
 import os
 import datetime
 import pipes
-import cPickle as pickle
+import pickle as pickle
 
 
 # from http://stackoverflow.com/a/14392472/3074835  by Dietrich Epp

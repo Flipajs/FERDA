@@ -1,4 +1,7 @@
 from __future__ import absolute_import
+from __future__ import unicode_literals
+from builtins import range
+from builtins import object
 __author__ = 'flipajs'
 
 from .chunk import Chunk
@@ -9,7 +12,7 @@ import warnings
 import numpy as np
 
 
-class ChunkManager:
+class ChunkManager(object):
     def __init__(self):
         # default value in graph properties will be 0, so we can easily test...
         self.id_ = 1
@@ -65,7 +68,7 @@ class ChunkManager:
 
     def chunk_list(self):
         l = []
-        for _, ch in self.chunks_.iteritems():
+        for _, ch in self.chunks_.items():
             l.append(ch)
 
         return l
@@ -112,7 +115,7 @@ class ChunkManager:
         return self.get_chunks_from_intervals_(intervals)
 
     def undecided_singleid_tracklets_in_frame(self, frame):
-        return filter(lambda x: len(x.P) == 0 and x.is_single(), self.tracklets_in_frame(frame))
+        return [x for x in self.tracklets_in_frame(frame) if len(x.P) == 0 and x.is_single()]
 
     def chunks_in_interval(self, start_frame, end_frame):
         intervals = self.itree[start_frame-self.eps2:end_frame+self.eps2]
@@ -133,7 +136,7 @@ class ChunkManager:
         return self.tracklet_gen()
 
     def tracklet_gen(self):
-        for t in self.chunks_.itervalues():
+        for t in self.chunks_.values():
             yield t
 
     def reset_itree(self, gm):
@@ -196,7 +199,7 @@ class ChunkManager:
         affected = set(self.chunks_in_interval(tracklet.start_frame(project.gm),
                                                      tracklet.end_frame(project.gm)))
 
-        return filter(lambda x: (x.is_single() or x.is_multi()) and not x.is_id_decided(), affected)
+        return [x for x in affected if (x.is_single() or x.is_multi()) and not x.is_id_decided()]
 
     def complete_set_gen(self, project):
         from sys import maxsize
@@ -205,7 +208,7 @@ class ChunkManager:
         frame = 0
         while frame < project.num_frames():
             s = self.tracklets_in_frame(frame)
-            s = filter(lambda x: x.is_single(), s)
+            s = [x for x in s if x.is_single()]
 
             if len(s) == num_animals:
                 yield s
@@ -219,7 +222,7 @@ class ChunkManager:
     def get_random_regions(self, n, gm):
         import random
 
-        tracklet_ids = self.chunks_.keys()
+        tracklet_ids = list(self.chunks_.keys())
         regions = []
         vertices = []
         for _ in range(n):

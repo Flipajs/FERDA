@@ -1,4 +1,8 @@
 from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import range
+from past.utils import old_div
 __author__ = 'filip@naiser.cz'
 
 import pickle
@@ -70,7 +74,7 @@ med_speed = [0] * ant_num
 avg_area = [0] * ant_num
 med_area = [0] * ant_num
 for i in range(ant_num):
-    avg_speed[i] = sum(speed[i]) / float(frames-1)
+    avg_speed[i] = old_div(sum(speed[i]), float(frames-1))
     med_speed[i] = np.median(speed[i])
 
     avg_area[i] = np.average(area[i])

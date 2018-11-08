@@ -1,5 +1,8 @@
+from __future__ import unicode_literals
 #Reused Michael Hlavacek code from background_corrector
 
+from builtins import str
+from builtins import range
 from PyQt4.QtGui import *
 from PyQt4.QtCore import *
 from copy import deepcopy

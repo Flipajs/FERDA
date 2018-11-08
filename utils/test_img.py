@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 import unittest
 from utils.img import safe_crop
 import numpy as np

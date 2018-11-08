@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 import numpy as np
 import sys, os, re, random
 import h5py

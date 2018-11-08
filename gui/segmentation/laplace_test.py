@@ -1,4 +1,7 @@
 from __future__ import absolute_import
+from __future__ import division
+from __future__ import unicode_literals
+from past.utils import old_div
 from PyQt4 import QtGui, QtCore
 import cv2, sys
 import numpy as np
@@ -28,11 +31,11 @@ class LaplacianTest(QtGui.QWidget):
         self.repaint()
 
     def slide3(self, value):
-        self.sigma1 = value / float(10)
+        self.sigma1 = old_div(value, float(10))
         self.repaint()
 
     def slide4(self, value):
-        self.sigma2 = value / float(10)
+        self.sigma2 = old_div(value, float(10))
         self.repaint()
 
     def repaint(self):

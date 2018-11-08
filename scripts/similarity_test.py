@@ -1,3 +1,9 @@
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import map
+from builtins import str
+from builtins import range
+from past.utils import old_div
 __author__ = 'fnaiser'
 
 import pickle
@@ -27,7 +33,7 @@ def transform_pts(r1, r2):
 
     pts2 -= r2.centroid()
     th = r2.theta_ - r1.theta_
-    if abs(th) > np.pi/2:
+    if abs(th) > old_div(np.pi,2):
         th = th + np.pi
 
     rot = np.array([[cos(th), -sin(th)],[sin(th), cos(th)]])
@@ -45,7 +51,7 @@ def get_intersection(pts1, pts2):
     s = s1 & s2
     inter_len = len(s)
 
-    return (len(s1) - inter_len + len(s2) - inter_len) / float(len(s1))
+    return old_div((len(s1) - inter_len + len(s2) - inter_len), float(len(s1)))
 
 
 def similarity_loss(r1, r2):

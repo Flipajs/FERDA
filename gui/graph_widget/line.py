@@ -1,6 +1,8 @@
+from __future__ import unicode_literals
 
 
-class Line:
+from builtins import object
+class Line(object):
 
     def __init__(self, from_region, to_region, type, sureness, color, source_start_id):
         self.from_region = from_region

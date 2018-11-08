@@ -1,10 +1,17 @@
 from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
+from future import standard_library
+standard_library.install_aliases()
+from builtins import range
+from builtins import object
+from past.utils import old_div
 import numpy as np
 from pkg_resources import resource_filename, Requirement
-import cPickle as pickle
+import pickle as pickle
 import math
 
-class ColorNaming:
+class ColorNaming(object):
     w2c = None
 
     def __init__(self):
@@ -49,7 +56,7 @@ class ColorNaming:
         GG = im[:,:, 1].ravel()
         BB = im[:,:, 2].ravel()
 
-        index_im = np.asarray(np.floor(RR / 8)+32 * np.floor(GG / 8)+32 * 32 * np.floor(BB / 8), dtype=np.uint)
+        index_im = np.asarray(np.floor(old_div(RR, 8))+32 * np.floor(old_div(GG, 8))+32 * 32 * np.floor(old_div(BB, 8)), dtype=np.uint)
 
         if out_type == 'colored_image':
             pass
@@ -65,7 +72,7 @@ class ColorNaming:
 
 def __mat2pkl(path, name):
     from scipy.io import loadmat
-    import cPickle as pickle
+    import pickle as pickle
 
     w2c = loadmat(path+'/'+name+'.mat')['w2c']
     with open(path+'/'+name+'.pkl', 'w') as f:
@@ -76,7 +83,7 @@ def im2colors(im, out_type='color_names'):
     return ColorNaming.im2colors(im, out_type)
 
 if __name__ == '__main__':
-    import cPickle as pickle
+    import pickle as pickle
     from scipy.misc import imread
 
     # __mat2pkl('data', 'w2c')
@@ -99,8 +106,8 @@ if __name__ == '__main__':
     im = np.zeros((edge_len_i, edge_len_i, 3), dtype=np.uint8)
     w2cM = np.argmax(w2c, axis=1)
 
-    alpha = math.atan(128.0/255.0)
-    beta = math.atan(255.0/(255.0*2**0.5))
+    alpha = math.atan(old_div(128.0,255.0))
+    beta = math.atan(old_div(255.0,(255.0*2**0.5)))
 
     for bp in range(edge_len_i):
         for gp in range(edge_len_i):
@@ -108,10 +115,10 @@ if __name__ == '__main__':
             g = min(math.cos(alpha) * gp, 255)
 
             i = [edge_len, edge_len]
-            rp = (np.dot(i, [bp, gp]) / np.linalg.norm(i)**2) * edge_len
+            rp = (old_div(np.dot(i, [bp, gp]), np.linalg.norm(i)**2)) * edge_len
             r = min(math.cos(beta) * rp, 255)
 
-            id_ = int(np.floor(r / 8)+32 * np.floor(g / 8)+32 * 32 * np.floor(b / 8))
+            id_ = int(np.floor(old_div(r, 8))+32 * np.floor(old_div(g, 8))+32 * 32 * np.floor(old_div(b, 8)))
             im[bp, gp, :] = np.array(color_values[w2cM[id_]]) * 255
 
     plt.figure(1)
@@ -127,10 +134,10 @@ if __name__ == '__main__':
             g = min((math.cos(alpha) * gp), 255)
 
             i = [edge_len, edge_len]
-            bp = (np.dot(i, [rp, gp]) / np.linalg.norm(i)**2) * edge_len
+            bp = (old_div(np.dot(i, [rp, gp]), np.linalg.norm(i)**2)) * edge_len
             b = min(math.cos(beta) * bp, 255)
 
-            id_ = int(np.floor(r / 8)+32 * np.floor(g / 8)+32 * 32 * np.floor(b / 8))
+            id_ = int(np.floor(old_div(r, 8))+32 * np.floor(old_div(g, 8))+32 * 32 * np.floor(old_div(b, 8)))
             im[rp, gp, :] = np.array(color_values[w2cM[id_]]) * 255
 
     plt.figure(2)
@@ -146,10 +153,10 @@ if __name__ == '__main__':
             r = min((math.cos(alpha) * rp), 255)
 
             i = [edge_len, edge_len]
-            gp = (np.dot(i, [bp, rp]) / np.linalg.norm(i)**2) * edge_len
+            gp = (old_div(np.dot(i, [bp, rp]), np.linalg.norm(i)**2)) * edge_len
             g = min(math.cos(beta) * gp, 255)
 
-            id_ = int(np.floor(r / 8)+32 * np.floor(g / 8)+32 * 32 * np.floor(b / 8))
+            id_ = int(np.floor(old_div(r, 8))+32 * np.floor(old_div(g, 8))+32 * 32 * np.floor(old_div(b, 8)))
             im[bp, rp, :] = np.array(color_values[w2cM[id_]]) * 255
 
     plt.figure(3)
@@ -172,7 +179,7 @@ if __name__ == '__main__':
         print(r)
         for g in range(0, 255, step):
             for b in range(0, 255, step):
-                id_ = int(np.floor(r / 8) + 32 * np.floor(g / 8) + 32 * 32 * np.floor(b / 8))
+                id_ = int(np.floor(old_div(r, 8)) + 32 * np.floor(old_div(g, 8)) + 32 * 32 * np.floor(old_div(b, 8)))
                 c = np.array(color_values[w2cM[id_]])
 
                 rs.append(r)

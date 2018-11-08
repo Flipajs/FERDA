@@ -1,5 +1,11 @@
 from __future__ import print_function
 from __future__ import absolute_import
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import map
+from builtins import str
+from builtins import range
+from past.utils import old_div
 __author__ = 'fnaiser'
 
 from PyQt4 import QtGui
@@ -165,7 +171,7 @@ class StatisticsWidget(QtGui.QWidget):
 
     def obj_arr_append_(self, obj_arr, d):
         new_d = {}
-        for key, val in d.iteritems():
+        for key, val in d.items():
             if key != 'frame' and key != 'region_id':
                 val = np.array(val)
 
@@ -184,7 +190,7 @@ class StatisticsWidget(QtGui.QWidget):
             rch[0].pts()
             size_sum += asizeof.asizeof(rch[0])
 
-        return int(size_sum / ch_test_num)
+        return int(old_div(size_sum, ch_test_num))
 
     def export_mat(self):
         import time
@@ -204,7 +210,7 @@ class StatisticsWidget(QtGui.QWidget):
 
         t1 = time.time()
         if not self.export_chunks_only.isChecked():
-            for _, vs in self.project.gm.vertices_in_t.iteritems():
+            for _, vs in self.project.gm.vertices_in_t.items():
                 for v in vs:
                     ch, _ = self.project.gm.is_chunk(v)
 
@@ -222,7 +228,7 @@ class StatisticsWidget(QtGui.QWidget):
         t2 = time.time()
         file_num = 0
         chunNum  = 0
-        for _, ch in self.project.chm.chunks_.iteritems():
+        for _, ch in self.project.chm.chunks_.items():
             chunNum += 1
 
             rch = RegionChunk(ch, self.project.gm, self.project.rm)
@@ -286,8 +292,8 @@ class StatisticsWidget(QtGui.QWidget):
                                 center += np.array([y, x])
                                 num += 1
 
-                    c = center / num
-                    radius = round((num / np.pi) ** 0.5)
+                    c = old_div(center, num)
+                    radius = round((old_div(num, np.pi)) ** 0.5)
 
                 arena = {'cx': c[1], 'cy': c[0], 'radius': radius}
 
@@ -437,7 +443,7 @@ class StatisticsWidget(QtGui.QWidget):
         import matplotlib.pyplot as plt
 
         vals = []
-        ff = range(0, frames, step)
+        ff = list(range(0, frames, step))
         for f in ff:
             vals.append(len(self.project.chm.tracklets_in_frame(f)))
 
@@ -449,10 +455,10 @@ class StatisticsWidget(QtGui.QWidget):
         ax.bar(ind, np.array(vals), width, color='r')
 
         how_many_labels_do_we_want = 30
-        labels_step = max(1, int(len(vals) / how_many_labels_do_we_want))
+        labels_step = max(1, int(old_div(len(vals), how_many_labels_do_we_want)))
 
         ax.set_xticks(ind[::labels_step])
-        ax.set_xticklabels(map(str, ff[::labels_step]))
+        ax.set_xticklabels(list(map(str, ff[::labels_step])))
 
         plt.ion()
         plt.show()

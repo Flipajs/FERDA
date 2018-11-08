@@ -1,3 +1,6 @@
+from __future__ import division
+from __future__ import unicode_literals
+from past.utils import old_div
 from PyQt4 import QtGui, QtCore
 
 class VideoSlider(QtGui.QSlider):
@@ -39,7 +42,7 @@ class VideoSlider(QtGui.QSlider):
 
         if QMouseEvent.button() == QtCore.Qt.LeftButton and not sr.contains(QMouseEvent.pos()):
             if self.orientation() == QtCore.Qt.Vertical:
-                newVal = self.minimum() + ((self.maximum() - self.minimum()) * (self.height()-QMouseEvent.y()))/self.height()
+                newVal = self.minimum() + old_div(((self.maximum() - self.minimum()) * (self.height()-QMouseEvent.y())),self.height())
             else:
                 newVal = self.minimum() + (self.maximum() - self.minimum()) * QMouseEvent.x() / self.width()
             if self.invertedAppearance():

@@ -1,4 +1,9 @@
 from __future__ import absolute_import
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import range
+from past.utils import old_div
+from builtins import object
 from PyQt4 import QtGui, QtCore
 from PyQt4.QtCore import Qt
 import math
@@ -16,7 +21,7 @@ PARTIAL_LINE_OFFSET = 5
 __author__ = 'Simon Mandlik'
 
 
-class Edge:
+class Edge(object):
 
     def __init__(self, from_x, from_y, to_x, to_y, graph_line, scene, vertical=False, partial=False):
         self.from_x = from_x
@@ -86,8 +91,8 @@ class EdgeGraphical(QtGui.QGraphicsLineItem):
         self.info_item.setFlag(QtGui.QGraphicsItem.ItemSendsScenePositionChanges)
 
     def compute_rect_pos(self):
-        x = (self.parent_line.x2() + self.parent_line.x1()) / 2
-        y = (self.parent_line.y2() + self.parent_line.y1()) / 2
+        x = old_div((self.parent_line.x2() + self.parent_line.x1()), 2)
+        y = old_div((self.parent_line.y2() + self.parent_line.y1()), 2)
         return x, y
 
     def decolor_margins(self):

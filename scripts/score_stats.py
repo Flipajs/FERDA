@@ -1,4 +1,8 @@
 from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import range
+from past.utils import old_div
 __author__ = 'fnaiser'
 
 import pickle
@@ -80,7 +84,7 @@ if __name__ == '__main__':
 
             t_ = max(t1, t2) - min(t1, t2)
 
-            if t_ > np.pi/2:
+            if t_ > old_div(np.pi,2):
                 t_ = np.pi - t_
             # t_ %= np.pi/2
 
@@ -93,7 +97,7 @@ if __name__ == '__main__':
 
             # thetas[id, i] = r1.theta_ - r2.theta_
 
-            similarities[id, i] = abs(r1.area() - r2.area()) / float(min(r1.area(), r2.area()))
+            similarities[id, i] = old_div(abs(r1.area() - r2.area()), float(min(r1.area(), r2.area())))
             # similarities[id, i] = similarity_loss(r1, r2)
 
             a_[id, i] = r1.ellipse_major_axis_length()
@@ -123,7 +127,7 @@ if __name__ == '__main__':
     orientation_data = np.array(np.abs(thetas.reshape(-1)))
     avg_main_axis_len = 2*np.mean(a_.reshape(-1))
     print(avg_main_axis_len)
-    distance_data = np.array(distances100.reshape(-1)) / avg_main_axis_len
+    distance_data = old_div(np.array(distances100.reshape(-1)), avg_main_axis_len)
     similarity_data = np.array(similarities.reshape(-1))
     mini_data = np.array(minI.reshape(-1))
 
@@ -148,7 +152,7 @@ if __name__ == '__main__':
 
     ##### dist similarity 2d hist
     avg_main_axis_len = 2*np.mean(a_.reshape(-1))
-    data = np.array(distances100.reshape(-1)) / avg_main_axis_len
+    data = old_div(np.array(distances100.reshape(-1)), avg_main_axis_len)
     h, x, y, p = plt.hist2d(similarity_data, distance_data, bins = 20, normed=True)
     plt.imshow(h, origin = "lower")
     plt.title('2d histogram')
@@ -162,7 +166,7 @@ if __name__ == '__main__':
 
     ##### similarity orientation 2d hist
     avg_main_axis_len = 2*np.mean(a_.reshape(-1))
-    data = np.array(distances100.reshape(-1)) / avg_main_axis_len
+    data = old_div(np.array(distances100.reshape(-1)), avg_main_axis_len)
     h, x, y, p = plt.hist2d(orientation_data, similarity_data, bins = 20, normed=True)
     plt.imshow(h, origin = "lower")
     plt.title('2d histogram')
@@ -175,7 +179,7 @@ if __name__ == '__main__':
 
     ##### similarity minI 2d hist
     avg_main_axis_len = 2*np.mean(a_.reshape(-1))
-    data = np.array(distances100.reshape(-1)) / avg_main_axis_len
+    data = old_div(np.array(distances100.reshape(-1)), avg_main_axis_len)
     h, x, y, p = plt.hist2d(similarity_data, mini_data, bins = 20, normed=True)
     plt.imshow(h, origin = "lower")
     plt.title('2d histogram')
@@ -206,7 +210,7 @@ if __name__ == '__main__':
     plt.subplot(4, 2, 3)
     plt.title('histogram of distances from predicted position')
     avg_main_axis_len = 2*np.mean(a_.reshape(-1))
-    data = np.array(distances100.reshape(-1)) / avg_main_axis_len
+    data = old_div(np.array(distances100.reshape(-1)), avg_main_axis_len)
     bins = np.linspace(np.min(data), np.max(data), n_bins)
     data = np.append(data, bins)
     data = gaussian_filter1d(data, 3)
@@ -291,5 +295,5 @@ if __name__ == '__main__':
         print(np.mean(it), np.std(it), np.median(it), np.min(it), np.max(it))
 
 
-    print("ALPHA: ", np.mean(distances100) / np.mean(thetas))
-    print("BETA: ", np.mean(distances100) / np.mean(similarities))
+    print("ALPHA: ", old_div(np.mean(distances100), np.mean(thetas)))
+    print("BETA: ", old_div(np.mean(distances100), np.mean(similarities)))

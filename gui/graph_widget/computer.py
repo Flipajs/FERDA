@@ -1,3 +1,6 @@
+from __future__ import division
+from __future__ import unicode_literals
+from past.utils import old_div
 from heapq import *
 
 from gui.graph_widget.graph_line import LineType
@@ -11,7 +14,7 @@ def sort_edges(edges, used_frames_sorted):
     for edge in edges:
         length = used_frames_sorted.index(edge.region_to.frame_) - used_frames_sorted.index(edge.region_from.frame_)
         if edge.type == LineType.TRACKLET or edge.type == LineType.PARTIAL_TRACKLET:
-            if length in chunk_dict.keys():
+            if length in list(chunk_dict.keys()):
                 chunk = chunk_dict.pop(length)
                 if isinstance(chunk, list):
                     chunk.append(edge)
@@ -23,8 +26,7 @@ def sort_edges(edges, used_frames_sorted):
         elif edge.type == LineType.LINE:
             frame0 = used_frames_sorted.index(edge.region_from.frame_)
             heappush(heap, ((len(used_frames_sorted) - length)
-                            + ((used_frames_sorted[len(used_frames_sorted) - 1] - frame0) + (1 - edge.sureness)
-                               / float(len(used_frames_sorted))), edge))
+                            + ((used_frames_sorted[len(used_frames_sorted) - 1] - frame0) + old_div((1 - edge.sureness), float(len(used_frames_sorted)))), edge))
 
     chunks = get_list_from_dict(chunk_dict)
     lines = []
@@ -37,7 +39,7 @@ def sort_edges(edges, used_frames_sorted):
 
 
 def get_list_from_dict(dictionary):
-    lengths = dictionary.keys()
+    lengths = list(dictionary.keys())
     result = []
     for length in sorted(lengths, reverse=True):
         value = dictionary[length]

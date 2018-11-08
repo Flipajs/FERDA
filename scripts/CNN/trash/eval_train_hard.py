@@ -1,4 +1,9 @@
 from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import str
+from builtins import range
+from past.utils import old_div
 import h5py
 import os
 import argparse
@@ -30,7 +35,7 @@ if __name__ == '__main__':
 
     pos_d = []
     neg_d = []
-    for i in range(pred.shape[0]/(2+args.num_negative)):
+    for i in range(old_div(pred.shape[0],(2+args.num_negative))):
         p1 = pred[i*(2 + args.num_negative)]
         p2 = pred[i*(2 + args.num_negative) + 1]
         n = pred[i*(2 + args.num_negative) + 2]
@@ -44,5 +49,5 @@ if __name__ == '__main__':
     print(stats.describe(neg_d))
 
     corr = np.sum(np.array(pos_d) < np.array(neg_d))
-    print("{}, {:.2%}".format(corr, corr/float(len(pos_d))))
+    print("{}, {:.2%}".format(corr, old_div(corr,float(len(pos_d)))))
 

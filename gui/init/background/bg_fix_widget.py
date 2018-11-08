@@ -1,4 +1,10 @@
 from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
+from past.utils import old_div
 from PyQt4 import QtGui, QtCore
 from gui.img_controls.my_view import MyView
 import cv2
@@ -7,7 +13,7 @@ from gui.img_controls import gui_utils
 from gui.init.background import settingsdialog
 import copy
 import math
-import thread
+import _thread
 import numpy as np
 
 class BgFixWidget(QtGui.QWidget):
@@ -139,12 +145,12 @@ class BgFixWidget(QtGui.QWidget):
             else:
                 # self.statusBar().showMessage("Move the new square to the area you wish to be copied into selected space and press fix again.")
                 mouse_coords = self.graphics_view.mapToScene(self.graphics_view.mapFromGlobal(QtGui.QCursor.pos()))
-                self.add_copy_marker(mouse_coords.x() - self.pos_marker.rect().width()/2, mouse_coords.y() - self.pos_marker.rect().height()/2, self.pos_marker.rect().width(), self.pos_marker.rect().height())
+                self.add_copy_marker(mouse_coords.x() - old_div(self.pos_marker.rect().width(),2), mouse_coords.y() - old_div(self.pos_marker.rect().height(),2), self.pos_marker.rect().width(), self.pos_marker.rect().height())
 
     def open_image(self):
         filename = QtGui.QFileDialog.getOpenFileName(self, "Open image", "", "Images(*.*)")
         if filename != "":
-            filename = unicode(filename)
+            filename = str(filename)
             self.load_image(filename)
             # self.statusBar().showMessage("Select an area you want to fix.")
 
@@ -254,10 +260,10 @@ class BgFixWidget(QtGui.QWidget):
         y_blur = max(0, new_y - blur_distance)
         w_blur = min(img_width, width + 2*blur_distance)
         h_blur = min(img_height, height + 2*blur_distance)
-        x_keep = min((2*new_x + width)/2, new_x + blur_distance)
-        y_keep = min((2*new_y + height)/2, new_y + blur_distance)
-        w_keep = max((2*new_x + width)/2, width - 2*blur_distance)
-        h_keep = max((2*new_y + height)/2, height - 2*blur_distance)
+        x_keep = min(old_div((2*new_x + width),2), new_x + blur_distance)
+        y_keep = min(old_div((2*new_y + height),2), new_y + blur_distance)
+        w_keep = max(old_div((2*new_x + width),2), width - 2*blur_distance)
+        h_keep = max(old_div((2*new_y + height),2), height - 2*blur_distance)
 
         to_blur = self.get_img_part(x_blur, y_blur, w_blur, h_blur)
         to_keep = self.get_img_part(x_keep, y_keep, w_keep, h_keep)

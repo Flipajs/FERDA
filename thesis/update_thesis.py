@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 import os, shutil
 
 RESULTS_WD = '/Users/flipajs/Documents/dev/ferda/thesis'

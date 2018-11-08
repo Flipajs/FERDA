@@ -1,4 +1,10 @@
 from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import zip
+from builtins import range
+from builtins import object
+from past.utils import old_div
 import itertools
 import os.path
 import tempfile
@@ -38,7 +44,7 @@ def get_hull_poly(region, epsilon_px=5):
     return np.vstack((hull, hull[0:1]))
 
 
-class InteractionDetector:
+class InteractionDetector(object):
     def __init__(self, model_dir, project=None):
         """
         Load interaction detector keras model.
@@ -196,7 +202,7 @@ class InteractionDetector:
                 # # save_prediction_img(None, 1, img, pred=prediction, gt=None, scale=1.1)
                 # images.append(safe_crop(img, tuple([prediction[x] for x in ('0_x', '0_y')]), 200)[0])
                 overlap = prediction_r.get_overlap(get_hull_poly(multi_region))
-                if float(overlap) / prediction_r.area < 0.25:
+                if old_div(float(overlap), prediction_r.area) < 0.25:
                     # print('overlap bellow threshold')
                     break
             regions.append(prediction_r)
@@ -324,7 +330,7 @@ class InteractionDetector:
         img_rotated = timg.get_img()
 
         img_crop, delta_xy = safe_crop(img_rotated, prev_xy, self.config['input_size_px'])
-        img = np.expand_dims(img_crop, 0).astype(np.float) / 255.
+        img = old_div(np.expand_dims(img_crop, 0).astype(np.float), 255.)
         pred = self.m.predict(img)
         pred_ = pred.copy().flatten()
         pred = self.ti.postprocess_predictions(pred)
@@ -354,7 +360,7 @@ class InteractionDetector:
             tracks_items = [t for _, t in tracks.iterrows()]
         elif isinstance(tracks, list):
             tracks_items = tracks
-        for img, props in tqdm(zip(images, tracks_items), desc='interaction movie'):
+        for img, props in tqdm(list(zip(images, tracks_items)), desc='interaction movie'):
     #         for obj_i in range(2):
     #             predictions['{}_major'.format(obj_i)] = 60
     #             predictions['{}_minor'.format(obj_i)] = 15
@@ -418,9 +424,9 @@ class InteractionDetector:
         except OSError:
             pass
 
-        imgs = [vm.get_frame(frame) for frame in tqdm(range(start_frame, end_frame + 1), desc='gathering images')]
+        imgs = [vm.get_frame(frame) for frame in tqdm(list(range(start_frame, end_frame + 1)), desc='gathering images')]
         regions = []
-        for frame in tqdm(range(start_frame, end_frame + 1), desc='gathering regions'):
+        for frame in tqdm(list(range(start_frame, end_frame + 1)), desc='gathering regions'):
             regions_in_frame = []
             for t in self.project.chm.tracklets_in_frame(frame):
                 r = t.get_region_in_frame(self.project.gm, frame)
@@ -448,7 +454,7 @@ class InteractionDetector:
         def min_dist(p1, p2):
             p1 = {el.frame: el for el in p1}
             p2 = {el.frame: el for el in p2}
-            frames = sorted(list(set(p1.keys()).intersection(p2.keys())))
+            frames = sorted(list(set(p1.keys()).intersection(list(p2.keys()))))
             if not frames:
                 return 99999, -1
             else:

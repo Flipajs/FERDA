@@ -1,4 +1,10 @@
 from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
+from future import standard_library
+standard_library.install_aliases()
+from builtins import range
+from past.utils import old_div
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn_theano.datasets import load_sample_image
@@ -6,7 +12,7 @@ from sklearn_theano.feature_extraction import OverfeatLocalizer, OverfeatTransfo
 from sklearn.mixture import GMM
 import cv2
 import time
-import cPickle as pickle
+import pickle as pickle
 from utils.img import get_img_around_pts, replace_everything_but_pts
 
 from core.graph.region_chunk import RegionChunk
@@ -49,8 +55,8 @@ def process_tracklet(t, p, cnn):
             #     # todo
             #     raise Exception("Not implemented yet")
             # else:
-            y = (bb.shape[0]-231)/2
-            x = (bb.shape[1]-231)/2
+            y = old_div((bb.shape[0]-231),2)
+            x = old_div((bb.shape[1]-231),2)
             im_ = get_safe_selection(bb, y, x, H_, W_, fill_color=(0, 0, 0))
 
 
@@ -67,7 +73,7 @@ def process_tracklet(t, p, cnn):
 def get_features(p, tracklets, cnn):
     features = {}
     i = 0
-    for arr in tracklets.itervalues():
+    for arr in tracklets.values():
         for t_id in arr:
             t = p.chm[t_id]
             X = process_tracklet(t, p, cnn)
@@ -113,7 +119,7 @@ if __name__ == "__main__":
 
         data = [[] for i in range(len(tracklets))]
 
-        for id_, arr in tracklets.iteritems():
+        for id_, arr in tracklets.items():
             for t_id_ in arr:
                 data[id_].extend(list(features[t_id_]))
 
@@ -152,7 +158,7 @@ if __name__ == "__main__":
             m_ = probs_[i_]
             probs_[i_] = 0
             m2_ = np.max(probs_)
-            print(i_, m_ / (m_ + m2_))
+            print(i_, old_div(m_, (m_ + m2_)))
 
             print()
             print()

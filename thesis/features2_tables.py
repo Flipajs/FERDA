@@ -1,6 +1,12 @@
 from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
+from future import standard_library
+standard_library.install_aliases()
+from builtins import range
+from past.utils import old_div
 from thesis.config import *
-import cPickle as pickle
+import pickle as pickle
 import numpy as np
 from pylatex.utils import NoEscape
 
@@ -375,10 +381,10 @@ if __name__ == '__main__':
                 c2 = np.array(resultsi[i][3])
 
                 x = np.logical_and(np.logical_and(r1 == r2, c1), c2)
-                print("{:.2%}".format(np.sum(x) / float(r1.shape[0])))
+                print("{:.2%}".format(old_div(np.sum(x), float(r1.shape[0]))))
                 print(np.sum(x), r1.shape[0], resultsc[i][1], resultsi[i][1])
 
-                vals.append(np.sum(x) / float(r1.shape[0]))
+                vals.append(old_div(np.sum(x), float(r1.shape[0])))
 
             nn.append(np.mean(vals))
 

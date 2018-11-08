@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 from PyQt4 import QtGui, QtCore
 # regenerate the ui_tracking_widget code with `pyuic4 tracking_widget.ui -o ui_tracking_widget.py -x`
 from gui.generated.ui_tracking_widget import Ui_tracking_widget

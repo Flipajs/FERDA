@@ -1,4 +1,8 @@
 from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import range
+from past.utils import old_div
 import sys
 
 __author__ = 'filip@naiser.cz'
@@ -301,10 +305,10 @@ class CollisionEditor(QtGui.QMainWindow):
         y_blur = max(0, new_y - blur_distance)
         w_blur = min(img_width, width + 2*blur_distance)
         h_blur = min(img_height, height + 2*blur_distance)
-        x_keep = min((2*new_x + width)/2, new_x + blur_distance)
-        y_keep = min((2*new_y + height)/2, new_y + blur_distance)
-        w_keep = max((2*new_x + width)/2, width - 2*blur_distance)
-        h_keep = max((2*new_y + height)/2, height - 2*blur_distance)
+        x_keep = min(old_div((2*new_x + width),2), new_x + blur_distance)
+        y_keep = min(old_div((2*new_y + height),2), new_y + blur_distance)
+        w_keep = max(old_div((2*new_x + width),2), width - 2*blur_distance)
+        h_keep = max(old_div((2*new_y + height),2), height - 2*blur_distance)
 
         to_blur = self.get_img_part(x_blur, y_blur, w_blur, h_blur)
         to_keep = self.get_img_part(x_keep, y_keep, w_keep, h_keep)

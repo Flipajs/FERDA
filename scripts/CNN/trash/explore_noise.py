@@ -1,4 +1,6 @@
 from __future__ import print_function
+from __future__ import unicode_literals
+from builtins import str
 import pickle
 import numpy as np
 from imageio import imread
@@ -27,7 +29,7 @@ with open(wd + '/softmax_results_map.pkl') as f:
     d = pickle.load(f)
 
 x = []
-for val in d.itervalues():
+for val in d.values():
     x.append(val)
 
 x = np.array(x)
@@ -36,7 +38,7 @@ plt.show()
 
 from tqdm import tqdm
 
-for id, val in tqdm(d.iteritems()):
+for id, val in tqdm(iter(d.items())):
 
     if val[-1] < 0.5:
         continue

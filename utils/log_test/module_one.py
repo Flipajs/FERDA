@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 import logging
 from utils import get_logger
 # import module_two as two

@@ -1,4 +1,8 @@
 from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import range
+from past.utils import old_div
 __author__ = 'filip@naiser.cz'
 import sys
 from random import randint
@@ -85,7 +89,7 @@ class ImgSequenceWidget(QtGui.QWidget):
 
     def scroll_changed(self):
         s = self.scroll_area.verticalScrollBar()
-        val = s.value() / float(s.maximum())
+        val = old_div(s.value(), float(s.maximum()))
         print("Scrolling", val)
 
         length = 30
@@ -112,8 +116,8 @@ class ImgSequenceWidget(QtGui.QWidget):
                 img_ = zeros((shape(img)[0] + 2 * self.im_height_, shape(img)[1] + 2 * self.im_width_, 3), dtype=uint8)
                 img_[self.im_height_:-self.im_height_, self.im_width_:-self.im_width_] = img.copy()
 
-                x = pos['cx'] + self.im_width_ / 2
-                y = pos['cy'] + self.im_height_ / 2
+                x = pos['cx'] + old_div(self.im_width_, 2)
+                y = pos['cy'] + old_div(self.im_height_, 2)
 
                 crop = img_[y:y + self.im_height_, x:x + self.im_width_, :].copy()
 
@@ -210,8 +214,8 @@ class ImgSequenceWidget(QtGui.QWidget):
             img_ = zeros((shape(img)[0] + 2 * height, shape(img)[1] + 2 * width, 3), dtype=uint8)
             img_[height:-height, width:-width] = img.copy()
 
-            x = new_data[f - frame]['cx'] + width / 2
-            y = new_data[f - frame]['cy'] + height / 2
+            x = new_data[f - frame]['cx'] + old_div(width, 2)
+            y = new_data[f - frame]['cy'] + old_div(height, 2)
 
             crop = img_[y:y + height, x:x + width, :].copy()
 
@@ -273,8 +277,8 @@ class ImgSequenceWidget(QtGui.QWidget):
             img_ = zeros((shape(img)[0] + 2 * self.im_height_, shape(img)[1] + 2 * self.im_width_, 3), dtype=uint8)
             img_[self.im_height_:-self.im_height_, self.im_width_:-self.im_width_] = img.copy()
 
-            x = pos['cx'] + self.im_width_ / 2
-            y = pos['cy'] + self.im_height_ / 2
+            x = pos['cx'] + old_div(self.im_width_, 2)
+            y = pos['cy'] + old_div(self.im_height_, 2)
 
             crop = img_[y:y + self.im_height_, x:x + self.im_width_, :].copy()
 

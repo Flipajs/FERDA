@@ -1,5 +1,9 @@
 from __future__ import print_function
 from __future__ import absolute_import
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import range
+from past.utils import old_div
 import threading
 from PyQt4 import QtGui, QtCore
 
@@ -278,11 +282,11 @@ class GraphVisualizer(QtGui.QWidget):
             position = col.get_position_with_chunk_id(ch_id)
             y = GAP + FROM_TOP + position * self.height + SPACE_BETWEEN_VER * position
             if self.show_vertically:
-                self.view.centerOn(y, x + QtGui.QWidget.normalGeometry(self).width() / 2)
+                self.view.centerOn(y, x + old_div(QtGui.QWidget.normalGeometry(self).width(), 2))
             else:
-                self.view.centerOn(x + QtGui.QWidget.normalGeometry(self).width() / 2, y)
+                self.view.centerOn(x + old_div(QtGui.QWidget.normalGeometry(self).width(), 2), y)
             x += WIDTH
-            y += HEIGHT / 2
+            y += old_div(HEIGHT, 2)
             if self.show_vertically:
                 x, y = y, x
             g_item = self.scene.itemAt(x, y)
@@ -292,7 +296,7 @@ class GraphVisualizer(QtGui.QWidget):
         self.loader.update_colours(self.edges)
 
     def show_node_images(self):
-        for it in self.scene.items():
+        for it in list(self.scene.items()):
             if isinstance(it, Node):
                 it.create_pixmap()
 
@@ -482,7 +486,7 @@ class GraphVisualizer(QtGui.QWidget):
                                         self.relative_margin, self.width, self.height, True)
                         self.frames_columns[((x - empty_frame_count), x - 1)] = column
                         self.columns.append(column)
-                    self.scene_width += WIDTH / 2 + SPACE_BETWEEN_HOR
+                    self.scene_width += old_div(WIDTH, 2) + SPACE_BETWEEN_HOR
                 column = Column(x, self.scene, self.img_manager, self.relative_margin, self.width, self.height)
                 self.frames_columns[x] = column
                 self.columns.append(column)
@@ -547,7 +551,7 @@ class GraphVisualizer(QtGui.QWidget):
         Faster than the one above, intended for use with imageless nodes
         """
         next_x = 0
-        refresh_step = last_frame - first_frame / 3
+        refresh_step = last_frame - old_div(first_frame, 3)
         r = first_frame
         for column in self.columns:
             self.load_indicator_wheel()
@@ -574,7 +578,7 @@ class GraphVisualizer(QtGui.QWidget):
         if column.empty and isinstance(column.frame, tuple) and not self.compress_axis:
             next_x += WIDTH * (column.frame[1] - column.frame[0])
         else:
-            next_x += WIDTH / 2 if column.empty else WIDTH
+            next_x += old_div(WIDTH, 2) if column.empty else WIDTH
         next_x += SPACE_BETWEEN_HOR
         return next_x
 
