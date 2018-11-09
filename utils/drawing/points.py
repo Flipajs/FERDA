@@ -4,7 +4,6 @@ import pickle
 import cv2
 import numpy as np
 
-from core.region import mser, mser_operations
 from utils.img import get_safe_selection
 from utils.roi import get_roi
 
@@ -204,7 +203,7 @@ if __name__ == '__main__':
         regions = pickle.load(f)
 
     img = cv2.imread('/Users/fnaiser/Documents/colormarktests/imgs/0.png')
-
+    from core.region import mser, mser_operations
 
     regions = mser.get_msers_img(img)
     groups = mser_operations.get_region_groups(regions)
