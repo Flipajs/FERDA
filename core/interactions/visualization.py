@@ -176,7 +176,7 @@ def visualize_results(experiment_dir, data_dir, image_store='images.h5:test', n_
         errors_xy = K.eval(errors_xy)
 
         if n_objects == 1:
-            angle_errors = errors[:, ti.array.prop2idx(0, 'angle_deg')]  # shape=(n,)
+            angle_errors = errors[:, ti.array.prop2idx(0, 'angle_deg_cw')]  # shape=(n,)
             xy_errors = errors_xy[:, 0]  # shape=(n,)
         elif n_objects == 2:
             assert False, 'not implemented'
