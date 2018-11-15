@@ -128,8 +128,8 @@ class DataGenerator(object):
                        'regression_tracking_image_size_px': 150,
                        'single_tracklet_min_speed': 5,
                        'single_tracklet_remove_fraction': 0.4,
-#                       'augmentation_elliptic_mask_multiplier': 1,  # fishes, sowbugs
-                       'augmentation_elliptic_mask_multiplier': 4,  # ants
+#                       'augmentation_elliptic_mask_multipliers': (1, 1), # fishes, sowbugs
+                       'augmentation_elliptic_mask_multipliers': (1.5, 4), # ants
                        }
         # self.__i = 0  # used for visualizations commented out
         # self._get_single_region_tracklets_cached = memory.cache(
@@ -488,8 +488,8 @@ class DataGenerator(object):
 
         tregion = TransformableRegion(img_rgba)
         tregion.set_ellipse(copy.deepcopy(ellipse_a))
-        multiplier = self.params['augmentation_elliptic_mask_multiplier']
-        tregion.set_elliptic_mask(multiplier, multiplier)
+        multipliers = self.params['augmentation_elliptic_mask_multipliers']
+        tregion.set_elliptic_mask(*multipliers)
 
         head_xy, _ = ellipse_a.get_vertices()
         tregion.move(-head_xy[::-1])  # move head of object 2 to (0, 0)
