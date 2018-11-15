@@ -23,6 +23,7 @@ import random
 import copy
 from joblib import Memory
 from os.path import join
+import matplotlib.pylab as plt
 
 from core.project.project import Project
 from core.graph.region_chunk import RegionChunk
@@ -307,7 +308,7 @@ class DataGenerator(object):
         gt_out.to_csv(out_csv, index=False, float_format='%.2f')
         # gt.to_hdf(join(out_dir, 'test.h5'), )
 
-    def write_regression_tracking_data(self, project_dir, out_dir, count, test_fraction=0.1, augmentation=True,
+    def write_regression_tracking_data(self, project_dir, count, out_dir=None, test_fraction=0.1, augmentation=True,
                                        overwrite=False):
         """
         Write regression tracking training and testing data with optional augmentation.
@@ -316,29 +317,35 @@ class DataGenerator(object):
         --write-regression-tracking-data /home/matej/prace/ferda/projects/2_temp/180713_1633_Cam1_clip_initial . 10
 
         :param project_dir: project to use for training data extraction
-        :param out_dir: output directory for images.h5, train.csv, test.csv
         :param count: number of generated training samples
+        :param out_dir: output directory for images.h5, train.csv, test.csv or None to display the generated data
         :param test_fraction: fraction of test samples with respect to training samples
         :param augmentation: augment training samples with a disruptor object
         :param overwrite: enable to silently overwrite existing data
         """
         self._load_project(project_dir)
 
-        self._makedirs(out_dir)
-        h5_filename = join(out_dir, 'images.h5')
-        train_csv_filename = join(out_dir, 'train.csv')
-        test_csv_filename = join(out_dir, 'test.csv')
+        if out_dir is not None:
+            self._makedirs(out_dir)
+            h5_filename = join(out_dir, 'images.h5')
+            train_csv_filename = join(out_dir, 'train.csv')
+            test_csv_filename = join(out_dir, 'test.csv')
 
-        if not overwrite:
-            if os.path.exists(h5_filename):
-                raise OSError(errno.EEXIST, 'HDF5 file %s already exists.' % h5_filename)
-            if os.path.exists(train_csv_filename):
-                raise OSError(errno.EEXIST, 'file %s already exists.' % train_csv_filename)
-            if os.path.exists(test_csv_filename):
-                raise OSError(errno.EEXIST, 'file %s already exists.' % test_csv_filename)
-        h5_file = h5py.File(h5_filename, mode='w')
-        h5_group_train = h5_file.create_group('train')
-        h5_group_test = h5_file.create_group('test')
+            if not overwrite:
+                if os.path.exists(h5_filename):
+                    raise OSError(errno.EEXIST, 'HDF5 file %s already exists.' % h5_filename)
+                if os.path.exists(train_csv_filename):
+                    raise OSError(errno.EEXIST, 'file %s already exists.' % train_csv_filename)
+                if os.path.exists(test_csv_filename):
+                    raise OSError(errno.EEXIST, 'file %s already exists.' % test_csv_filename)
+            h5_file = h5py.File(h5_filename, mode='w')
+            h5_group_train = h5_file.create_group('train')
+            h5_group_test = h5_file.create_group('test')
+        else:
+            train_csv_filename = None
+            test_csv_filename = None
+            h5_group_train = None
+            h5_group_test = None
 
         all_regions_idx, single_region_tracklets = self._get_single_region_tracklets()
 
@@ -359,8 +366,9 @@ class DataGenerator(object):
         self._write_regression_tracking_dataset(h5_group_test, idxs[count:],
                                                 single_region_tracklets, test_csv_filename,
                                                 None if not augmentation else idxs_augmentation[count:])
-        h5_file.close()
-        self.show_ground_truth(train_csv_filename, join(out_dir, 'sample'), h5_filename + ':train/img1', n=20)
+        if out_dir is not None:
+            h5_file.close()
+            self.show_ground_truth(train_csv_filename, join(out_dir, 'sample'), h5_filename + ':train/img1', n=20)
 
     def _get_single_region_tracklets_cached(self, project_working_directory):
         """
@@ -400,7 +408,7 @@ class DataGenerator(object):
         """
         Generate regression tracking training data.
 
-        :param h5_group: h5 group or dataset
+        :param h5_group: h5 group or dataset or None to display the images
         :param idx: tracklet / region indices, [(tracklet_idx, region_idx), (tracklet_idx, region_idx), ...]
         :param tracklets: tracklets regions, [[Region, Region, ....], [Region, ...], ...]
         :param out_csv: out csv filename
@@ -409,14 +417,16 @@ class DataGenerator(object):
 
         dataset_names = ['img0', 'img1']
         img_size_px = self.params['regression_tracking_image_size_px']
-        for name in dataset_names:
-            h5_group.create_dataset(name, (len(idx), img_size_px, img_size_px, 3), np.uint8)
+        if h5_group is not None:
+            for name in dataset_names:
+                h5_group.create_dataset(name, (len(idx), img_size_px, img_size_px, 3), np.uint8)
 
-        # initialize csv output file
-        COLUMNS = ['x', 'y', 'major', 'minor', 'angle_deg_cw']  # , 'region1_id', 'region2_id']
-        csv_file = open(out_csv, 'w')
-        csv_writer = csv.DictWriter(csv_file, fieldnames=COLUMNS)
-        csv_writer.writeheader()
+        if out_csv is not None:
+            # initialize csv output file
+            COLUMNS = ['x', 'y', 'major', 'minor', 'angle_deg_cw']  # , 'region1_id', 'region2_id']
+            csv_file = open(out_csv, 'w')
+            csv_writer = csv.DictWriter(csv_file, fieldnames=COLUMNS)
+            csv_writer.writeheader()
 
         for i, (tracklet_idx, region_idx) in enumerate(tqdm.tqdm(idx)):
             # a region in the frame n and n + 1
@@ -453,19 +463,28 @@ class DataGenerator(object):
                                                 theta_deg, phi_deg, aug_shift_px)
                 img_crop, delta_xy = safe_crop(rotated_img, consecutive_regions[0].centroid()[::-1], img_size_px)
 
-                h5_group[dataset][i] = img_crop
+                if h5_group is not None:
+                    h5_group[dataset][i] = img_crop
+                else:
+                    ##
+                    plt.imshow(save_prediction_img(None, 1, img_crop, rotated_ellipse.move(-delta_xy).to_dict(),
+                                                   title=dataset))
+                    plt.show()
+                    ##
 
             centroid_xy2_crop = timg.get_transformed_coords(consecutive_regions[1].centroid()[::-1]) - delta_xy
 
-            csv_writer.writerow({
-                'x': centroid_xy2_crop[0],
-                'y': centroid_xy2_crop[1],
-                'major': 2 * consecutive_regions[1].major_axis_,
-                'minor': 2 * consecutive_regions[1].minor_axis_,
-                'angle_deg_cw': consecutive_regions[1].angle_deg_cw - consecutive_regions[0].angle_deg_cw,
-            })
+            if out_csv is not None:
+                csv_writer.writerow({
+                    'x': centroid_xy2_crop[0],
+                    'y': centroid_xy2_crop[1],
+                    'major': 2 * consecutive_regions[1].major_axis_,
+                    'minor': 2 * consecutive_regions[1].minor_axis_,
+                    'angle_deg_cw': consecutive_regions[1].angle_deg_cw - consecutive_regions[0].angle_deg_cw,
+                })
 
-        csv_file.close()
+        if out_csv is not None:
+            csv_file.close()
 
     def _get_bg_model(self):
         from core.bg_model.median_intensity import MedianIntensity
