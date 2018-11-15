@@ -25,6 +25,7 @@ from utils.img import safe_crop
 from utils.objectsarray import ObjectsArray
 from utils.gt.mot import load_mot, results_to_mot, eval_mot, mot_in_roi
 from core.region.ellipse import Ellipse
+from utils.roi import ROI
 
 memory = Memory('out/cache', verbose=0)
 
@@ -161,10 +162,15 @@ class InteractionDetector:
                       # output='dense_subgraph.svg'
                    )
 
-    def track_single_object_in_multi_tracklet(self, starting_region, multi_tracklet, forward=True, max_frames=np.inf):
+    def track_single_object(self, starting_region, multi_tracklet=None, forward=True, max_frames=np.inf):
         prediction = starting_region.to_dict()
-        start_frame = multi_tracklet.start_frame(self.project.gm)
-        end_frame = multi_tracklet.end_frame(self.project.gm)
+        if multi_tracklet is not None:
+            start_frame = multi_tracklet.start_frame(self.project.gm)
+            end_frame = multi_tracklet.end_frame(self.project.gm)
+        else:
+            start_frame = starting_region.frame
+            assert not np.isinf(max_frames)
+            end_frame = starting_region.frame + max_frames
         if forward:
             frame = start_frame
         else:
@@ -173,24 +179,24 @@ class InteractionDetector:
         i = 0
         regions = []
         while (start_frame <= frame <= end_frame) and i <= max_frames:  # overlap > 0 and
-            multi_region = multi_tracklet.get_region_in_frame(self.project.gm, frame)
             prev_prediction = prediction.copy()
 
             prediction, _, _, _ = self.detect_single_frame(frame, prev_prediction)
             prediction_r = Ellipse.from_dict(prediction)
             prediction_r.frame = frame
 
-            # img = self.project.img_manager.get_whole_img(frame)
-            # multi_poly = get_hull_poly(multi_region)
-            # cv2.polylines(img, [prediction_r.to_poly()], True, (255, 0, 0), 1)
-            # cv2.polylines(img, [multi_poly], True, (0, 255, 0))
-            # # save_prediction_img(None, 1, img, pred=prediction, gt=None, scale=1.1)
-            # images.append(safe_crop(img, tuple([prediction[x] for x in ('0_x', '0_y')]), 200)[0])
-
-            overlap = prediction_r.get_overlap(get_hull_poly(multi_region))
-            if float(overlap) / prediction_r.area < 0.25:
-                # print('overlap bellow threshold')
-                break
+            if multi_tracklet is not None:
+                multi_region = multi_tracklet.get_region_in_frame(self.project.gm, frame)
+                # img = self.project.img_manager.get_whole_img(frame)
+                # multi_poly = get_hull_poly(multi_region)
+                # cv2.polylines(img, [prediction_r.to_poly()], True, (255, 0, 0), 1)
+                # cv2.polylines(img, [multi_poly], True, (0, 255, 0))
+                # # save_prediction_img(None, 1, img, pred=prediction, gt=None, scale=1.1)
+                # images.append(safe_crop(img, tuple([prediction[x] for x in ('0_x', '0_y')]), 200)[0])
+                overlap = prediction_r.get_overlap(get_hull_poly(multi_region))
+                if float(overlap) / prediction_r.area < 0.25:
+                    # print('overlap bellow threshold')
+                    break
             regions.append(prediction_r)
             i += 1
             if forward is True:
@@ -242,7 +248,7 @@ class InteractionDetector:
                         continue
                     # last_region = Ellipse.from_region(tracklet.get_region(self.project.gm, last_region_idx))
                     regions, last_frame, success = \
-                        self.track_single_object_in_multi_tracklet(regions_path[-1], multi_tracklet, forward)
+                        self.track_single_object(regions_path[-1], multi_tracklet, forward)
                     multi_tracklets = processed_tracklets[:] + [multi_tracklet,]
                     if success:
                         track_recursive(v, graph, regions, multi_tracklets, forward)
@@ -385,6 +391,21 @@ class InteractionDetector:
             end_frame = max([t.start_frame(self.project.gm) for t in multi])
         return roi_union, (start_frame, end_frame)
 
+    def visualize_single_tracklet(self, regions, gt, out_dir):
+        try:
+            os.makedirs(out_dir)
+        except OSError:
+            pass
+        vm = self.project.get_video_manager()
+        rois = [ROI(r.y - r.major / 2, r.x - r.major / 2, r.major, r.major) for r in regions]
+        roi_union = reduce(lambda x, y: x.union(y), rois)
+        start_frame = regions[0].frame
+        end_frame = regions[-1].frame
+        imgs = [vm.get_frame(frame) for frame in tqdm(range(start_frame, end_frame + 1), desc='gathering images')]
+        Parallel(n_jobs=-1, verbose=10)(delayed(plot_frame)(frame, i, imgs[i], out_dir,
+                                                           paths=[{'regions': regions}], roi=roi_union, gt=gt)
+                                       for i, frame in enumerate(range(start_frame, end_frame + 1)))
+
     def visualize_tracklets(self, graph, paths, out_dir, gt=None):
         vm = self.project.get_video_manager()
         roi, (start_frame, end_frame) = self.get_bounds(graph)
@@ -411,7 +432,7 @@ class InteractionDetector:
                 regions_in_frame.append({'region': r, 'color': color, 'contour_yx': yx})
             regions.append(regions_in_frame)
 
-        Parallel(n_jobs=1, verbose=10)(delayed(plot_dense_frame)(frame, i, imgs[i], regions[i], out_dir, paths, roi, gt)
+        Parallel(n_jobs=1, verbose=10)(delayed(plot_frame)(frame, i, imgs[i], out_dir, regions[i], paths, roi, gt)
                                        for i, frame in enumerate(range(start_frame, end_frame + 1)))
 
 
@@ -524,7 +545,7 @@ class InteractionDetector:
         return eval_mot(df_gt, df_results)
 
 
-def plot_dense_frame(frame, i, img, regions_in_frame, out_dir, paths, roi, gt=None):
+def plot_frame(frame, i, img, out_dir, regions_in_frame=None, paths=None, roi=None, gt=None):
     from scripts.montage import save_figure_as_image
     from core.interactions.visualization import plot_interaction
     import matplotlib.pylab as plt
@@ -533,40 +554,45 @@ def plot_dense_frame(frame, i, img, regions_in_frame, out_dir, paths, roi, gt=No
     colors = itertools.cycle(['red', 'blue', 'green', 'yellow', 'white'])
     # for path_set, color in zip(paths, ('r', 'b')):
     #                for regions in path_set:
-    for path, color in zip(paths, colors):
-        regions = path['regions']
-        # plt.plot([r.x for r in regions], [r.y for r in regions], color=color)
-        frames = [r.frame for r in regions]
-        try:
-            r = regions[frames.index(frame)]
-            plot_interaction(1, pred=r.to_dict(), color=color)
-            plt.plot(r.x, r.y, 'o', color=color)
-        except ValueError:
-            pass
-        if path['in_region'] is not None and frame == path['in_region'].frame():
-            plot_interaction(1, gt=Ellipse.from_region(path['in_region']).to_dict(), color=color)
-        if path['out_region'] is not None and frame == path['out_region'].frame():
-            plot_interaction(1, gt=Ellipse.from_region(path['out_region']).to_dict(), color=color)
 
-        for r in regions_in_frame:
-            plt.plot(r['contour_yx'][:, 1], r['contour_yx'][:, 0], color=r['color'], linestyle='dotted', linewidth=0.5)
+    if paths is not None:
+        for path, color in zip(paths, colors):
+            regions = path['regions']
+            # plt.plot([r.x for r in regions], [r.y for r in regions], color=color)
+            frames = [r.frame for r in regions]
+            try:
+                r = regions[frames.index(frame)]
+                plot_interaction(1, pred=r.to_dict(), color=color)
+                plt.plot(r.x, r.y, 'o', color=color)
+            except ValueError:
+                pass
+            if 'in_region' in path and path['in_region'] is not None and frame == path['in_region'].frame():
+                plot_interaction(1, gt=Ellipse.from_region(path['in_region']).to_dict(), color=color)
+            if 'out_region' in path and path['out_region'] is not None and frame == path['out_region'].frame():
+                plot_interaction(1, gt=Ellipse.from_region(path['out_region']).to_dict(), color=color)
 
-        # for t in self.project.chm.tracklets_in_frame(frame):
-        #     r = t.get_region_in_frame(self.project.gm, frame)
-        #     yx = r.contour_without_holes()
-        #     if t.is_single():
-        #         color = 'white'
-        #     elif t.is_multi():
-        #         color = 'gray'
-        #     else:
-        #         color = 'red'
-        #     plt.plot(yx[:, 1], yx[:, 0], color=color, linestyle='dotted', linewidth=0.5)
+            if regions_in_frame is not None:
+                for r in regions_in_frame:
+                    plt.plot(r['contour_yx'][:, 1], r['contour_yx'][:, 0], color=r['color'], linestyle='dotted', linewidth=0.5)
+
+            # for t in self.project.chm.tracklets_in_frame(frame):
+            #     r = t.get_region_in_frame(self.project.gm, frame)
+            #     yx = r.contour_without_holes()
+            #     if t.is_single():
+            #         color = 'white'
+            #     elif t.is_multi():
+            #         color = 'gray'
+            #     else:
+            #         color = 'red'
+            #     plt.plot(yx[:, 1], yx[:, 0], color=color, linestyle='dotted', linewidth=0.5)
+
     if gt is not None:
         for track_id, row in gt.loc[frame].iterrows():
             plt.plot(row.x, row.y, '*w')
 
-    plt.xlim(roi.x_, roi.x_max_)
-    plt.ylim(roi.y_max_, roi.y_)
+    if roi is not None:
+        plt.xlim(roi.x_, roi.x_max_)
+        plt.ylim(roi.y_max_, roi.y_)
 
     # for t in incoming:
     #     r = Ellipse.from_region(t.get_region(self.project.gm, -1))
@@ -642,9 +668,12 @@ if __name__ == '__main__':
     # })
     from core.project.project import Project
     import matplotlib.pylab as plt
+    import random
     # plt.switch_backend('Qt4Agg')
 
-    project = Project('/datagrid/ferda/projects/1_initial_projects_180921_ILP/180810_2359_Cam1_ILP_cardinality')
+    project_dir = '/datagrid/ferda/projects/1_initial_projects_180921_ILP/180810_2359_Cam1_ILP_cardinality'
+#     project_dir = '/home/matej/prace/ferda/projects/2_temp/180810_2359_Cam1_ILP_cardinality'
+    project = Project(project_dir)
     # ../projects/2_temp/180810_2359_Cam1_ILP_cardinality
     project_name = '181101_ants1'
 
@@ -652,8 +681,27 @@ if __name__ == '__main__':
     # gt = None
     gt[['x', 'y']] -= [project.video_crop_model[key] for key in ['x1', 'y1']]
 
-    detector = InteractionDetector('/home/matej/prace/ferda/experiments/180913_1533_single_concat_conv3_alpha0_01', project)
+    #detector = InteractionDetector('/home/matej/prace/ferda/experiments/180913_1533_single_concat_conv3_alpha0_01', project)
 #    detector = InteractionDetector('/datagrid/ferda/models/181101_1537_tracker_cam1_1k_aug', project)
+    # detector = InteractionDetector('/home/matej/prace/ferda/experiments/181109_1114_cam1_5k_aug100', project)
+    detector = InteractionDetector('/datagrid/personal/smidm1/ferda/interactions/experiments/181109_1114_cam1_5k_aug100', project)
+
+    from generate_data import DataGenerator
+    dg = DataGenerator()
+    dg._load_project(project_dir)
+    idx, single_tracklets = dg._get_single_region_tracklets()
+
+    # random_tracklets_idx = random.sample(range(len(single_tracklets)), 60)
+    for i, tracklet_regions in enumerate(single_tracklets):
+        regions, last_frame, success = detector.track_single_object(
+            Ellipse.from_region(tracklet_regions[0]),
+            forward=True, max_frames=tracklet_regions[-1].frame() - tracklet_regions[0].frame())
+
+        detector.visualize_single_tracklet(regions, gt, 'out/single_tracking/%03d' % i)
+
+    import sys
+    sys.exit()
+
     dense_subgraphs = detector.find_dense_subgraphs()
     dense_subgraphs = sorted(dense_subgraphs, key=lambda x: len(x['ids']), reverse=True)
 
@@ -668,7 +716,7 @@ if __name__ == '__main__':
         dense_sections_tracklets = {}
 
     for i, dense in enumerate(tqdm(dense_subgraphs)):
-        if i != 10:
+        if i != 8:
             continue
         if i not in dense_sections_tracklets:
             dense_sections_tracklets[i] = detector.track_dense(dense['graph'], dense['ids'])
@@ -677,8 +725,8 @@ if __name__ == '__main__':
         detector.visualize_tracklets(dense['graph'], dense_sections_tracklets[i], 'out/dense_tracking/%03d' % i, gt)
 
     i = 10
-    detector.eval_dense_section(dense_subgraphs[i]['graph'], dense_sections_tracklets[i])
-    pass
+    # detector.eval_dense_section(dense_subgraphs[i]['graph'], dense_sections_tracklets[i])
+
 
 
 
