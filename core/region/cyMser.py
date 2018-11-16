@@ -2,6 +2,7 @@ from __future__ import unicode_literals
 __author__ = 'filip@naiser.cz'
 
 import platform
+import sys
 
 
 def __bootstrap__():
@@ -11,10 +12,16 @@ def __bootstrap__():
     if platform.system() == 'Darwin':
         __file__ = pkg_resources.resource_filename(__name__, 'libs/cyMser_64_OSX_v3.so')
     elif platform.system() == 'Linux':
-        if platform.architecture()[0] == '64bit':
-            __file__ = pkg_resources.resource_filename(__name__, 'libs/cyMser_64_Debian-v3.so')
+        if sys.version_info.major == 3:
+            if platform.architecture()[0] == '64bit':
+                __file__ = pkg_resources.resource_filename(__name__, 'libs/cyMser_64_py36_linux.so')
+            else:
+                assert False
         else:
-            __file__ = pkg_resources.resource_filename(__name__, 'libs/cyMser_ubuntu32.so')
+            if platform.architecture()[0] == '64bit':
+                __file__ = pkg_resources.resource_filename(__name__, 'libs/cyMser_64_Debian-v3.so')
+            else:
+                __file__ = pkg_resources.resource_filename(__name__, 'libs/cyMser_ubuntu32.so')
 
     __loader__ = None;
     del __bootstrap__, __loader__
