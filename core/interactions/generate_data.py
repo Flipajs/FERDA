@@ -437,50 +437,53 @@ class DataGenerator(object):
             else:
                 aug_consecutive_regions = [None, None]
 
-            timg = TransformableRegion()
-            timg.rotate(-consecutive_regions[0].angle_deg_cw, consecutive_regions[0].centroid())  # undo the rotation
-
             if idxs_augmentation is not None:
                 # generate parameters for augmentation
                 # border point angle with respect to object centroid, 0 rad is from the centroid rightwards, positive ccw
-                # theta_rad = np.random.uniform(-np.pi, np.pi, n)
                 theta_deg = np.random.uniform(-180, 180)
                 # approach angle, 0 rad is direction from the object centroid
                 # phi_deg = np.clip(np.random.normal(scale=90 / 2, size=n), -80, 80)
                 phi_deg = np.random.uniform(-90, 90)
                 # shift along ellipse_a major axis
                 aug_shift_px = int(round(np.random.normal(scale=5, loc=-15)))
+                # img1 rotation around object center
+                rot_deg = np.random.normal(scale=30)
 
             for region, aug_region, dataset in zip(consecutive_regions, aug_consecutive_regions, dataset_names):
-                img = self._project.img_manager.get_whole_img(region.frame())
-                timg.set_img(img)
-                rotated_img = timg.get_img()
+                timg = TransformableRegion()
+                timg.set_img(self._project.img_manager.get_whole_img(region.frame()))
+                timg.set_model(Ellipse.from_region(region))
+                # undo the first frame rotation
+                timg.rotate(-consecutive_regions[0].angle_deg_cw, consecutive_regions[0].centroid())
+
                 if idxs_augmentation is not None:
+                    if dataset == 'img1':
+                        timg.rotate(rot_deg, region.centroid())  # simulate rotation movement
                     aug_img = self._project.img_manager.get_whole_img(aug_region.frame())
-                    rotated_ellipse = Ellipse.from_region(region). \
-                        rotate(-consecutive_regions[0].angle_deg_cw, consecutive_regions[0].centroid()[::-1])
-                    rotated_img = self._augment(rotated_img, rotated_ellipse, aug_img, Ellipse.from_region(aug_region),
-                                                theta_deg, phi_deg, aug_shift_px)
-                img_crop, delta_xy = safe_crop(rotated_img, consecutive_regions[0].centroid()[::-1], img_size_px)
+                    img = self._augment(timg.get_img(), timg.get_model_copy(), aug_img, Ellipse.from_region(aug_region),
+                                        theta_deg, phi_deg, aug_shift_px)
+                else:
+                    img = timg.get_img()
+                img_crop, delta_xy = safe_crop(img, consecutive_regions[0].centroid()[::-1], img_size_px)
 
                 if h5_group is not None:
                     h5_group[dataset][i] = img_crop
                 else:
                     ##
-                    plt.imshow(save_prediction_img(None, 1, img_crop, rotated_ellipse.move(-delta_xy).to_dict(),
+                    plt.imshow(save_prediction_img(None, 1, img_crop,
+                                                   timg.get_model_copy().move(-delta_xy).to_dict(),
                                                    title=dataset))
                     plt.show()
                     ##
 
-            centroid_xy2_crop = timg.get_transformed_coords(consecutive_regions[1].centroid()[::-1]) - delta_xy
-
             if out_csv is not None:
+                model = timg.get_model_copy().move(-delta_xy)
                 csv_writer.writerow({
-                    'x': centroid_xy2_crop[0],
-                    'y': centroid_xy2_crop[1],
-                    'major': 2 * consecutive_regions[1].major_axis_,
-                    'minor': 2 * consecutive_regions[1].minor_axis_,
-                    'angle_deg_cw': consecutive_regions[1].angle_deg_cw - consecutive_regions[0].angle_deg_cw,
+                    'x': model.x,
+                    'y': model.y,
+                    'major': model.major,
+                    'minor': model.minor,
+                    'angle_deg_cw': model.angle_deg,
                 })
 
         if out_csv is not None:
@@ -506,7 +509,7 @@ class DataGenerator(object):
         img_rgba = np.concatenate((img_a, np.expand_dims(alpha * 255, 2).astype(np.uint8)), 2)
 
         tregion = TransformableRegion(img_rgba)
-        tregion.set_ellipse(copy.deepcopy(ellipse_a))
+        tregion.set_model(ellipse_a)
         multipliers = self.params['augmentation_elliptic_mask_multipliers']
         tregion.set_elliptic_mask(*multipliers)
 
