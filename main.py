@@ -6,9 +6,9 @@ import sys
 import time
 from PyQt4 import QtGui
 
-from .core.project.project import Project
-from .core.config import config
-from .gui.main_tab_widget import MainTabWidget
+from core.project.project import Project
+from core.config import config
+from gui.main_tab_widget import MainTabWidget
 
 parser = argparse.ArgumentParser(description='FERDA laboratory animal tracking system')
 parser.add_argument('project', nargs='?', help='project directory or file')
