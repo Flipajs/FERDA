@@ -573,7 +573,7 @@ class SetupMSERsWizardPage(QtGui.QWizardPage):
         self.button_next = QtGui.QPushButton("Next frame")
         self.button_prev = QtGui.QPushButton("Previous frame")
         self.button_rand = QtGui.QPushButton("Random frame")
-        from gui.init.crop_video_widget import SelectAllLineEdit
+        from gui.init.crop_video_page import SelectAllLineEdit
         self.frame_input = SelectAllLineEdit()
         self.show_frame_b = QtGui.QPushButton('go to frame')
         self.show_frame_b.clicked.connect(self.go_to_frame)

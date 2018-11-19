@@ -81,12 +81,12 @@ class CreateProjectPage(QtGui.QWizardPage):
 
     def validatePage(self):
         project = self.wizard().project
-        project.working_directory = str(self.field('project_folder').toString())
-        project.video_paths = str(self.field('video_file').toString())
-        project.name = str(self.field('project_name').toString())
+        project.working_directory = self.field('project_folder')
+        project.video_paths = self.field('video_file')
+        project.name = self.field('project_name')
         if not len(project.name):
             project.name = 'untitled'
-        project.description = str(self.field('project_description').toString())
+        project.description = self.field('project_description')
         project.date_created = time.time()
         project.date_last_modification = time.time()
         # from utils.img_manager import ImgManager
