@@ -48,7 +48,9 @@ class ImgManager:
                 return img.copy()
 
         # if the image isn't in the cache, load it and add it
-        image = prepare_for_visualisation(self.vid.get_frame(frame), self.project)
+        image = self.vid.get_frame(frame)
+        assert image is not None
+        image = prepare_for_visualisation(image, self.project)
 
         # check if cache isn't full (and maybe clean it)
         self.check_cache_size(image.nbytes)
