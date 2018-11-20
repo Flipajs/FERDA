@@ -121,6 +121,14 @@ class InteractionDetector:
         return interaction_graph, vertices
 
     def find_dense_subgraphs(self):
+        """
+        Find dense situations in a tracking graph.
+
+        Dense situation is a continuous series of multi tracklets with neighbouring incoming and outcoming tracklets.
+
+        :return: list of dictionaries with 'graph' (dense situation Graph) and
+                                           'ids' entries (tracklet id -> Vertex mapping)
+        """
         multi = [t for t in self.project.chm.chunk_gen() if t.is_multi()]
         # multi = sorted(multi, key=len, reverse=True)
         # multi = sorted(multi, key=lambda x: x.get_cardinality(project.gm), reverse=True)
@@ -215,7 +223,14 @@ class InteractionDetector:
             success = False
         return regions, last_frame, success
 
-    def get_tracklets_from_dense(self, graph):
+    @staticmethod
+    def get_tracklets_from_dense(graph):
+        """
+        Get incoming, outcoming and multi tracklets from a dense tracklets graph.
+
+        :param graph: dense graph; Graph with vertex properties 'category' and 'tracklet'
+        :return: incoming, outcoming, multi; lists of tracklets (Chunk)
+        """
         category_prop = graph.vertex_properties['category']
         tracklet_prop = graph.vertex_properties['tracklet']
         incoming = [tracklet_prop[v] for v in graph.vertices() if
@@ -587,7 +602,7 @@ def plot_frame(frame, i, img, out_dir, regions_in_frame=None, paths=None, roi=No
             #     plt.plot(yx[:, 1], yx[:, 0], color=color, linestyle='dotted', linewidth=0.5)
 
     if gt is not None:
-        for track_id, row in gt.loc[frame].iterrows():
+        for track_id, row in gt.loc[frame + 1].iterrows():
             plt.plot(row.x, row.y, '*w')
 
     if roi is not None:
