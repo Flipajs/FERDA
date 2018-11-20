@@ -699,50 +699,56 @@ if __name__ == '__main__':
     #detector = InteractionDetector('/home/matej/prace/ferda/experiments/180913_1533_single_concat_conv3_alpha0_01', project)
 #    detector = InteractionDetector('/datagrid/ferda/models/181101_1537_tracker_cam1_1k_aug', project)
     # detector = InteractionDetector('/home/matej/prace/ferda/experiments/181109_1114_cam1_5k_aug100', project)
-    detector = InteractionDetector('/datagrid/personal/smidm1/ferda/interactions/experiments/181109_1114_cam1_5k_aug100', project)
+    detector = InteractionDetector('/datagrid/personal/smidm1/ferda/interactions/experiments/181116_1604_cam1_5k_aug100_rot/', project) # TODO
 
-    from generate_data import DataGenerator
-    dg = DataGenerator()
-    dg._load_project(project_dir)
-    idx, single_tracklets = dg._get_single_region_tracklets()
+    if False:
+        from generate_data import DataGenerator
+        dg = DataGenerator()
+        dg._load_project(project_dir)
+        idx, single_tracklets = dg._get_single_region_tracklets()
 
-    # random_tracklets_idx = random.sample(range(len(single_tracklets)), 60)
-    for i, tracklet_regions in enumerate(single_tracklets):
-        regions, last_frame, success = detector.track_single_object(
-            Ellipse.from_region(tracklet_regions[0]),
-            forward=True, max_frames=tracklet_regions[-1].frame() - tracklet_regions[0].frame())
+        # random_tracklets_idx = random.sample(range(len(single_tracklets)), 60)
+        for i, tracklet_regions in enumerate(single_tracklets):
+            regions, last_frame, success = detector.track_single_object(
+                Ellipse.from_region(tracklet_regions[0]),
+                forward=True, max_frames=tracklet_regions[-1].frame() - tracklet_regions[0].frame())
 
-        detector.visualize_single_tracklet(regions, gt, 'out/single_tracking/%03d' % i)
+            detector.visualize_single_tracklet(regions, gt, 'out/single_tracking_rot/%03d' % i)
 
-    import sys
-    sys.exit()
+    else:
+        dense_subgraphs = detector.find_dense_subgraphs()
+        dense_subgraphs = sorted(dense_subgraphs, key=lambda x: len(x['ids']), reverse=True)
+        if True:
+            for i, dense in enumerate(tqdm(dense_subgraphs)):
+                incoming, outcoming, _ = detector.get_tracklets_from_dense(dense['graph'])
+                try:
+                    min_frame = min([t.end_frame(detector.project.gm) for t in incoming])
+                    max_frame = max([t.start_frame(detector.project.gm) for t in outcoming])
+                except ValueError:
+                    continue
+                for j, tracklet in enumerate(incoming): # [t for t in incoming if t.start_frame(detector.project.gm) == min_frame]):
+                    regions, last_frame, success = detector.track_single_object(
+                        Ellipse.from_region(tracklet.get_region(detector.project.gm, -1)),
+                        forward=True, max_frames=max_frame-tracklet.end_frame(detector.project.gm))  # max_frame-min_frame
+                    detector.visualize_single_tracklet(regions, gt, 'out/simple_multi_tracking_rot/%03d_%d' % (i, j))
+                break
+        else:
+            import pickle
+            out_filename = project_name + '_dense_sections_tracklets.pkl'
+            try:
+                with file(out_filename, 'rb') as fr:
+                    dense_sections_tracklets = pickle.load(fr)
+            except:
+                dense_sections_tracklets = {}
 
-    dense_subgraphs = detector.find_dense_subgraphs()
-    dense_subgraphs = sorted(dense_subgraphs, key=lambda x: len(x['ids']), reverse=True)
+            for i, dense in enumerate(tqdm(dense_subgraphs)):
+                # if i != 8:
+                #     continue
+                if i not in dense_sections_tracklets:
+                    dense_sections_tracklets[i] = detector.track_dense(dense['graph'], dense['ids'])
+                    with file(out_filename, 'wb') as fw:
+                        pickle.dump(dense_sections_tracklets, fw)
+                detector.visualize_tracklets(dense['graph'], dense_sections_tracklets[i], 'out/dense_tracking/%03d' % i, gt)
 
-
-    ##
-    import pickle
-    out_filename = project_name + '_dense_sections_tracklets.pkl'
-    try:
-        with file(out_filename, 'rb') as fr:
-            dense_sections_tracklets = pickle.load(fr)
-    except:
-        dense_sections_tracklets = {}
-
-    for i, dense in enumerate(tqdm(dense_subgraphs)):
-        if i != 8:
-            continue
-        if i not in dense_sections_tracklets:
-            dense_sections_tracklets[i] = detector.track_dense(dense['graph'], dense['ids'])
-            with file(out_filename, 'wb') as fw:
-                pickle.dump(dense_sections_tracklets, fw)
-        detector.visualize_tracklets(dense['graph'], dense_sections_tracklets[i], 'out/dense_tracking/%03d' % i, gt)
-
-    i = 10
-    # detector.eval_dense_section(dense_subgraphs[i]['graph'], dense_sections_tracklets[i])
-
-
-
-
-
+            # i = 10
+            # detector.eval_dense_section(dense_subgraphs[i]['graph'], dense_sections_tracklets[i])
