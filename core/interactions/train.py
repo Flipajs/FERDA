@@ -38,6 +38,7 @@ from utils.angles import angle_absolute_error, angle_absolute_error_direction_ag
 import warnings
 import yaml
 from utils.objectsarray import ObjectsArray
+from core.interactions.visualization import visualize_results
 # import skimage.transform
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
@@ -758,6 +759,7 @@ class TrainInteractions:
                                          csv_filename=join(parameters['experiment_dir'], 'results.csv'))
                 results_['loss_alpha'] = alpha
                 results = results.append(results_, ignore_index=True)
+                visualize_results(parameters['experiment_dir'], data_dir, test_img)
 
             print(results.to_string(index=False))
             results.to_csv(join(base_experiment_dir, 'results.csv'))
@@ -770,6 +772,7 @@ class TrainInteractions:
                 fw.write(m.to_yaml())
             results = self.evaluate(m, test_generator, parameters, y_test,
                           csv_filename=join(parameters['experiment_dir'], 'results.csv'))
+            visualize_results(parameters['experiment_dir'], data_dir, test_img)
 
         hf_train.close()
         hf_test.close()
