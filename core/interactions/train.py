@@ -64,11 +64,13 @@ class TrainInteractions:
                len(predicted_properties) == len(error_functions)
         self.models = {
             '6conv_3dense': self.model_6conv_3dense,  # former default
+            '6conv_3dense_two_inputs': self.model_6conv_3dense_two_inputs,
             '6conv_2dense': self.model_6conv_2dense,
             'mobilenet': self.model_mobilenet,
             'single_mobilenet': self.model_single_mobilenet,
             'single_concat_mp': self.model_single_concat_mp,
             'single_concat_conv3': self.model_single_concat_conv3,
+            'single_concat_conv3_2inputs': self.model_single_concat_conv3_2inputs,
         }
         if predicted_properties is None:
             self.PREDICTED_PROPERTIES = ['x', 'y', 'angle_deg_cw']  # , 'major', 'minor']
@@ -318,7 +320,7 @@ class TrainInteractions:
 
         return errors, errors_xy, swap_indices
 
-    def model_6conv_3dense(self):
+    def model_6conv_3dense_convolutions(self):
         input_shape = Input(shape=(self.detector_input_size_px, self.detector_input_size_px, self.num_input_layers))
         x = Conv2D(32, (3, 3), padding='same', activation='relu')(input_shape)
         x = Conv2D(32, (3, 3), padding='same', activation='relu', dilation_rate=(2, 2))(x)
@@ -329,10 +331,23 @@ class TrainInteractions:
         x = MaxPooling2D((2, 2))(x)
         x = Conv2D(16, (3, 3))(x)
         x = Flatten()(x)
+        return input_shape, x
+
+    def model_6conv_3dense(self):
+        input_shape, x = self.model_6conv_3dense_convolutions()
         x = Dense(64, activation='relu')(x)
         x = Dense(32, activation='relu')(x)
         out = Dense(self.array.num_columns(), kernel_initializer='normal', activation='tanh')(x)
         return Model(input_shape, out)
+
+    def model_6conv_3dense_two_inputs(self):
+        input1, x1 = self.model_6conv_3dense_convolutions()
+        input2, x2 = self.model_6conv_3dense_convolutions()
+        x = Concatenate()([x1, x2])
+        x = Dense(64, activation='relu')(x)
+        x = Dense(32, activation='relu')(x)
+        out = Dense(self.array.num_columns(), kernel_initializer='normal', activation='tanh')(x)
+        return Model([input1, input2], out)
 
     def model_6conv_3dense_legacy(self):
         input_shape = Input(shape=(200, 200, 3))
@@ -426,7 +441,7 @@ class TrainInteractions:
         out = Dense(self.array.num_columns(), activation='tanh')(x)
         return Model(input_shape, out)
 
-    def model_single_concat_conv3(self):
+    def _model_single_concat_conv3_convolutions(self):
         input_shape = Input(shape=(self.detector_input_size_px, self.detector_input_size_px, self.num_input_layers))
         x = Conv2D(1, (1, 1), padding='same', activation='relu')(input_shape)
         conv2 = Conv2D(32, (7, 7), padding='same', activation='relu')(x)
@@ -441,11 +456,23 @@ class TrainInteractions:
         x = Flatten()(x)
 
         x = concatenate([x, Flatten()(conv3)])
+        return input_shape, x
 
+    def model_single_concat_conv3(self):
+        input_shape, x = self._model_single_concat_conv3_convolutions()
         x = Dense(64, activation='relu')(x)
         x = Dense(32, activation='relu')(x)
         out = Dense(self.array.num_columns(), activation='tanh')(x)
         return Model(input_shape, out)
+
+    def model_single_concat_conv3_2inputs(self):
+        input1, x1 = self._model_single_concat_conv3_convolutions()
+        input2, x2 = self._model_single_concat_conv3_convolutions()
+        x = Concatenate()([x1, x2])
+        x = Dense(64, activation='relu')(x)
+        # x = Dense(32, activation='relu')(x)
+        out = Dense(self.array.num_columns(), activation='tanh')(x)
+        return Model([input1, input2], out)
 
     def train(self, model, train_generator, test_generator, params, callbacks=[]):
         # adam = Adam(lr=0.005, beta_1=0.9, beta_2=0.999, epsilon=1e-8)
@@ -605,6 +632,19 @@ class TrainInteractions:
             out[i, :img_shape[0], :img_shape[1]] = img  # np.expand_dims(img, 2)
         return out
 
+    def load_datasets(self, datasets_str, data_dir='.'):
+        datasets = []
+        h5files = []
+        for dataset_str in datasets_str.split(';'):
+            filename, dataset_name = dataset_str.split(':')
+            h5file = h5py.File(join(data_dir, filename), 'r')
+            dataset = h5file[dataset_name]
+            if self.num_input_layers == 1:
+                dataset = np.expand_dims(dataset, 3)
+            datasets.append(dataset)
+            h5files.append(h5file)
+        return datasets, h5files
+
     def train_and_evaluate(self, data_dir, loss_alpha, train_img='images.h5:train', test_img='images.h5:test', n_epochs=10, rotate=False, exp_name='',
                            model='6conv_3dense', input_layers=3, experiment_dir=None, input_size_px=200):
         """
@@ -616,10 +656,8 @@ class TrainInteractions:
         self.num_input_layers = input_layers
         self.detector_input_size_px = input_size_px
         # load images
-        hf_train = h5py.File(join(data_dir, train_img.split(':')[0]), 'r')
-        X_train = hf_train[train_img.split(':')[1]]
-        hf_test = h5py.File(join(data_dir, test_img.split(':')[0]), 'r')
-        X_test = hf_test[test_img.split(':')[1]]
+        X_train, h5_train_files = self.load_datasets(train_img, data_dir)
+        X_test, h5_test_files = self.load_datasets(test_img, data_dir)
         # if model == 'mobilenet':
         #     X_train = self.resize_images(hf[dataset_names['train']], (224, 224, 1))
         #     X_test = self.resize_images(hf[dataset_names['test']], (224, 224, 1))
@@ -633,6 +671,7 @@ class TrainInteractions:
 
         # input image and gt rotation
         if rotate:
+            assert len(X_test) != 2
             tregion = TransformableRegion(X_test[0])
             tregion.rotate(90, np.array(tregion.img.shape[:2]) / 2)
             for i in range(ti.num_objects):
@@ -666,8 +705,8 @@ class TrainInteractions:
         assert model in self.models, 'model {} doesn\'t exist'.format(model)
 
         parameters = {'epochs': n_epochs,
-                      'steps_per_epoch': int(len(X_train) / BATCH_SIZE),  # 1
-                      'n_test': len(X_test),
+                      'steps_per_epoch': int(len(X_train[0]) / BATCH_SIZE),  # 1
+                      'n_test': len(X_test[0]),
         }
         if isinstance(loss_alpha, str) and loss_alpha == 'batch':
             parameters['loss_alpha'] = np.linspace(0, 1, 8)
@@ -697,9 +736,6 @@ class TrainInteractions:
             preprocessing = rotate90
         else:
             preprocessing = None
-        if self.num_input_layers == 1:
-            X_train = np.expand_dims(X_train, 3)
-            X_test = np.expand_dims(X_test, 3)
 
         def get_sample_weight(df, detector_input_size_px, max_reweighted_distance_px=20):
             distance = np.linalg.norm(df[['0_x', '0_y']] - detector_input_size_px / 2, axis=1)
@@ -710,10 +746,10 @@ class TrainInteractions:
             return weights / weights.min()
 
         train_datagen = ImageDataGenerator(rescale=1./255, preprocessing_function=preprocessing)
-        train_generator = train_datagen.flow(X_train, y_train)
+        train_generator = train_datagen.flow(X_train if len(X_train) > 1 else X_train[0], y_train)
 #                                             sample_weight=get_sample_weight(y_train_df, self.detector_input_size_px))
         test_datagen = ImageDataGenerator(rescale=1./255, preprocessing_function=preprocessing)
-        test_generator = test_datagen.flow(X_test, y_test, shuffle=False)
+        test_generator = test_datagen.flow(X_test if len(X_test) > 1 else X_test[0], y_test, shuffle=False)
 #                                           sample_weight=get_sample_weight(y_test_df, self.detector_input_size_px))
 
         def eval_and_print(_m, _t):
@@ -774,8 +810,8 @@ class TrainInteractions:
                           csv_filename=join(parameters['experiment_dir'], 'results.csv'))
             visualize_results(parameters['experiment_dir'], data_dir, test_img)
 
-        hf_train.close()
-        hf_test.close()
+        for h5_file in h5_train_files + h5_test_files:
+            h5_file.close()
 
     def _write_argv(self, out_dir):
         with open(join(out_dir, 'parameters.txt'), 'w') as fw:
