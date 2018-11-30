@@ -474,7 +474,9 @@ class TrainInteractions:
         out = Dense(self.array.num_columns(), activation='tanh')(x)
         return Model([input1, input2], out)
 
-    def train(self, model, train_generator, test_generator, params, callbacks=[]):
+    def train(self, model, train_generator, params, test_generator=None, callbacks=None):
+        if callbacks is None:
+            callbacks = []
         # adam = Adam(lr=0.005, beta_1=0.9, beta_2=0.999, epsilon=1e-8)
         model.compile(loss=lambda x, y: self.interaction_loss_angle(x, y, alpha=params['loss_alpha']),
                       optimizer='adam')
@@ -657,6 +659,8 @@ class TrainInteractions:
                train . 0.5 train.h5:train/img1 test.h5:test/img1 --input-size-px=150 --model=single_mobilenet
         remote: train /mnt/home.stud/smidm/datagrid/ferda/interactions/1712_1k_36rot_fixed/ 0.5 100 --exp-name=two_mobilenet_scratch
         """
+        # try to overfit on single batch, see https://twitter.com/karpathy/status/1013244313327681536
+        try_overfit_single_batch = True
         self.num_input_layers = input_layers
         self.detector_input_size_px = input_size_px
         # load images
@@ -669,6 +673,12 @@ class TrainInteractions:
         # load gt
         n_train, columns_train, y_train_df = read_gt(join(data_dir, 'train.csv'))
         n_test, columns_test, y_test_df = read_gt(join(data_dir, 'test.csv'))
+        if try_overfit_single_batch:
+            X_train = [x[:BATCH_SIZE] for x in X_train]
+            X_test = [x[:BATCH_SIZE] for x in X_test]
+            y_train_df = y_train_df[:BATCH_SIZE]
+            y_test_df = y_test_df[:BATCH_SIZE]
+
         assert n_train == n_test
         assert columns_train == columns_test
         self.set_num_objects(n_train)
@@ -749,18 +759,22 @@ class TrainInteractions:
             weights[distance >= max_reweighted_distance_px] = max_weight
             return weights / weights.min()
 
-        train_datagen = ImageDataGenerator(rescale=1./255, preprocessing_function=preprocessing)
-        train_generator = train_datagen.flow(X_train if len(X_train) > 1 else X_train[0], y_train)
-#                                             sample_weight=get_sample_weight(y_train_df, self.detector_input_size_px))
-        test_datagen = ImageDataGenerator(rescale=1./255, preprocessing_function=preprocessing)
-        test_generator = test_datagen.flow(X_test if len(X_test) > 1 else X_test[0], y_test, shuffle=False)
-#                                           sample_weight=get_sample_weight(y_test_df, self.detector_input_size_px))
-
         def eval_and_print(_m, _t):
             results = self.evaluate(_m, _t, parameters, y_test)
             print('\n' + results.to_string(index=False) + '\n')
 
-        val_callback = ValidationCallback(test_generator, eval_and_print)
+        train_datagen = ImageDataGenerator(rescale=1./255, preprocessing_function=preprocessing)
+        train_generator = train_datagen.flow(X_train if len(X_train) > 1 else X_train[0], y_train, shuffle=False)
+#                                             sample_weight=get_sample_weight(y_train_df, self.detector_input_size_px))
+
+        if not try_overfit_single_batch:
+            test_datagen = ImageDataGenerator(rescale=1./255, preprocessing_function=preprocessing)
+            test_generator = test_datagen.flow(X_test if len(X_test) > 1 else X_test[0], y_test, shuffle=False)
+    #                                           sample_weight=get_sample_weight(y_test_df, self.detector_input_size_px))
+            callbacks = (ValidationCallback(test_generator, eval_and_print), )
+        else:
+            test_generator = None
+            callbacks = None
 
         if experiment_dir is None:
             base_experiment_name = time.strftime("%y%m%d_%H%M", time.localtime()) + '_' + exp_name
@@ -792,14 +806,14 @@ class TrainInteractions:
                 parameters['loss_alpha'] = alpha
                 parameters['experiment_dir'] = experiment_dir
                 parameters['tensorboard_dir'] = join(base_tensor_board_dir, str(alpha))
-                m = self.train(m, train_generator, test_generator, parameters, callbacks=[val_callback])
+                m = self.train(m, train_generator, parameters, test_generator, callbacks)
                 with open(join(experiment_dir, 'model.yaml'), 'w') as fw:
                     fw.write(m.to_yaml())
                 results_ = self.evaluate(m, test_generator, parameters, y_test,
                                          csv_filename=join(parameters['experiment_dir'], 'results.csv'))
                 results_['loss_alpha'] = alpha
                 results = results.append(results_, ignore_index=True)
-                visualize_results(parameters['experiment_dir'], data_dir, test_img)
+                visualize_results(parameters['experiment_dir'], data_dir, 'images.h5:test/img1')
 
             print(results.to_string(index=False))
             results.to_csv(join(base_experiment_dir, 'results.csv'))
@@ -807,12 +821,16 @@ class TrainInteractions:
             m = self.models[model]()
             parameters['experiment_dir'] = base_experiment_dir
             parameters['tensorboard_dir'] = base_tensor_board_dir
-            m = self.train(m, train_generator, test_generator, parameters, callbacks=[val_callback])
+            m = self.train(m, train_generator, parameters, test_generator, callbacks=callbacks)
             with open(join(parameters['experiment_dir'], 'model.yaml'), 'w') as fw:
                 fw.write(m.to_yaml())
-            results = self.evaluate(m, test_generator, parameters, y_test,
-                          csv_filename=join(parameters['experiment_dir'], 'results.csv'))
-            visualize_results(parameters['experiment_dir'], data_dir, test_img)
+            if try_overfit_single_batch:
+                self.evaluate(m, train_generator, parameters, y_train)
+                visualize_results(parameters['experiment_dir'], data_dir, 'images.h5:train/img1')
+            else:
+                self.evaluate(m, test_generator, parameters, y_test,
+                              csv_filename=join(parameters['experiment_dir'], 'results.csv'))
+                visualize_results(parameters['experiment_dir'], data_dir, 'images.h5:test/img1')
 
         for h5_file in h5_train_files + h5_test_files:
             h5_file.close()
