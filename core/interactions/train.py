@@ -543,7 +543,7 @@ class TrainInteractions:
             h5files.append(h5file)
         return datasets, h5files
 
-    def train_and_evaluate(self, data_dir, loss_alpha, train_img='images.h5:train', test_img='images.h5:test', n_epochs=10, rotate=False, exp_name='',
+    def train_and_evaluate(self, data_dir, loss_alpha, train_img='images.h5:train', test_img='images.h5:test', n_epochs=10, exp_name='',
                            model='6conv_3dense', input_layers=3, experiment_dir=None, input_size_px=200):
         """
         example:
@@ -575,20 +575,6 @@ class TrainInteractions:
         assert columns_train == columns_test
         self.set_num_objects(n_train)
 
-        # input image and gt rotation
-        if rotate:
-            assert len(X_test) != 2
-            tregion = TransformableRegion(X_test[0])
-            tregion.rotate(90, np.array(tregion.img.shape[:2]) / 2)
-            for i in range(ti.num_objects):
-                y_train_df[['%d_x' % i, '%d_y' % i]] = tregion.get_transformed_coords(
-                    y_train_df[['%d_x' % i, '%d_y' % i]].values.T).T
-                y_train_df['%d_angle_deg_cw' % i] = tregion.get_transformed_angle(y_train_df['%d_angle_deg_cw' % i])
-
-                y_test_df[['%d_x' % i, '%d_y' % i]] = tregion.get_transformed_coords(
-                    y_test_df[['%d_x' % i, '%d_y' % i]].values.T).T
-                y_test_df['%d_angle_deg_cw' % i] = tregion.get_transformed_angle(y_test_df['%d_angle_deg_cw' % i])
-
         y_train = self.array.dataframe_to_array(y_train_df)
         y_test = self.array.dataframe_to_array(y_test_df)
 
@@ -609,23 +595,12 @@ class TrainInteractions:
         seed = 7
         np.random.seed(seed)
 
-        def rotate90(img):
-            tregion.set_img(img)
-            return tregion.get_img()
-            # out_img = skimage.transform.rotate(img, 90, preserve_range=True)
-            # return out_img
-
         size = self.detector_input_size_px
         x, y = np.mgrid[0:size, 0:size]
         mask = np.expand_dims(np.exp(- 0.0002 * ((x - size / 2) ** 2 + (y - size / 2) ** 2)), 2)
 
         def image_dim(img):
             return img * mask
-
-        if rotate:
-            preprocessing = rotate90
-        else:
-            preprocessing = None
 
         def get_sample_weight(df, detector_input_size_px, max_reweighted_distance_px=20):
             distance = np.linalg.norm(df[['0_x', '0_y']] - detector_input_size_px / 2, axis=1)
@@ -639,12 +614,12 @@ class TrainInteractions:
             results = self.evaluate(_m, _t, parameters, y_test)
             print('\n' + results.to_string(index=False) + '\n')
 
-        train_datagen = ImageDataGenerator(rescale=1./255, preprocessing_function=preprocessing)
+        train_datagen = ImageDataGenerator(rescale=1./255)
         train_generator = train_datagen.flow(X_train if len(X_train) > 1 else X_train[0], y_train, shuffle=False)
 #                                             sample_weight=get_sample_weight(y_train_df, self.detector_input_size_px))
 
         if not try_overfit_single_batch:
-            test_datagen = ImageDataGenerator(rescale=1./255, preprocessing_function=preprocessing)
+            test_datagen = ImageDataGenerator(rescale=1./255)
             test_generator = test_datagen.flow(X_test if len(X_test) > 1 else X_test[0], y_test, shuffle=False)
     #                                           sample_weight=get_sample_weight(y_test_df, self.detector_input_size_px))
             callbacks = (ValidationCallback(test_generator, eval_and_print), )
