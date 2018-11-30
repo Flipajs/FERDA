@@ -20,10 +20,10 @@ import pandas as pd
 import errno
 import hashlib
 import random
-import copy
 from joblib import Memory
 from os.path import join
 import matplotlib.pylab as plt
+import itertools
 
 from core.project.project import Project
 from core.graph.region_chunk import RegionChunk
@@ -307,6 +307,84 @@ class DataGenerator(object):
         gt_out['video_file'] = os.path.basename(self._video.video_path)
         gt_out.to_csv(out_csv, index=False, float_format='%.2f')
         # gt.to_hdf(join(out_dir, 'test.h5'), )
+
+    def _write_segmentation_dataset(self, h5_group, frames, write_masks=True, single_color=True):
+        # img_shape = self._project.img_manager.get_whole_img(0).shape
+        img_shape = (512, 512)
+        if h5_group is not None:
+            h5_group.create_dataset('img', (len(frames), img_shape[0], img_shape[1], 3), np.uint8)
+            h5_group.create_dataset('mask', (len(frames), img_shape[0], img_shape[1]), np.uint8)
+
+        for i, frame in enumerate(frames):
+            img = cv2.cvtColor(self._project.img_manager.get_whole_img(frame), cv2.COLOR_BGR2GRAY)
+            if img.shape[:2] != tuple(img_shape[:2]):
+                img = cv2.resize(img, img_shape, interpolation=cv2.INTER_LANCZOS4)
+            if write_masks:
+                mask = np.zeros(shape=img_shape[:2], dtype=np.uint8)
+                for t in self._project.chm.tracklets_in_frame(frame):
+                    r = t.get_region_in_frame(self._project.gm, frame)
+                    yx = r.contour_without_holes()
+                    if single_color:
+                        color = 255
+                    else:
+                        color = random.randint(1, 255)
+                    cv2.drawContours(mask, [yx[:, ::-1]], -1, color, cv2.FILLED)
+            if h5_group is not None:
+                h5_group['img'][i] = img
+                if write_masks:
+                    h5_group['mask'][i] = mask
+            else:
+                plt.imshow(img)
+                plt.show()
+                if write_masks:
+                    plt.imshow(mask)
+                    plt.show()
+
+    def write_segmentation_data(self, project_dir, n, out_h5_filename=None, test_fraction=0.1, overwrite=False,
+                                n_validation=0):
+        self._load_project(project_dir)
+
+        if out_h5_filename is not None:
+            out_dir = os.path.dirname(out_h5_filename)
+            self._makedirs(out_dir)
+            if not overwrite:
+                if os.path.exists(out_h5_filename):
+                    raise OSError(errno.EEXIST, 'HDF5 file %s already exists.' % out_h5_filename)
+            h5_file = h5py.File(out_h5_filename, mode='w')
+            h5_group_train = h5_file.create_group('train')
+            h5_group_test = h5_file.create_group('test')
+            if n_validation != 0:
+                h5_group_valid = h5_file.create_group('valid')
+        else:
+            h5_group_train = None
+            h5_group_test = None
+
+        multi_tracklets = [t for t in self._project.chm.chunk_gen() if t.is_multi()]
+        frames_with_multi = set(itertools.chain(*[range(t.start_frame(self._project.gm),
+                                                        t.end_frame(self._project.gm) + 1) for t in multi_tracklets]))
+        frames_without_multi = list(set(range(self._project.video_start_t,
+                                              self._project.video_end_t + 1)) - frames_with_multi)
+        frames_selected = random.sample(frames_without_multi, int(n * (1 + test_fraction)))
+        print('Selected {} out of {} frames with all objects correctly segmented.'.format(len(frames_selected),
+                                                                                          len(frames_without_multi)))
+        self._write_segmentation_dataset(h5_group_train, frames_selected[:n])
+        self._write_segmentation_dataset(h5_group_test, frames_selected[n:])
+        if n_validation != 0:
+            frames_selected = random.sample(frames_with_multi, n_validation)
+            print('Selected {} out of {} frames with multi tracklets.'.format(len(frames_selected),
+                                                                              len(frames_with_multi)))
+            self._write_segmentation_dataset(h5_group_valid, frames_selected, write_masks=False)
+
+        if out_h5_filename is not None:
+            sample_dir = join(out_dir, 'sample')
+            DataGenerator._makedirs(sample_dir)
+            for i in range(20):
+                cv2.imwrite(join(sample_dir, '%02d.png' % i), h5_group_train['img'][i])
+                cv2.imwrite(join(sample_dir, '%02d_mask.png' % i), h5_group_train['mask'][i])
+            if n_validation != 0:
+                for i in range(20):
+                    cv2.imwrite(join(sample_dir, 'validation_%02d.png' % i), h5_group_valid['img'][i])
+            h5_file.close()
 
     def write_regression_tracking_data(self, project_dir, count, out_dir=None, test_fraction=0.1, augmentation=True,
                                        overwrite=False):
