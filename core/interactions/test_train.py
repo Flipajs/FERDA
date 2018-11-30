@@ -58,7 +58,7 @@ class LossFunctionsTestCase(unittest.TestCase):
 
         # pred['0_angle_deg'] = 1. / np.tan(np.radians(5.))
         # pred['1_angle_deg'] = 1. / np.tan(np.radians(45.))
-        print(train_interactions.K.eval(self.ti.interaction_loss_angle(y_test[:3], pred[:3])))
+        print(train_interactions.K.eval(self.ti.loss(y_test[:3], pred[:3])))
 
     def test_match_pred_to_gt(self):
         self.ti.set_num_objects(2)
@@ -67,21 +67,11 @@ class LossFunctionsTestCase(unittest.TestCase):
         print(K.eval(errors_xy))
         print(K.eval(indices))
 
-        errors_np, errors_xy_np, indices_np = self.ti.match_pred_to_gt_numpy(self.y_a, self.y_b)
-        assert_array_equal(K.eval(errors), errors_np)
-        assert_array_equal(K.eval(errors_xy), errors_xy_np)
-        assert_array_equal(K.eval(indices), indices_np)
-
         self.ti.set_num_objects(1)
         errors, errors_xy, indices = self.ti.match_pred_to_gt(self.y_a1, self.y_b1)
         print(K.eval(errors))
         print(K.eval(errors_xy))
         print(K.eval(indices))
-
-        errors_np, errors_xy_np, indices_np = self.ti.match_pred_to_gt_numpy(self.y_a1, self.y_b1)
-        assert_array_equal(K.eval(errors), errors_np)
-        assert_array_equal(K.eval(errors_xy), errors_xy_np)
-        assert_array_equal(K.eval(indices), indices_np)
 
         # test tf.gather_nd (used in match_pred_to_gt)
         err1 = K.variable(np.array([[1, 2, 3, 4], [5, 6, 7, 8]]))  # shape=(n, n_objects * len(PREDICTED_PROPERTIES))
@@ -196,14 +186,14 @@ class TrainInteractionsTestCase(unittest.TestCase):
     def test_loss(self):
         m = self.ti.model_mobilenet()
         pred = m.predict(self.X_train_)
-        loss = K.eval(self.ti.interaction_loss_angle(self.y_train[:self.n_images], pred))
+        loss = K.eval(self.ti.loss(self.y_train[:self.n_images], pred))
         self.assertTrue(np.isscalar(loss))
         self.assertTrue(loss > 0)
 
     def test_train(self):
         n_images = 3
         m = self.ti.model_mobilenet()
-        m.compile(loss=lambda x, y: self.ti.interaction_loss_angle(x, y, alpha=0.5), optimizer='adam')
+        m.compile(loss=lambda x, y: self.ti.loss(x, y, alpha=0.5), optimizer='adam')
         train_datagen = ImageDataGenerator(rescale=1./255)
         train_generator = train_datagen.flow(self.X_train_, self.y_train[:self.n_images], batch_size=self.n_images)
 
@@ -218,7 +208,7 @@ class TrainInteractionsTestCase(unittest.TestCase):
     def test_eval(self):
         n_images = 3
         m = self.ti.model_mobilenet()
-        m.compile(loss=lambda x, y: self.ti.interaction_loss_angle(x, y, alpha=0.5), optimizer='adam')
+        m.compile(loss=lambda x, y: self.ti.loss(x, y, alpha=0.5), optimizer='adam')
         test_datagen = ImageDataGenerator(rescale=1./255)
         test_generator = test_datagen.flow(self.X_test_, self.y_test, batch_size=self.n_images)
         results = self.ti.evaluate(m, test_generator, {'n_test': len(self.y_test)}, self.y_test)

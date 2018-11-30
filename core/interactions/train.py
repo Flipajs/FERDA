@@ -109,7 +109,7 @@ class TrainInteractions:
              y_pred[:, self.array.prop2idx_(i, 'minor')] - y_true[:, self.array.prop2idx_(j, 'minor')]),
             axis=1))
 
-    def interaction_loss_angle(self, y_true, y_pred, alpha=0.5):
+    def loss(self, y_true, y_pred, alpha=0.5):
         """
         Compute prediction loss with respect to true xy and angle of all detected objects.
 
@@ -171,39 +171,6 @@ class TrainInteractions:
             else:
                 assert False, 'error function ' + error_fun + ' not implemented'
         return backend.stack(errors_columns, axis=1)
-
-    def match_pred_to_gt_numpy(self, y_true, y_pred):
-        """
-        Return errors for individual samples and indices to matching predicted and ground truth values.
-        """
-        if self.num_objects == 1:
-            possible_matchings = (((0, 0),),
-                                  )
-        elif self.num_objects == 2:
-            possible_matchings = (((0, 0), (1, 1)),
-                                  ((0, 1), (1, 0)))
-        else:
-            assert False, 'not implemented'
-
-        sum_xy_errors = []
-        all_matching_errors = []
-        all_xy_euclidean_errors = []
-        for matching in possible_matchings:
-            matching_errors = [self.errors_ij(y_true, y_pred, i, j, np) for i, j in matching]
-            matching_errors_array = np.concatenate(matching_errors, axis=1)  # shape=(n, num_objects * len(self.PREDICTED_PROPERTIES))
-            all_matching_errors.append(matching_errors_array)
-
-            xy_euclidean_errors_ = [np.linalg.norm(matching_errors_array[:, self.array.prop2idx(i, ['x', 'y'])],
-                                                   axis=1, keepdims=True)
-                                    for i in range(self.num_objects)]
-            xy_euclidean_errors = np.concatenate(xy_euclidean_errors_, axis=1)  # shape=(n, num_objects)
-            sum_xy_errors.append(np.sum(xy_euclidean_errors, axis=1, keepdims=True))  # shape=(n, 1)
-            all_xy_euclidean_errors.append(xy_euclidean_errors)  # list of array like, shape=(n, num_objects)
-
-        swap_indices = np.argmin(np.concatenate(sum_xy_errors, axis=1), axis=1)  # shape = (n,)
-        errors = np.array([all_matching_errors[i_swap][i_row] for i_row, i_swap in enumerate(swap_indices)])
-        errors_xy = np.array([all_xy_euclidean_errors[i_swap][i_row] for i_row, i_swap in enumerate(swap_indices)])  # shape=(n, num_objects)
-        return errors, errors_xy, swap_indices
 
     def match_pred_to_gt(self, y_true, y_pred):
         """
@@ -416,7 +383,7 @@ class TrainInteractions:
         if callbacks is None:
             callbacks = []
         # adam = Adam(lr=0.005, beta_1=0.9, beta_2=0.999, epsilon=1e-8)
-        model.compile(loss=lambda x, y: self.interaction_loss_angle(x, y, alpha=params['loss_alpha']),
+        model.compile(loss=lambda x, y: self.loss(x, y, alpha=params['loss_alpha']),
                       optimizer='adam')
         # model.lr.set_value(0.05)
         with open(join(params['experiment_dir'], 'model.txt'), 'w') as fw:
