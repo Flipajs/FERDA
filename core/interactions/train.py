@@ -1,5 +1,4 @@
 from __future__ import print_function
-
 import numbers
 import os
 import sys
@@ -30,6 +29,7 @@ try:
     from keras.models import model_from_yaml, model_from_json
     from keras.preprocessing.image import ImageDataGenerator
     from keras.applications.mobilenet import mobilenet
+    from core.interactions.keras_utils import GetBest
 except ImportError as e:
     print('Warning, no keras installed: {}'.format(e))
 import fire
@@ -482,8 +482,9 @@ class TrainInteractions:
         with open(join(params['experiment_dir'], 'model.txt'), 'w') as fw:
             model.summary(print_fn=lambda x: fw.write(x + '\n'))
         csv_logger = CSVLogger(join(params['experiment_dir'], 'log.csv'), append=True, separator=';')
-        checkpoint = ModelCheckpoint(join(params['experiment_dir'], 'weights.h5'), save_best_only=True)
-        callbacks.extend([csv_logger, checkpoint])
+        # checkpoint = ModelCheckpoint(join(params['experiment_dir'], 'weights.h5'), save_best_only=True)
+        get_best = GetBest(monitor='loss', verbose=1)
+        callbacks.extend([csv_logger, get_best])
         if 'tensorboard_dir' in params and params['tensorboard_dir'] is not None:
             tb = TensorBoard(log_dir=params['tensorboard_dir'], histogram_freq=0, batch_size=32, write_graph=True, write_grads=False,
                              write_images=False, embeddings_freq=0, embeddings_layer_names=None,
@@ -492,10 +493,11 @@ class TrainInteractions:
         model.fit_generator(train_generator, steps_per_epoch=params['steps_per_epoch'], epochs=params['epochs'],
                             verbose=1, callbacks=callbacks,
                             validation_data=test_generator, validation_steps=params['n_test'])
-        # model.save_weights(join(params['experiment_dir'], 'weights.h5'))
+        model.save_weights(join(params['experiment_dir'], 'weights.h5'))
         return model
 
     def evaluate(self, model, test_generator, params, y_test=None, csv_filename=None):
+        # test_generator.shuffle = False
         pred = model.predict_generator(test_generator)  # , int(params['n_test'] / BATCH_SIZE))
         assert pred is not None and pred is not []
 
@@ -536,6 +538,8 @@ class TrainInteractions:
                 ]))
             if csv_filename is not None:
                 results.to_csv(csv_filename)
+            else:
+                print(results)
             return results
 
     def postprocess_predictions(self, pred):
