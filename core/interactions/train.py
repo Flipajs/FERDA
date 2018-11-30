@@ -109,21 +109,6 @@ class TrainInteractions:
              y_pred[:, self.array.prop2idx_(i, 'minor')] - y_true[:, self.array.prop2idx_(j, 'minor')]),
             axis=1))
 
-    def delta_error(self, y_true, y_pred, i, j, backend):
-        """
-        absolute difference between dx and dy in y_pred and y_true
-
-        :param y_true:
-        :param y_pred:
-        :param i: y_true object index
-        :param j: y_pred object index
-        :param backend:
-        :return: shape=(n, 2)
-        """
-        dx = y_true[:, self.array.prop2idx_(i, 'dx')] - y_pred[:, self.array.prop2idx_(j, 'dx')]
-        dy = y_true[:, self.array.prop2idx_(i, 'dy')] - y_pred[:, self.array.prop2idx_(j, 'dy')]
-        return backend.concatenate((backend.abs(dx), backend.abs(dy)), axis=1)
-
     def interaction_loss_angle(self, y_true, y_pred, alpha=0.5):
         """
         Compute prediction loss with respect to true xy and angle of all detected objects.
@@ -159,53 +144,6 @@ class TrainInteractions:
             loss += K.sum(error_xy * (1 - alpha) + error_angle * alpha)
 
         return loss
-
-    def interaction_loss_dxdy(self, y_true, y_pred, alpha=0.5):
-        assert 0 <= alpha <= 1
-        mean_errors_xy, mean_errors_delta, indices = self.match_pred_to_gt_dxdy(y_true, y_pred, K)
-
-        return K.mean(tf.gather_nd(mean_errors_xy, indices) * (1 - alpha) +
-                      tf.gather_nd(mean_errors_delta, indices) * alpha)
-
-    def match_pred_to_gt_dxdy(self, y_true, y_pred, backend):
-        """
-        Return mean absolute errors for individual samples for xy and theta
-        in two possible combinations of prediction and ground truth.
-        """
-        assert False, 'outdated'
-        bk = backend
-        xy = {}
-        delta = {}
-        for i, j in ((0, 0), (1, 1), (0, 1), (1, 0)):
-            xy[(i, j)] = self.xy_absolute_error(y_true, y_pred, i, j,
-                                           bk)  # shape=(n, 2) [[x_abs_err, y_abs_err], [x_abs_err, y_abs_err], ...]
-            delta[(i, j)] = self.delta_error(y_true, y_pred, i, j, bk)
-
-        if backend == np:
-            norm = np.linalg.norm
-            int64 = np.int64
-            shape = lambda x, n: x.shape[n]
-        else:
-            norm = tf.linalg.norm
-            int64 = tf.int64
-            shape = lambda x, n: bk.cast(bk.shape(x)[n], int64)
-
-        mean_errors_xy = bk.stack((
-            bk.mean(bk.stack((norm(xy[0, 0], axis=1),
-                              norm(xy[1, 1], axis=1))), axis=0),
-            bk.mean(bk.stack((norm(xy[0, 1], axis=1),
-                              norm(xy[1, 0], axis=1))), axis=0)))  # shape=(2, n)
-        mean_errors_delta = bk.stack((
-            bk.mean(bk.stack((bk.sum(delta[0, 0], axis=1),
-                              bk.sum(delta[1, 1], axis=1))), axis=0),
-            bk.mean(bk.stack((bk.sum(delta[0, 1], axis=1),
-                              bk.sum(delta[1, 0], axis=1))), axis=0)))  # shape=(2, n)
-
-        swap_idx = bk.argmin(mean_errors_xy, axis=0)  # shape = (n,)
-
-        indices = backend.transpose(
-            backend.stack((swap_idx, backend.arange(0, shape(mean_errors_xy, 1)))))  # shape=(n, 2)
-        return mean_errors_xy, mean_errors_delta, indices
 
     def errors_ij(self, y_true, y_pred, j_true, i_pred, backend=np):
         """
@@ -516,22 +454,9 @@ class TrainInteractions:
             self.save_model_properties(join(params['experiment_dir'], 'config.yaml'))
 
         if y_test is not None:
-            # xy, _, indices = match_pred_to_gt_dxdy(y_test.values, pred, np)
             errors, errors_xy, _ = self.match_pred_to_gt(y_test[:len(pred)], pred)  # trim y_test to be modulo BATCH_SIZE
 
             errors_angle = K.concatenate([errors[:, self.array.prop2idx_(i, 'angle_deg_cw')] for i in range(self.num_objects)])
-
-            # # compute angle errors
-            # angle = {}
-            # for i, j in ((0, 0), (1, 1), (0, 1), (1, 0)):
-            #     angle[(i, j)] = angle_absolute_error(
-            #         y_test.values[:, NAME2COL[i]['angle_deg_cw']],
-            #         np.degrees(np.arctan((pred[:, NAME2COL[j]['dy']] / pred[:, NAME2COL[j]['dx']]))),
-            #         np)
-            # mean_errors_angle = np.stack((
-            #     np.mean(np.stack((angle[0, 0], angle[1, 1]), axis=1), axis=1),
-            #     np.mean(np.stack((angle[0, 1], angle[1, 0]), axis=1), axis=1)))  # shape=(2, n)
-            # angle_mae = (mean_errors_angle[indices[:, 0], indices[:, 1]]).mean()
 
             results = pd.DataFrame.from_dict(OrderedDict([
                 ('xy MAE', [K.eval(K.mean(errors_xy))]),
@@ -696,22 +621,6 @@ class TrainInteractions:
                 y_test_df[['%d_x' % i, '%d_y' % i]] = tregion.get_transformed_coords(
                     y_test_df[['%d_x' % i, '%d_y' % i]].values.T).T
                 y_test_df['%d_angle_deg_cw' % i] = tregion.get_transformed_angle(y_test_df['%d_angle_deg_cw' % i])
-
-        # dx and dy columns
-        # for i in range(self.num_objects):
-        #     # y_train_df.loc[:, '%d_angle_deg' % i] += 90
-        #     # y_train_df.loc[:, '%d_angle_deg' % i] %= 360
-        #
-        #     angle_rad = np.radians(y_train_df['%d_angle_deg' % i])
-        #     y_train_df.loc[:, '%d_dx' % i] = y_train_df['%d_major' % i] * np.cos(angle_rad)
-        #     y_train_df.loc[:, '%d_dy' % i] = y_train_df['%d_major' % i] * np.sin(angle_rad)
-        #
-        #     # y_test_df.loc[:, '%d_angle_deg' % i] += 90
-        #     # y_test_df.loc[:, '%d_angle_deg' % i] %= 360
-        #
-        #     angle_rad = np.radians(y_test_df['%d_angle_deg' % i])
-        #     y_test_df.loc[:, '%d_dx' % i] = y_test_df['%d_major' % i] * np.cos(angle_rad)
-        #     y_test_df.loc[:, '%d_dy' % i] = y_test_df['%d_major' % i] * np.sin(angle_rad)
 
         y_train = self.array.dataframe_to_array(y_train_df)
         y_test = self.array.dataframe_to_array(y_test_df)
