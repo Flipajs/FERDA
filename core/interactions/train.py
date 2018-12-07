@@ -44,9 +44,46 @@ from core.interactions.visualization import visualize_results
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 
-ROOT_EXPERIMENT_DIR = '/datagrid/personal/smidm1/ferda/interactions/experiments/'
-ROOT_TENSOR_BOARD_DIR = '/datagrid/personal/smidm1/ferda/interactions/tb_logs'
-BATCH_SIZE = 32
+class Experiment(object):
+    def __init__(self, name=None, prefix_datetime=True, params=None, config=None, tensorboard=True):
+        """
+
+        :param name: experiment name
+        :param prefix_datetime: prefix experiment dir with current datetime
+        :param params: experimental parameters (loss_alpha, epochs, batch_size)
+        :param config: experiment configuration (root_experiment_dir, root_tensor_board_dir)
+        :param tensorboard: if True, initialize tensor_board_dir
+        """
+        if prefix_datetime:
+            self.basename = time.strftime("%y%m%d_%H%M", time.localtime())
+        if name is not None:
+            self.basename += '_' + name
+        if config is None:
+            config = {}
+        self.config = config
+        root_dir = self.config.get('root_experiment_dir', '.')
+        self.dir = join(root_dir, self.basename)
+        root_tb_dir = self.config.get('root_tensor_board_dir', '.')
+        if tensorboard:
+            self.tensor_board_dir = join(root_tb_dir, self.basename)
+        else:
+            self.tensor_board_dir = None
+        self._create_dir()
+
+        if params is None:
+            self.params = {}
+        else:
+            self.params = params
+
+    def _create_dir(self):
+        try:
+            os.makedirs(self.dir)
+        except OSError:
+            pass
+
+    def write_argv(self):
+        with open(join(self.dir, 'arguments.txt'), 'w') as fw:
+            fw.writelines('\n'.join(sys.argv))
 
 
 class ValidationCallback(Callback):
@@ -406,40 +443,41 @@ class TrainInteractions:
         out = Dense(self.array.num_columns(), activation='tanh')(x)
         return Model([input1, input2], out)
 
-    def train(self, model, train_dataset, params, test_dataset=None, callbacks=None):
+    def train(self, model, train_dataset, experiment, test_dataset=None, callbacks=None):
         if callbacks is None:
             callbacks = []
         # adam = Adam(lr=0.005, beta_1=0.9, beta_2=0.999, epsilon=1e-8)
-        model.compile(loss=lambda x, y: self.loss(x, y, alpha=params['loss_alpha']),
+        model.compile(loss=lambda x, y: self.loss(x, y, alpha=experiment.params['loss_alpha']),
                       optimizer='adam')
         # model.lr.set_value(0.05)
-        with open(join(params['experiment_dir'], 'model.txt'), 'w') as fw:
+        with open(join(experiment.dir, 'model.txt'), 'w') as fw:
             model.summary(print_fn=lambda x: fw.write(x + '\n'))
         callbacks.extend([
-            CSVLogger(join(params['experiment_dir'], 'log.csv'), append=True, separator=';'),
+            CSVLogger(join(experiment.dir, 'log.csv'), append=True, separator=';'),
             GetBest(monitor='val_loss', verbose=1),
         ])
-        if 'tensorboard_dir' in params and params['tensorboard_dir'] is not None:
+        if experiment.tensor_board_dir is not None:
             callbacks.append(
-                TensorBoard(log_dir=params['tensorboard_dir'], histogram_freq=0, batch_size=BATCH_SIZE, write_graph=True,
+                TensorBoard(log_dir=experiment.tensor_board_dir, histogram_freq=0,
+                            batch_size=experiment.params['batch_size'], write_graph=True,
                             write_grads=False, write_images=False, embeddings_freq=0, embeddings_layer_names=None,
                             embeddings_metadata=None))
-        model.fit_generator(train_dataset, epochs=params['epochs'], verbose=1, callbacks=callbacks,
+        model.fit_generator(train_dataset, epochs=experiment.params['epochs'], verbose=1, callbacks=callbacks,
                             validation_data=test_dataset)
-        model.save_weights(join(params['experiment_dir'], 'weights.h5'))
+        model.save_weights(join(experiment.dir, 'weights.h5'))
         return model
 
-    def evaluate(self, model, dataset, params, out_csv_filename=None):
+    def evaluate(self, model, dataset, experiment=None, out_csv_filename=None):
         pred = model.predict_generator(dataset, verbose=0)
         assert pred is not None and pred is not []
 
         # following expects tanh output (-1; 1)
         pred = self.postprocess_predictions(pred)
 
-        if 'experiment_dir' in params:
+        if experiment is not None:
             pred_df = self.array.array_to_dataframe(pred)
-            pred_df.to_csv(join(params['experiment_dir'], 'predictions.csv'), index=False)
-            self.save_model_properties(join(params['experiment_dir'], 'config.yaml'))
+            pred_df.to_csv(join(experiment.dir, 'predictions.csv'), index=False)
+            self.save_model_properties(join(experiment.dir, 'config.yaml'))
 
         if dataset.y is not None:
             errors, errors_xy, _ = self.match_pred_to_gt(np.vstack([item[1] for item in dataset]), pred)
@@ -454,6 +492,8 @@ class TrainInteractions:
             else:
                 print(results)
             return results
+        else:
+            return None
 
     def postprocess_predictions(self, pred):
         for i in range(self.num_objects):
@@ -492,8 +532,7 @@ class TrainInteractions:
             m = self.model_6conv_3dense()
             warnings.warn('Stored model not found, initializing model using model_6conv_3dense().')
         m.load_weights(join(model_dir, 'weights.h5'))
-        with open(join(model_dir, 'config.yaml'), 'r') as fr:
-            model_metadata = yaml.load(fr)
+        model_metadata = yaml.load(open(join(model_dir, 'config.yaml')))
         self.PREDICTED_PROPERTIES = model_metadata['properties']
         self.detector_input_size_px = model_metadata['input_size_px']
         self.array = ObjectsArray(self.PREDICTED_PROPERTIES, model_metadata['num_objects'])
@@ -512,20 +551,7 @@ class TrainInteractions:
         # def image_dim(img):
         #     return img * mask
 
-        base_experiment_name = time.strftime("%y%m%d_%H%M", time.localtime())
-        base_experiment_dir = ROOT_EXPERIMENT_DIR + base_experiment_name
-        base_tensor_board_dir = join(ROOT_TENSOR_BOARD_DIR, base_experiment_name)
-
-        try:
-            os.makedirs(base_experiment_dir)
-        except OSError:
-            pass
-        self._write_argv(base_experiment_dir)
-
-        parameters = {'experiment_dir': base_experiment_dir,
-                      'tensorboard_dir': base_tensor_board_dir,
-                      }
-        results = self.evaluate(m, test_dataset, parameters)
+        results = self.evaluate(m, test_dataset, Experiment('evaluation'))
 
     def resize_images(self, img_batch, shape):
         img_shape = img_batch[0].shape
@@ -548,8 +574,8 @@ class TrainInteractions:
             h5files.append(h5file)
         return datasets, h5files
 
-    def train_and_evaluate(self, data_dir, loss_alpha, train_img='images.h5:train', test_img='images.h5:test', n_epochs=10, exp_name='',
-                           model='6conv_3dense', input_layers=3, experiment_dir=None, input_size_px=200):
+    def train_and_evaluate(self, data_dir, loss_alpha, train_img='images.h5:train', test_img='images.h5:test',
+                           n_epochs=10, exp_name=None, model='6conv_3dense', input_layers=3, input_size_px=200):
         """
         example:
         local: train /home/matej/prace/ferda/data/interactions/1712_1k_36rot/ 0.5 100 --exp-name=two_mobilenet_scratch
@@ -560,26 +586,24 @@ class TrainInteractions:
         self.num_input_layers = input_layers
         self.detector_input_size_px = input_size_px
 
+        parameters = {'epochs': n_epochs,
+                      'loss_alpha': loss_alpha,
+                      'batch_size': 32
+                      }
+
         train_dataset = Hdf5CsvSequence(os.path.join(data_dir, train_img.split(':')[0]),
                                         train_img.split(':')[1],
                                         join(data_dir, 'train.csv'),
-                                        BATCH_SIZE,
+                                        parameters['batch_size'],
                                         self.array)
         test_dataset = Hdf5CsvSequence(os.path.join(data_dir, test_img.split(':')[0]),
                                        test_img.split(':')[1],
                                        join(data_dir, 'test.csv'),
-                                       BATCH_SIZE,
+                                       parameters['batch_size'],
                                        self.array)
 
         assert model in self.models, 'model {} doesn\'t exist'.format(model)
 
-        parameters = {'epochs': n_epochs, }
-        if isinstance(loss_alpha, str) and loss_alpha == 'batch':
-            parameters['loss_alpha'] = np.linspace(0, 1, 8)
-        elif isinstance(loss_alpha, numbers.Number):
-            parameters['loss_alpha'] = float(loss_alpha)
-        else:
-            assert False, 'invalid loss_alpha specified'
 
         # fix random seed for reproducibility
         # seed = 7
@@ -592,73 +616,27 @@ class TrainInteractions:
         # def image_dim(img):
         #     return img * mask
 
-        def get_sample_weight(df, detector_input_size_px, max_reweighted_distance_px=20):
-            distance = np.linalg.norm(df[['0_x', '0_y']] - detector_input_size_px / 2, axis=1)
-            kde = stats.gaussian_kde(distance)
-            weights = 1. / kde(distance)
-            max_weight = weights[distance < max_reweighted_distance_px].max()
-            weights[distance >= max_reweighted_distance_px] = max_weight
-            return weights / weights.min()
+        # def get_sample_weight(df, detector_input_size_px, max_reweighted_distance_px=20):
+        #     distance = np.linalg.norm(df[['0_x', '0_y']] - detector_input_size_px / 2, axis=1)
+        #     kde = stats.gaussian_kde(distance)
+        #     weights = 1. / kde(distance)
+        #     max_weight = weights[distance < max_reweighted_distance_px].max()
+        #     weights[distance >= max_reweighted_distance_px] = max_weight
+        #     return weights / weights.min()
 
         # def eval(_m, _t):
         #     results = self.evaluate(_m, test_dataset, parameters)
         # callbacks = [ValidationCallback(test_dataset, eval), ]
         callbacks = None
 
-        if experiment_dir is None:
-            base_experiment_name = time.strftime("%y%m%d_%H%M", time.localtime()) + '_' + exp_name
-            base_experiment_dir = join(ROOT_EXPERIMENT_DIR, base_experiment_name)
-            base_tensor_board_dir = join(ROOT_TENSOR_BOARD_DIR, base_experiment_name)
-            try:
-                os.makedirs(base_experiment_dir)
-            except OSError:
-                pass
-        else:
-            base_experiment_dir = experiment_dir
-            base_tensor_board_dir = None
-
-        print('argv -{}-'.format(sys.argv))
-        self._write_argv(base_experiment_dir)
-
-        results = pd.DataFrame()
-
-        if isinstance(parameters['loss_alpha'], np.ndarray):
-            for alpha in parameters['loss_alpha']:
-                m = self.models[model]()
-                print('loss_alpha %f' % alpha)
-                experiment_dir = join(base_experiment_dir, str(alpha))
-                try:
-                    os.makedirs(experiment_dir)
-                except OSError:
-                    pass
-
-                parameters['loss_alpha'] = alpha
-                parameters['experiment_dir'] = experiment_dir
-                parameters['tensorboard_dir'] = join(base_tensor_board_dir, str(alpha))
-                m = self.train(m, train_generator, parameters, test_generator, callbacks)
-                with open(join(experiment_dir, 'model.yaml'), 'w') as fw:
-                    fw.write(m.to_yaml())
-                results_ = self.evaluate(m, test_generator, parameters, y_test,
-                                         out_csv_filename=join(parameters['experiment_dir'], 'results.csv'))
-                results_['loss_alpha'] = alpha
-                results = results.append(results_, ignore_index=True)
-                visualize_results(parameters['experiment_dir'], data_dir, 'images.h5:test/img1')
-
-            print(results.to_string(index=False))
-            results.to_csv(join(base_experiment_dir, 'results.csv'))
-        else:
-            m = self.models[model]()
-            parameters['experiment_dir'] = base_experiment_dir
-            parameters['tensorboard_dir'] = base_tensor_board_dir
-            m = self.train(m, train_dataset, parameters, test_dataset, callbacks=callbacks)
-            with open(join(parameters['experiment_dir'], 'model.yaml'), 'w') as fw:
-                fw.write(m.to_yaml())
-            self.evaluate(m, test_dataset, parameters, out_csv_filename=join(parameters['experiment_dir'], 'results.csv'))
-            visualize_results(parameters['experiment_dir'], data_dir, 'images.h5:test/img1')
-
-    def _write_argv(self, out_dir):
-        with open(join(out_dir, 'parameters.txt'), 'w') as fw:
-            fw.writelines('\n'.join(sys.argv))
+        experiment = Experiment(exp_name, params=parameters, config=yaml.load(open('interactions_config.yaml')))
+        experiment.write_argv()
+        m = self.models[model]()
+        m = self.train(m, train_dataset, experiment, test_dataset, callbacks=callbacks)
+        with open(join(experiment.dir, 'model.yaml'), 'w') as fw:
+            fw.write(m.to_yaml())
+        self.evaluate(m, test_dataset, experiment, out_csv_filename=join(experiment.dir, 'results.csv'))
+        visualize_results(experiment.dir, data_dir, 'images.h5:test/img1')
 
 
 if __name__ == '__main__':

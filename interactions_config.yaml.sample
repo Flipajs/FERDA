@@ -1,0 +1,3 @@
+root_experiment_dir: '.'
+root_tensor_board_dir: './tensor_board'
+
