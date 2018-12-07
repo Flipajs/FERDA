@@ -635,7 +635,8 @@ class TrainInteractions:
         m = self.train(m, train_dataset, experiment, test_dataset, callbacks=callbacks)
         with open(join(experiment.dir, 'model.yaml'), 'w') as fw:
             fw.write(m.to_yaml())
-        self.evaluate(m, test_dataset, experiment, out_csv_filename=join(experiment.dir, 'results.csv'))
+        results = self.evaluate(m, test_dataset, experiment, out_csv_filename=join(experiment.dir, 'results.csv'))
+        print(results.to_string(index=False))
         visualize_results(experiment.dir, data_dir, 'images.h5:test/img1')
 
 
