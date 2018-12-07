@@ -76,7 +76,7 @@ class GetBest(Callback):
                     self.best_epochs = epoch + 1
                     self.best_weights = self.model.get_weights()
                 else:
-                    if self.verbose > 0:
+                    if self.verbose > 1:
                         print('\nEpoch %05d: %s did not improve' %
                               (epoch + 1, self.monitor))
 

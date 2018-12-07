@@ -29,6 +29,7 @@ try:
     from keras.models import model_from_yaml, model_from_json
     from keras.preprocessing.image import ImageDataGenerator
     from keras.applications.mobilenet import mobilenet
+    from keras.utils import Sequence
     from core.interactions.keras_utils import GetBest
 except ImportError as e:
     print('Warning, no keras installed: {}'.format(e))
@@ -49,16 +50,48 @@ BATCH_SIZE = 32
 
 
 class ValidationCallback(Callback):
-    def __init__(self, test_generator, evaluate_fun):
-        self.test_generator = test_generator
+    def __init__(self, test_dataset, evaluate_fun):
+        self.test_dataset = test_dataset
         self.evaluate_fun = evaluate_fun
 
     def on_epoch_end(self, epoch, logs={}):
-        self.evaluate_fun(self.model, self.test_generator)
+        self.evaluate_fun(self.model, self.test_dataset)
+
+
+class Hdf5CsvSequence(Sequence):
+
+    def __init__(self, hdf5_filename, dataset_name, csv_filename, batch_size, array):
+        self.batch_size = batch_size
+        self.h5file = h5py.File(hdf5_filename, 'r')
+        self.x = self.h5file[dataset_name]
+        n_train, columns_train, df = read_gt(csv_filename)
+        self.y = array.dataframe_to_array(df)
+#        warnings.warn('Ground truth file test.csv not found. Generating predictions without evaluation.')
+
+        # if self.num_input_layers == 1:
+        #     dataset = np.expand_dims(dataset, 3)
+
+    def __len__(self):
+        return int(np.ceil(len(self.x) / float(self.batch_size)))
+        # return 1
+
+    def __getitem__(self, idx):
+        if idx >= len(self):
+            raise IndexError
+        batch_x = self.x[idx * self.batch_size:(idx + 1) * self.batch_size]
+        batch_y = self.y[idx * self.batch_size:(idx + 1) * self.batch_size]
+        return batch_x / 255., batch_y
+
+    def __iter__(self):
+        for i in range(len(self)):
+            yield self[i]
+
+    def __del__(self):
+        self.h5file.close()
 
 
 class TrainInteractions:
-    def __init__(self, num_objects=None, num_input_layers=3, predicted_properties=None, error_functions=None,
+    def __init__(self, num_input_layers=3, predicted_properties=None, error_functions=None,
                  detector_input_size_px=200):
         assert (predicted_properties is None and error_functions is None) or \
                len(predicted_properties) == len(error_functions)
@@ -82,14 +115,8 @@ class TrainInteractions:
             self.ERROR_FUNCTIONS = error_functions
         self.detector_input_size_px = detector_input_size_px
         self.num_input_layers = num_input_layers
-        self.num_objects = None
-        self.array = None  # provide column name to index mapping using ObjectsArray
-        if num_objects is not None:
-            self.set_num_objects(num_objects)  # init num_objects and map
-
-    def set_num_objects(self, n):
-        self.num_objects = n
-        self.array = ObjectsArray(self.PREDICTED_PROPERTIES, n)
+        self.num_objects = 1
+        self.array = ObjectsArray(self.PREDICTED_PROPERTIES, self.num_objects)  # provide column name to index mapping using ObjectsArray
 
     @staticmethod
     def toarray(struct_array):
@@ -379,7 +406,7 @@ class TrainInteractions:
         out = Dense(self.array.num_columns(), activation='tanh')(x)
         return Model([input1, input2], out)
 
-    def train(self, model, train_generator, params, test_generator=None, callbacks=None):
+    def train(self, model, train_dataset, params, test_dataset=None, callbacks=None):
         if callbacks is None:
             callbacks = []
         # adam = Adam(lr=0.005, beta_1=0.9, beta_2=0.999, epsilon=1e-8)
@@ -388,30 +415,24 @@ class TrainInteractions:
         # model.lr.set_value(0.05)
         with open(join(params['experiment_dir'], 'model.txt'), 'w') as fw:
             model.summary(print_fn=lambda x: fw.write(x + '\n'))
-        csv_logger = CSVLogger(join(params['experiment_dir'], 'log.csv'), append=True, separator=';')
-        # checkpoint = ModelCheckpoint(join(params['experiment_dir'], 'weights.h5'), save_best_only=True)
-        get_best = GetBest(monitor='loss', verbose=1)
-        callbacks.extend([csv_logger, get_best])
+        callbacks.extend([
+            CSVLogger(join(params['experiment_dir'], 'log.csv'), append=True, separator=';'),
+            GetBest(monitor='val_loss', verbose=1),
+        ])
         if 'tensorboard_dir' in params and params['tensorboard_dir'] is not None:
-            tb = TensorBoard(log_dir=params['tensorboard_dir'], histogram_freq=0, batch_size=32, write_graph=True, write_grads=False,
-                             write_images=False, embeddings_freq=0, embeddings_layer_names=None,
-                             embeddings_metadata=None)
-            callbacks.append(tb)
-        model.fit_generator(train_generator, steps_per_epoch=params['steps_per_epoch'], epochs=params['epochs'],
-                            verbose=1, callbacks=callbacks,
-                            validation_data=test_generator, validation_steps=params['n_test'])
+            callbacks.append(
+                TensorBoard(log_dir=params['tensorboard_dir'], histogram_freq=0, batch_size=BATCH_SIZE, write_graph=True,
+                            write_grads=False, write_images=False, embeddings_freq=0, embeddings_layer_names=None,
+                            embeddings_metadata=None))
+        model.fit_generator(train_dataset, epochs=params['epochs'], verbose=1, callbacks=callbacks,
+                            validation_data=test_dataset)
         model.save_weights(join(params['experiment_dir'], 'weights.h5'))
         return model
 
-    def evaluate(self, model, test_generator, params, y_test=None, csv_filename=None):
-        # test_generator.shuffle = False
-        pred = model.predict_generator(test_generator)  # , int(params['n_test'] / BATCH_SIZE))
+    def evaluate(self, model, dataset, params, out_csv_filename=None):
+        pred = model.predict_generator(dataset, verbose=0)
         assert pred is not None and pred is not []
 
-        # with h5py.File(join(params['experiment_dir'], 'predictions.h5'), 'w') as hf:
-        #     hf.create_dataset("data", data=pred)
-
-        # pred = (pred - 0.5) * 2  # softmax -> tanh range
         # following expects tanh output (-1; 1)
         pred = self.postprocess_predictions(pred)
 
@@ -420,18 +441,16 @@ class TrainInteractions:
             pred_df.to_csv(join(params['experiment_dir'], 'predictions.csv'), index=False)
             self.save_model_properties(join(params['experiment_dir'], 'config.yaml'))
 
-        if y_test is not None:
-            errors, errors_xy, _ = self.match_pred_to_gt(y_test[:len(pred)], pred)  # trim y_test to be modulo BATCH_SIZE
-
+        if dataset.y is not None:
+            errors, errors_xy, _ = self.match_pred_to_gt(np.vstack([item[1] for item in dataset]), pred)
             errors_angle = K.concatenate([errors[:, self.array.prop2idx_(i, 'angle_deg_cw')] for i in range(self.num_objects)])
 
             results = pd.DataFrame.from_dict(OrderedDict([
                 ('xy MAE', [K.eval(K.mean(errors_xy))]),
                 ('angle MAE', [K.eval(K.mean(errors_angle))]),
-#                ('axes MAE', [axes_mae]),
                 ]))
-            if csv_filename is not None:
-                results.to_csv(csv_filename)
+            if out_csv_filename is not None:
+                results.to_csv(out_csv_filename)
             else:
                 print(results)
             return results
@@ -480,29 +499,18 @@ class TrainInteractions:
         self.array = ObjectsArray(self.PREDICTED_PROPERTIES, model_metadata['num_objects'])
 
         # load images
-        hf = h5py.File(join(data_dir, image_store.split(':')[0]), 'r')
-        X_test = hf[image_store.split(':')[1]]
+        test_dataset = Hdf5CsvSequence(os.path.join(data_dir, image_store.split(':')[0]),
+                                       image_store.split(':')[1],
+                                       join(data_dir, 'test.csv'),
+                                       BATCH_SIZE,
+                                       self.array)
 
-        # load gt
-        gt_filename = join(data_dir, 'test.csv')
-        if os.path.exists(gt_filename):
-            gt_n, gt_columns, y_test_df = read_gt(gt_filename)
-            assert model_metadata['num_objects'] == gt_n, 'number of predicted objects and number of objects in gt has to agree'
-            y_test = self.array.dataframe_to_array(y_test_df)
-        else:
-            warnings.warn('Ground truth file test.csv not found. Generating predictions without evaluation.')
-            y_test = None
-
-        self.set_num_objects(self.array.n)
         # size = 200
         # x, y = np.mgrid[0:size, 0:size]
         # mask = np.expand_dims(np.exp(- 0.0002 * ((x - size / 2) ** 2 + (y - size / 2) ** 2)), 2)
         #
         # def image_dim(img):
         #     return img * mask
-
-        test_datagen = ImageDataGenerator(rescale=1./255)  # , preprocessing_function=rotate90)
-        test_generator = test_datagen.flow(X_test, shuffle=False)
 
         base_experiment_name = time.strftime("%y%m%d_%H%M", time.localtime())
         base_experiment_dir = ROOT_EXPERIMENT_DIR + base_experiment_name
@@ -516,11 +524,8 @@ class TrainInteractions:
 
         parameters = {'experiment_dir': base_experiment_dir,
                       'tensorboard_dir': base_tensor_board_dir,
-                      'n_test': len(X_test)
                       }
-        results = self.evaluate(m, test_generator, parameters, y_test)
-        print(results.to_string(index=False))
-        hf.close()
+        results = self.evaluate(m, test_dataset, parameters)
 
     def resize_images(self, img_batch, shape):
         img_shape = img_batch[0].shape
@@ -552,38 +557,23 @@ class TrainInteractions:
         remote: train /mnt/home.stud/smidm/datagrid/ferda/interactions/1712_1k_36rot_fixed/ 0.5 100 --exp-name=two_mobilenet_scratch
         """
         # try to overfit on single batch, see https://twitter.com/karpathy/status/1013244313327681536
-        try_overfit_single_batch = True
         self.num_input_layers = input_layers
         self.detector_input_size_px = input_size_px
-        # load images
-        X_train, h5_train_files = self.load_datasets(train_img, data_dir)
-        X_test, h5_test_files = self.load_datasets(test_img, data_dir)
-        # if model == 'mobilenet':
-        #     X_train = self.resize_images(hf[dataset_names['train']], (224, 224, 1))
-        #     X_test = self.resize_images(hf[dataset_names['test']], (224, 224, 1))
 
-        # load gt
-        n_train, columns_train, y_train_df = read_gt(join(data_dir, 'train.csv'))
-        n_test, columns_test, y_test_df = read_gt(join(data_dir, 'test.csv'))
-        if try_overfit_single_batch:
-            X_train = [x[:BATCH_SIZE] for x in X_train]
-            X_test = [x[:BATCH_SIZE] for x in X_test]
-            y_train_df = y_train_df[:BATCH_SIZE]
-            y_test_df = y_test_df[:BATCH_SIZE]
-
-        assert n_train == n_test
-        assert columns_train == columns_test
-        self.set_num_objects(n_train)
-
-        y_train = self.array.dataframe_to_array(y_train_df)
-        y_test = self.array.dataframe_to_array(y_test_df)
+        train_dataset = Hdf5CsvSequence(os.path.join(data_dir, train_img.split(':')[0]),
+                                        train_img.split(':')[1],
+                                        join(data_dir, 'train.csv'),
+                                        BATCH_SIZE,
+                                        self.array)
+        test_dataset = Hdf5CsvSequence(os.path.join(data_dir, test_img.split(':')[0]),
+                                       test_img.split(':')[1],
+                                       join(data_dir, 'test.csv'),
+                                       BATCH_SIZE,
+                                       self.array)
 
         assert model in self.models, 'model {} doesn\'t exist'.format(model)
 
-        parameters = {'epochs': n_epochs,
-                      'steps_per_epoch': int(len(X_train[0]) / BATCH_SIZE),  # 1
-                      'n_test': len(X_test[0]),
-        }
+        parameters = {'epochs': n_epochs, }
         if isinstance(loss_alpha, str) and loss_alpha == 'batch':
             parameters['loss_alpha'] = np.linspace(0, 1, 8)
         elif isinstance(loss_alpha, numbers.Number):
@@ -592,15 +582,15 @@ class TrainInteractions:
             assert False, 'invalid loss_alpha specified'
 
         # fix random seed for reproducibility
-        seed = 7
-        np.random.seed(seed)
+        # seed = 7
+        # np.random.seed(seed)
 
-        size = self.detector_input_size_px
-        x, y = np.mgrid[0:size, 0:size]
-        mask = np.expand_dims(np.exp(- 0.0002 * ((x - size / 2) ** 2 + (y - size / 2) ** 2)), 2)
-
-        def image_dim(img):
-            return img * mask
+        # size = self.detector_input_size_px
+        # x, y = np.mgrid[0:size, 0:size]
+        # mask = np.expand_dims(np.exp(- 0.0002 * ((x - size / 2) ** 2 + (y - size / 2) ** 2)), 2)
+        #
+        # def image_dim(img):
+        #     return img * mask
 
         def get_sample_weight(df, detector_input_size_px, max_reweighted_distance_px=20):
             distance = np.linalg.norm(df[['0_x', '0_y']] - detector_input_size_px / 2, axis=1)
@@ -610,22 +600,10 @@ class TrainInteractions:
             weights[distance >= max_reweighted_distance_px] = max_weight
             return weights / weights.min()
 
-        def eval_and_print(_m, _t):
-            results = self.evaluate(_m, _t, parameters, y_test)
-            print('\n' + results.to_string(index=False) + '\n')
-
-        train_datagen = ImageDataGenerator(rescale=1./255)
-        train_generator = train_datagen.flow(X_train if len(X_train) > 1 else X_train[0], y_train, shuffle=False)
-#                                             sample_weight=get_sample_weight(y_train_df, self.detector_input_size_px))
-
-        if not try_overfit_single_batch:
-            test_datagen = ImageDataGenerator(rescale=1./255)
-            test_generator = test_datagen.flow(X_test if len(X_test) > 1 else X_test[0], y_test, shuffle=False)
-    #                                           sample_weight=get_sample_weight(y_test_df, self.detector_input_size_px))
-            callbacks = (ValidationCallback(test_generator, eval_and_print), )
-        else:
-            test_generator = None
-            callbacks = None
+        # def eval(_m, _t):
+        #     results = self.evaluate(_m, test_dataset, parameters)
+        # callbacks = [ValidationCallback(test_dataset, eval), ]
+        callbacks = None
 
         if experiment_dir is None:
             base_experiment_name = time.strftime("%y%m%d_%H%M", time.localtime()) + '_' + exp_name
@@ -661,7 +639,7 @@ class TrainInteractions:
                 with open(join(experiment_dir, 'model.yaml'), 'w') as fw:
                     fw.write(m.to_yaml())
                 results_ = self.evaluate(m, test_generator, parameters, y_test,
-                                         csv_filename=join(parameters['experiment_dir'], 'results.csv'))
+                                         out_csv_filename=join(parameters['experiment_dir'], 'results.csv'))
                 results_['loss_alpha'] = alpha
                 results = results.append(results_, ignore_index=True)
                 visualize_results(parameters['experiment_dir'], data_dir, 'images.h5:test/img1')
@@ -672,19 +650,11 @@ class TrainInteractions:
             m = self.models[model]()
             parameters['experiment_dir'] = base_experiment_dir
             parameters['tensorboard_dir'] = base_tensor_board_dir
-            m = self.train(m, train_generator, parameters, test_generator, callbacks=callbacks)
+            m = self.train(m, train_dataset, parameters, test_dataset, callbacks=callbacks)
             with open(join(parameters['experiment_dir'], 'model.yaml'), 'w') as fw:
                 fw.write(m.to_yaml())
-            if try_overfit_single_batch:
-                self.evaluate(m, train_generator, parameters, y_train)
-                visualize_results(parameters['experiment_dir'], data_dir, 'images.h5:train/img1')
-            else:
-                self.evaluate(m, test_generator, parameters, y_test,
-                              csv_filename=join(parameters['experiment_dir'], 'results.csv'))
-                visualize_results(parameters['experiment_dir'], data_dir, 'images.h5:test/img1')
-
-        for h5_file in h5_train_files + h5_test_files:
-            h5_file.close()
+            self.evaluate(m, test_dataset, parameters, out_csv_filename=join(parameters['experiment_dir'], 'results.csv'))
+            visualize_results(parameters['experiment_dir'], data_dir, 'images.h5:test/img1')
 
     def _write_argv(self, out_dir):
         with open(join(out_dir, 'parameters.txt'), 'w') as fw:

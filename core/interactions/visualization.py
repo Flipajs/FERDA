@@ -248,11 +248,11 @@ def visualize_results(experiment_dir, data_dir, image_store='images.h5:test', n_
                                                                                 angle=round(float(results_df['angle MAE']), 1))
     for part in visualizations:
         input_files = glob.glob(join(out_dir, part + '*.png'))
-        cmd = 'montage -verbose -tile 5x5 -geometry +5+5 -title {experiment_str} {input_files} {path}/montage_{part}.jpg'.format(
+        cmd = 'montage -tile 5x5 -geometry +5+5 -title {experiment_str} {input_files} {path}/montage_{part}.jpg'.format(
             experiment_str='\"' + part + ' ' + experiment_str + '\"',
             input_files=' '.join(sorted(input_files)),
-            path=out_dir, part=part)
-        print(call(shlex.split(cmd)))
+            path=out_dir, part=part)  # -verbose
+        call(shlex.split(cmd))
         for fn in input_files:
             os.remove(fn)
 
