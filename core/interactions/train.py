@@ -467,7 +467,7 @@ class TrainInteractions:
         model.save_weights(join(experiment.dir, 'weights.h5'))
         return model
 
-    def evaluate(self, model, dataset, experiment=None, out_csv_filename=None):
+    def evaluate(self, model, dataset, experiment=None, evaluation_csv_filename=None, prediction_csv_filename=None):
         pred = model.predict_generator(dataset, verbose=0)
         assert pred is not None and pred is not []
 
@@ -475,8 +475,10 @@ class TrainInteractions:
         pred = self.postprocess_predictions(pred)
 
         if experiment is not None:
+            if prediction_csv_filename is None:
+                prediction_csv_filename = join(experiment.dir, 'predictions.csv')
             pred_df = self.array.array_to_dataframe(pred)
-            pred_df.to_csv(join(experiment.dir, 'predictions.csv'), index=False)
+            pred_df.to_csv(prediction_csv_filename, index=False)
             self.save_model_properties(join(experiment.dir, 'config.yaml'))
 
         if dataset.y is not None:
@@ -487,8 +489,8 @@ class TrainInteractions:
                 ('xy MAE', [K.eval(K.mean(errors_xy))]),
                 ('angle MAE', [K.eval(K.mean(errors_angle))]),
                 ]))
-            if out_csv_filename is not None:
-                results.to_csv(out_csv_filename)
+            if evaluation_csv_filename is not None:
+                results.to_csv(evaluation_csv_filename)
             else:
                 print(results)
             return results
@@ -512,7 +514,7 @@ class TrainInteractions:
                 'input_size_px': self.detector_input_size_px,
             }, fw)
 
-    def evaluate_model(self, data_dir, model_dir, image_store='images.h5:test'):
+    def evaluate_model(self, data_dir, model_dir, image_store='images.h5:test', target_csv_file='test.csv'):
         """
         Evaluates a model.
 
@@ -537,11 +539,14 @@ class TrainInteractions:
         self.detector_input_size_px = model_metadata['input_size_px']
         self.array = ObjectsArray(self.PREDICTED_PROPERTIES, model_metadata['num_objects'])
 
+        parameters = {'batch_size': 32,
+                      }
+
         # load images
         test_dataset = Hdf5CsvSequence(os.path.join(data_dir, image_store.split(':')[0]),
                                        image_store.split(':')[1],
-                                       join(data_dir, 'test.csv'),
-                                       BATCH_SIZE,
+                                       join(data_dir, target_csv_file),
+                                       parameters['batch_size'],
                                        self.array)
 
         # size = 200
@@ -635,7 +640,17 @@ class TrainInteractions:
         m = self.train(m, train_dataset, experiment, test_dataset, callbacks=callbacks)
         with open(join(experiment.dir, 'model.yaml'), 'w') as fw:
             fw.write(m.to_yaml())
-        results = self.evaluate(m, test_dataset, experiment, out_csv_filename=join(experiment.dir, 'results.csv'))
+        results = self.evaluate(m, test_dataset, experiment,
+                                evaluation_csv_filename=join(experiment.dir, 'results.csv'),
+                                prediction_csv_filename=join(experiment.dir, 'predictions.csv'),
+                                )
+        print('test dataset')
+        print(results.to_string(index=False))
+        results = self.evaluate(m, train_dataset, experiment,
+                                evaluation_csv_filename=join(experiment.dir, 'results_train.csv'),
+                                prediction_csv_filename=join(experiment.dir, 'predictions_train.csv'),
+                                )
+        print('train dataset')
         print(results.to_string(index=False))
         visualize_results(experiment.dir, data_dir, 'images.h5:test/img1')
 
