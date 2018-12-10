@@ -141,6 +141,7 @@ class TrainInteractions:
             'single_concat_mp': self.model_single_concat_mp,
             'single_concat_conv3': self.model_single_concat_conv3,
             'single_concat_conv3_2inputs': self.model_single_concat_conv3_2inputs,
+            'single_concat_conv3_dense32': self.model_single_concat_conv3_dense32,
         }
         if predicted_properties is None:
             self.PREDICTED_PROPERTIES = ['x', 'y', 'angle_deg_cw']  # , 'major', 'minor']
@@ -430,6 +431,13 @@ class TrainInteractions:
     def model_single_concat_conv3(self):
         input_shape, x = self._model_single_concat_conv3_convolutions()
         x = Dense(64, activation='relu')(x)
+        x = Dense(32, activation='relu')(x)
+        out = Dense(self.array.num_columns(), activation='tanh')(x)
+        return Model(input_shape, out)
+
+    def model_single_concat_conv3_dense32(self):
+        input_shape, x = self._model_single_concat_conv3_convolutions()
+        x = Dense(32, activation='relu')(x)
         x = Dense(32, activation='relu')(x)
         out = Dense(self.array.num_columns(), activation='tanh')(x)
         return Model(input_shape, out)
