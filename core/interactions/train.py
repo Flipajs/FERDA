@@ -1,17 +1,13 @@
 from __future__ import print_function
-import numbers
 import os
-import sys
-import time
 from collections import OrderedDict
 from os.path import join
-
 import h5py
 import numpy as np
 import pandas as pd
-import scipy.stats as stats
 
 from core.interactions.io import read_gt
+from utils.experiment import Experiment
 
 try:
     from keras.utils import np_utils
@@ -42,48 +38,6 @@ from utils.objectsarray import ObjectsArray
 from core.interactions.visualization import visualize_results
 # import skimage.transform
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-
-
-class Experiment(object):
-    def __init__(self, name=None, prefix_datetime=True, params=None, config=None, tensorboard=True):
-        """
-
-        :param name: experiment name
-        :param prefix_datetime: prefix experiment dir with current datetime
-        :param params: experimental parameters (loss_alpha, epochs, batch_size)
-        :param config: experiment configuration (root_experiment_dir, root_tensor_board_dir)
-        :param tensorboard: if True, initialize tensor_board_dir
-        """
-        if prefix_datetime:
-            self.basename = time.strftime("%y%m%d_%H%M", time.localtime())
-        if name is not None:
-            self.basename += '_' + name
-        if config is None:
-            config = {}
-        self.config = config
-        root_dir = self.config.get('root_experiment_dir', '.')
-        self.dir = join(root_dir, self.basename)
-        root_tb_dir = self.config.get('root_tensor_board_dir', '.')
-        if tensorboard:
-            self.tensor_board_dir = join(root_tb_dir, self.basename)
-        else:
-            self.tensor_board_dir = None
-        self._create_dir()
-
-        if params is None:
-            self.params = {}
-        else:
-            self.params = params
-
-    def _create_dir(self):
-        try:
-            os.makedirs(self.dir)
-        except OSError:
-            pass
-
-    def write_argv(self):
-        with open(join(self.dir, 'arguments.txt'), 'w') as fw:
-            fw.writelines('\n'.join(sys.argv))
 
 
 class ValidationCallback(Callback):
@@ -587,22 +541,23 @@ class TrainInteractions:
             h5files.append(h5file)
         return datasets, h5files
 
-    def train_and_evaluate(self, data_dir, loss_alpha, train_img='images.h5:train', test_img='images.h5:test',
-                           n_epochs=10, exp_name=None, model='6conv_3dense', input_layers=3, input_size_px=200):
+    def train_and_evaluate(self, data_dir, train_img='images.h5:train', test_img='images.h5:test',
+                           input_layers=3, input_size_px=150, **parameters):
         """
-        example:
-        local: train /home/matej/prace/ferda/data/interactions/1712_1k_36rot/ 0.5 100 --exp-name=two_mobilenet_scratch
-               train . 0.5 train.h5:train/img1 test.h5:test/img1 --input-size-px=150 --model=single_mobilenet
-        remote: train /mnt/home.stud/smidm/datagrid/ferda/interactions/1712_1k_36rot_fixed/ 0.5 100 --exp-name=two_mobilenet_scratch
+        example usage:
+        train /datagrid/ferda/datasets/interactions/181116_cam1_5k_rot/ train.h5:train/img1 test.h5:test/img1
+              --epochs=150 --loss_alpha=0.5 --batch_size=32 --model=single_mobilenet --name=test
         """
-        # try to overfit on single batch, see https://twitter.com/karpathy/status/1013244313327681536
         self.num_input_layers = input_layers
         self.detector_input_size_px = input_size_px
 
-        parameters = {'epochs': n_epochs,
-                      'loss_alpha': loss_alpha,
-                      'batch_size': 32
-                      }
+        if not ('epochs' in parameters and 'loss_alpha' in parameters and 'batch_size' in parameters):
+            print("""missing experimental parameters, minimal example:
+parameters = {'epochs': 150,
+              'loss_alpha': 0.1,
+              'batch_size': 32,
+              }""")
+            return
 
         train_dataset = Hdf5CsvSequence(os.path.join(data_dir, train_img.split(':')[0]),
                                         train_img.split(':')[1],
@@ -615,7 +570,7 @@ class TrainInteractions:
                                        parameters['batch_size'],
                                        self.array)
 
-        assert model in self.models, 'model {} doesn\'t exist'.format(model)
+        assert parameters['model'] in self.models, 'model {} doesn\'t exist'.format(parameters['model'])
 
 
         # fix random seed for reproducibility
@@ -642,25 +597,28 @@ class TrainInteractions:
         # callbacks = [ValidationCallback(test_dataset, eval), ]
         callbacks = None
 
-        experiment = Experiment(exp_name, params=parameters, config=yaml.load(open('interactions_config.yaml')))
-        experiment.write_argv()
-        m = self.models[model]()
-        m = self.train(m, train_dataset, experiment, test_dataset, callbacks=callbacks)
-        with open(join(experiment.dir, 'model.yaml'), 'w') as fw:
-            fw.write(m.to_yaml())
-        results = self.evaluate(m, test_dataset, experiment,
-                                evaluation_csv_filename=join(experiment.dir, 'results.csv'),
-                                prediction_csv_filename=join(experiment.dir, 'predictions.csv'),
-                                )
-        print('test dataset')
-        print(results.to_string(index=False))
-        results = self.evaluate(m, train_dataset, experiment,
-                                evaluation_csv_filename=join(experiment.dir, 'results_train.csv'),
-                                prediction_csv_filename=join(experiment.dir, 'predictions_train.csv'),
-                                )
-        print('train dataset')
-        print(results.to_string(index=False))
-        visualize_results(experiment.dir, data_dir, 'images.h5:test/img1')
+        root_experiment = Experiment(parameters.get('name', None), params=parameters,
+                                     config=yaml.load(open('interactions_config.yaml')))
+        for experiment in root_experiment:
+            print(experiment.basename)
+            experiment.write_argv()
+            yaml.dump(experiment.params, open(join(experiment.dir, 'parameters.yaml'), 'w'))
+            m = self.models[parameters['model']]()
+            m = self.train(m, train_dataset, experiment, test_dataset, callbacks=callbacks)
+            open(join(experiment.dir, 'model.yaml'), 'w').write(m.to_yaml())
+            results = self.evaluate(m, test_dataset, experiment,
+                                    evaluation_csv_filename=join(experiment.dir, 'results.csv'),
+                                    prediction_csv_filename=join(experiment.dir, 'predictions.csv'),
+                                    )
+            print('test dataset')
+            print(results.to_string(index=False))
+            results = self.evaluate(m, train_dataset, experiment,
+                                    evaluation_csv_filename=join(experiment.dir, 'results_train.csv'),
+                                    prediction_csv_filename=join(experiment.dir, 'predictions_train.csv'),
+                                    )
+            print('train dataset')
+            print(results.to_string(index=False))
+            visualize_results(experiment.dir, data_dir, 'images.h5:test/img1')
 
 
 if __name__ == '__main__':
