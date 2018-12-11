@@ -153,5 +153,6 @@ class TransformableRegion:
 
     def get_img(self):
         assert np.all(self.transformation[2, :] == (0, 0, 1))
-        return cv2.warpAffine(self.img, self.transformation[:2], self.img.shape[:2][::-1])
+        return cv2.warpAffine(self.img, self.transformation[:2], self.img.shape[:2][::-1],
+                              borderMode=cv2.BORDER_REPLICATE)
 
