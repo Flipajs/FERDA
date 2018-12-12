@@ -24,6 +24,7 @@ from joblib import Memory
 from os.path import join
 import matplotlib.pylab as plt
 import itertools
+import yaml
 
 from core.project.project import Project
 from core.graph.region_chunk import RegionChunk
@@ -124,13 +125,13 @@ class DataGenerator(object):
         self._multi = None
         self._project = None
         self.bg_model = None
-        self.params = {'single_min_frames': 10,
-                       'single_min_average_speed_px': 1.5,
+        self.params = {'single_min_frames': 0,
+                       'single_min_average_speed_px': 0,
                        'regression_tracking_image_size_px': 150,
-                       'single_tracklet_min_speed': 5,
-                       'single_tracklet_remove_fraction': 0.4,
+                       'single_tracklet_min_speed': 0,
+                       'single_tracklet_remove_fraction': 0,
 #                       'augmentation_elliptic_mask_multipliers': (1, 1), # fishes, sowbugs
-                       'augmentation_elliptic_mask_multipliers': (1.5, 4), # ants
+                       'augmentation_elliptic_mask_multipliers': (1.5, 4),  # ants
                        }
         # self.__i = 0  # used for visualizations commented out
         # self._get_single_region_tracklets_cached = memory.cache(
@@ -141,6 +142,9 @@ class DataGenerator(object):
         self._project = Project()
         self._project.load(project_dir, video_file=video_file)
         self._video = get_auto_video_manager(self._project)
+
+    def _write_params(self, out_dir):
+        yaml.dump(self.params, open(join(out_dir, 'parameters.yaml'), 'w'))
 
     @staticmethod
     def _get_hash(*args):
@@ -405,6 +409,7 @@ class DataGenerator(object):
 
         if out_dir is not None:
             self._makedirs(out_dir)
+            self._write_params(out_dir)
             h5_filename = join(out_dir, 'images.h5')
             train_csv_filename = join(out_dir, 'train.csv')
             test_csv_filename = join(out_dir, 'test.csv')
