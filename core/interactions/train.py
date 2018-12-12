@@ -597,11 +597,12 @@ parameters = {'epochs': 150,
         # callbacks = [ValidationCallback(test_dataset, eval), ]
         callbacks = None
 
-        root_experiment = Experiment(parameters.get('name', None), params=parameters,
+        root_experiment = Experiment.create(parameters.get('name', None), params=parameters,
                                      config=yaml.load(open('interactions_config.yaml')))
+        root_experiment.params.save(join(root_experiment, 'parameters.yaml'))
         for experiment in root_experiment:
             print(experiment.basename)
-            experiment.write_argv()
+            experiment.save_argv()
             yaml.dump(experiment.params, open(join(experiment.dir, 'parameters.yaml'), 'w'))
             m = self.models[parameters['model']]()
             m = self.train(m, train_dataset, experiment, test_dataset, callbacks=callbacks)
