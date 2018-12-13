@@ -145,10 +145,10 @@ def visualize_results(experiment_dir, data_dir, image_store='images.h5:test', n_
             metadata = yaml.load(fr)
         if n_objects is None:
             n_objects = metadata['num_objects']
-        ti = train_interactions.TrainInteractions(n_objects)
+        ti = train_interactions.TrainInteractions()
     else:
         # now obsolete, only for backwards compatibility
-        ti = train_interactions.TrainInteractions(n_objects)
+        ti = train_interactions.TrainInteractions()
         with h5py.File(join(experiment_dir, 'predictions.h5'), 'r') as hf_pred:
             data = hf_pred['data'][:]
             COLUMNS = ['x', 'y', 'major', 'minor', 'angle_deg']

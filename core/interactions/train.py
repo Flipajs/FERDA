@@ -81,9 +81,20 @@ class Hdf5CsvSequence(Sequence):
         self.h5file.close()
 
 
+class TwoImageSequence(Hdf5CsvSequence):
+    def __init__(self, hdf5_filename, dataset_basename, csv_filename, batch_size, array):
+        super(TwoImageSequence, self).__init__(hdf5_filename, dataset_basename + '1', csv_filename, batch_size, array)
+        self.x0 = self.h5file[dataset_basename + '0']
+
+    def __getitem__(self, idx):
+        if idx >= len(self):
+            raise IndexError
+        x1, y = super(TwoImageSequence, self).__getitem__(idx)
+        x0 = self.x0[idx * self.batch_size:(idx + 1) * self.batch_size] / 255.
+        return np.concatenate((x0, x1), axis=3), y
+
 class TrainInteractions:
-    def __init__(self, num_input_layers=3, predicted_properties=None, error_functions=None,
-                 detector_input_size_px=200):
+    def __init__(self, predicted_properties=None, error_functions=None):
         assert (predicted_properties is None and error_functions is None) or \
                len(predicted_properties) == len(error_functions)
         self.models = {
@@ -105,10 +116,10 @@ class TrainInteractions:
             self.ERROR_FUNCTIONS = ['abs', 'abs', 'angle_180']  # , 'abs', 'abs']
         else:
             self.ERROR_FUNCTIONS = error_functions
-        self.detector_input_size_px = detector_input_size_px
-        self.num_input_layers = num_input_layers
         self.num_objects = 1
         self.array = ObjectsArray(self.PREDICTED_PROPERTIES, self.num_objects)  # provide column name to index mapping using ObjectsArray
+        self.parameters = {}
+        self.input_shape = None
 
     @staticmethod
     def toarray(struct_array):
@@ -148,7 +159,8 @@ class TrainInteractions:
             for col in self.array.properties:
                 if col != 'angle_deg_cw':
                     # (-1; 1) -> (0; detector_input_size_px)
-                    tensor_columns.append((y_pred[:, self.array.prop2idx(i, col)] + 1) * self.detector_input_size_px / 2)
+                    tensor_columns.append((y_pred[:, self.array.prop2idx(i, col)] + 1) *
+                                          self.parameters['input_size_px'] / 2)
                 else:
                     # (-1; 1) -> (-90; 90)
                     tensor_columns.append(y_pred[:, self.array.prop2idx(i, 'angle_deg_cw')] * 90)
@@ -245,7 +257,7 @@ class TrainInteractions:
         return errors, errors_xy, swap_indices
 
     def model_6conv_3dense_convolutions(self):
-        input_shape = Input(shape=(self.detector_input_size_px, self.detector_input_size_px, self.num_input_layers))
+        input_shape = Input(shape=self.input_shape)
         x = Conv2D(32, (3, 3), padding='same', activation='relu')(input_shape)
         x = Conv2D(32, (3, 3), padding='same', activation='relu', dilation_rate=(2, 2))(x)
         x = MaxPooling2D((2, 2))(x)
@@ -290,7 +302,7 @@ class TrainInteractions:
         return Model(input_shape, out)
 
     def model_6conv_2dense(self):
-        input_shape = Input(shape=(self.detector_input_size_px, self.detector_input_size_px, self.num_input_layers))
+        input_shape = Input(shape=self.input_shape)
         x = Conv2D(32, (3, 3), padding='same', activation='relu')(input_shape)
         x = Conv2D(32, (3, 3), padding='same', activation='relu', dilation_rate=(2, 2))(x)
         x = MaxPooling2D((2, 2))(x)
@@ -305,9 +317,8 @@ class TrainInteractions:
         return Model(input_shape, out)
 
     def model_mobilenet(self):
-        base_model = keras.applications.mobilenet.MobileNet(
-            (self.detector_input_size_px, self.detector_input_size_px, self.num_input_layers),
-            include_top=False, weights=None)  # weights='imagenet'
+        base_model = keras.applications.mobilenet.MobileNet(self.input_shape,
+                                                            include_top=False, weights=None)  # weights='imagenet'
         # add a global spatial average pooling layer
         x = base_model.output
         x = GlobalAveragePooling2D()(x)
@@ -325,9 +336,10 @@ class TrainInteractions:
         return model
 
     def model_single_mobilenet(self):
-        base_model = keras.applications.mobilenet.MobileNet(
-            (self.detector_input_size_px, self.detector_input_size_px, self.num_input_layers),
-            include_top=False, weights=None)  # weights='imagenet'
+        base_model = keras.applications.mobilenet.MobileNet(self.input_shape,
+                                                            self.parameters['mobilenet_alpha'],
+                                                            self.parameters['mobilenet_depth_multiplier'],
+                                                            include_top=False, weights=None)  # weights='imagenet'
         # add a global spatial average pooling layer
         x = base_model.output
         x = GlobalAveragePooling2D()(x)
@@ -345,7 +357,7 @@ class TrainInteractions:
         return model
 
     def model_single_concat_mp(self):
-        input_shape = Input(shape=(self.detector_input_size_px, self.detector_input_size_px, self.num_input_layers))
+        input_shape = Input(shape=self.input_shape)
         x = Conv2D(1, (1, 1), padding='same', activation='relu')(input_shape)
         conv2 = Conv2D(32, (7, 7), padding='same', activation='relu')(x)
         conv3 = Conv2D(32, (5, 5), padding='same', activation='relu')(conv2)
@@ -366,7 +378,7 @@ class TrainInteractions:
         return Model(input_shape, out)
 
     def _model_single_concat_conv3_convolutions(self):
-        input_shape = Input(shape=(self.detector_input_size_px, self.detector_input_size_px, self.num_input_layers))
+        input_shape = Input(shape=self.input_shape)
         x = Conv2D(1, (1, 1), padding='same', activation='relu')(input_shape)
         conv2 = Conv2D(32, (7, 7), padding='same', activation='relu')(x)
         conv3 = Conv2D(32, (5, 5), padding='same', activation='relu')(conv2)
@@ -463,9 +475,9 @@ class TrainInteractions:
         for i in range(self.num_objects):
             pred[:, self.array.prop2idx(i, 'angle_deg_cw')] = pred[:, self.array.prop2idx(i, 'angle_deg_cw')] * 90
             pred[:, self.array.prop2idx(i, 'x')] = \
-                (pred[:, self.array.prop2idx(i, 'x')] + 1) * self.detector_input_size_px / 2
+                (pred[:, self.array.prop2idx(i, 'x')] + 1) * self.parameters['input_size_px'] / 2
             pred[:, self.array.prop2idx(i, 'y')] = \
-                (pred[:, self.array.prop2idx(i, 'y')] + 1) * self.detector_input_size_px / 2
+                (pred[:, self.array.prop2idx(i, 'y')] + 1) * self.parameters['input_size_px'] / 2
         return pred
 
     def save_model_properties(self, out_yaml):
@@ -473,7 +485,6 @@ class TrainInteractions:
             yaml.dump({
                 'num_objects': self.num_objects,
                 'properties': self.PREDICTED_PROPERTIES,
-                'input_size_px': self.detector_input_size_px,
             }, fw)
 
     def evaluate_model(self, data_dir, model_dir, image_store='images.h5:test', target_csv_file='test.csv'):
@@ -498,7 +509,6 @@ class TrainInteractions:
         m.load_weights(join(model_dir, 'weights.h5'))
         model_metadata = yaml.load(open(join(model_dir, 'config.yaml')))
         self.PREDICTED_PROPERTIES = model_metadata['properties']
-        self.detector_input_size_px = model_metadata['input_size_px']
         self.array = ObjectsArray(self.PREDICTED_PROPERTIES, model_metadata['num_objects'])
 
         parameters = {'batch_size': 32,
@@ -535,22 +545,18 @@ class TrainInteractions:
             filename, dataset_name = dataset_str.split(':')
             h5file = h5py.File(join(data_dir, filename), 'r')
             dataset = h5file[dataset_name]
-            if self.num_input_layers == 1:
+            if self.parameters['input_channels'] == 1:
                 dataset = np.expand_dims(dataset, 3)
             datasets.append(dataset)
             h5files.append(h5file)
         return datasets, h5files
 
-    def train_and_evaluate(self, data_dir, train_img='images.h5:train', test_img='images.h5:test',
-                           input_layers=3, input_size_px=150, **parameters):
+    def train_and_evaluate(self, data_dir, train_img='images.h5:train', test_img='images.h5:test', **parameters):
         """
         example usage:
-        train /datagrid/ferda/datasets/interactions/181116_cam1_5k_rot/ train.h5:train/img1 test.h5:test/img1
-              --epochs=150 --loss_alpha=0.5 --batch_size=32 --model=single_mobilenet --name=test
+        train /datagrid/ferda/datasets/interactions/181116_cam1_5k_rot/ images.h5:train/img1 images.h5:test/img1
+        --model=mobilenet --name=mobilenet_last --batch_size=32 --epochs=150 --loss_alpha=1
         """
-        self.num_input_layers = input_layers
-        self.detector_input_size_px = input_size_px
-
         if not ('epochs' in parameters and 'loss_alpha' in parameters and 'batch_size' in parameters):
             print("""missing experimental parameters, minimal example:
 parameters = {'epochs': 150,
@@ -559,7 +565,7 @@ parameters = {'epochs': 150,
               }""")
             return
 
-        train_dataset = Hdf5CsvSequence(os.path.join(data_dir, train_img.split(':')[0]),
+        train_dataset = Hdf5CsvSequence(os.path.join(data_dir, train_img.split(':')[0]),  # TwoImageSequence Hdf5CsvSequence
                                         train_img.split(':')[1],
                                         join(data_dir, 'train.csv'),
                                         parameters['batch_size'],
@@ -571,7 +577,11 @@ parameters = {'epochs': 150,
                                        self.array)
 
         assert parameters['model'] in self.models, 'model {} doesn\'t exist'.format(parameters['model'])
-
+        batch_x, _ = train_dataset[0]
+        parameters['input_size_px'] = batch_x.shape[1]  # (batch size, y, x, channels)
+        parameters['input_channels'] = batch_x.shape[3]
+        self.input_shape = batch_x.shape[1:]
+        self.parameters = parameters
 
         # fix random seed for reproducibility
         # seed = 7
@@ -598,12 +608,12 @@ parameters = {'epochs': 150,
         callbacks = None
 
         root_experiment = Experiment.create(parameters.get('name', None), params=parameters,
-                                     config=yaml.load(open('interactions_config.yaml')))
-        root_experiment.params.save(join(root_experiment, 'parameters.yaml'))
+                                            config=yaml.load(open('interactions_config.yaml')))
+        root_experiment.save_params()
         for experiment in root_experiment:
             print(experiment.basename)
             experiment.save_argv()
-            yaml.dump(experiment.params, open(join(experiment.dir, 'parameters.yaml'), 'w'))
+            experiment.save_params()
             m = self.models[parameters['model']]()
             m = self.train(m, train_dataset, experiment, test_dataset, callbacks=callbacks)
             open(join(experiment.dir, 'model.yaml'), 'w').write(m.to_yaml())

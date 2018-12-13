@@ -49,9 +49,10 @@ class InteractionDetector:
         keras_custom_objects = {
             'relu6': mobilenet.relu6,
         }
-        with open(join(model_dir, 'config.yaml'), 'r') as fr:
-            self.config = yaml.load(fr)
-        self.ti = TrainInteractions(self.config['num_objects'], detector_input_size_px=self.config['input_size_px'])  # TODO: remove dependency
+        self.config = yaml.load(open(join(model_dir, 'config.yaml')))
+        self.parameters = yaml.load(open(join(model_dir, 'parameters.yaml')))
+        self.ti = TrainInteractions()  # TODO: remove dependency
+        self.ti.parameters = self.parameters
 
         if os.path.exists(join(model_dir, 'model.yaml')):
             with open(join(model_dir, 'model.yaml'), 'r') as fr:
