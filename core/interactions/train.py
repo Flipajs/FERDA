@@ -113,7 +113,7 @@ class TrainInteractions:
         else:
             self.PREDICTED_PROPERTIES = predicted_properties
         if error_functions is None:
-            self.ERROR_FUNCTIONS = ['abs', 'abs', 'angle_180']  # , 'abs', 'abs']
+            self.ERROR_FUNCTIONS = ['abs', 'abs', 'angle_360']  # , 'abs', 'abs']
         else:
             self.ERROR_FUNCTIONS = error_functions
         self.num_objects = 1
