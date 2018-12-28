@@ -17,10 +17,11 @@ from keras.applications.mobilenet import mobilenet
 from keras.models import model_from_yaml, model_from_json
 from tqdm import tqdm
 
-from core.interactions.generate_data import DataGenerator
+from core.interactions.generate_data import DataGenerator, head_fix
 from core.interactions.train import TrainInteractions
 from core.interactions.visualization import save_prediction_img, show_prediction
 from core.region.transformableregion import TransformableRegion
+from core.graph.region_chunk import RegionChunk
 from utils.img import safe_crop
 from utils.objectsarray import ObjectsArray
 from utils.gt.mot import load_mot, results_to_mot, eval_mot, mot_in_roi
@@ -315,14 +316,21 @@ class InteractionDetector:
         :param prev_detection:
         :return:
         """
+        # img0 = self.project.img_manager.get_whole_img(frame - 1)
         img = self.project.img_manager.get_whole_img(frame)
-        pred_dict, pred_, delta_xy, img_crop = self.detect_single(img, prev_detection)
+        pred_dict, pred_, delta_xy, img_crop = self.detect_single(img, prev_detection) # , img0)
         return pred_dict, pred_, delta_xy, img_crop
 
     def detect_single_frame(self, frame, prev_detection):
         return self._detect_single_frame(basename(self.project.video_paths), frame, prev_detection)
 
-    def detect_single(self, img, prev_detection):
+    def get_rotated_crop(self, img, timg, xy):
+        timg.set_img(img)
+        img_rotated = timg.get_img()
+        img_crop, delta_xy = safe_crop(img_rotated, xy, self.parameters['input_size_px'])
+        return np.expand_dims(img_crop, 0).astype(np.float) / 255., delta_xy
+
+    def detect_single(self, img, prev_detection, img0=None):
         """
         Detect objects in interaction.
 
@@ -334,12 +342,11 @@ class InteractionDetector:
         timg = TransformableRegion()
         prev_xy = (prev_detection['0_x'], prev_detection['0_y'])
         timg.rotate(-prev_detection['0_angle_deg_cw'], prev_xy[::-1])
-        timg.set_img(img)
-        img_rotated = timg.get_img()
-
-        img_crop, delta_xy = safe_crop(img_rotated, prev_xy, self.config['input_size_px'])
-        img = np.expand_dims(img_crop, 0).astype(np.float) / 255.
-        pred = self.m.predict(img)
+        img_crop, delta_xy = self.get_rotated_crop(img, timg, prev_xy)
+        if img0 is not None:
+            img0_crop, _ = self.get_rotated_crop(img0, timg, prev_xy)
+            img_crop = np.concatenate((img0_crop, img_crop), axis=3)
+        pred = self.m.predict(img_crop)
         pred_ = pred.copy().flatten()
         pred = self.ti.postprocess_predictions(pred)
 
@@ -561,13 +568,14 @@ class InteractionDetector:
         return eval_mot(df_gt, df_results)
 
 
-def plot_frame(frame, i, img, out_dir, regions_in_frame=None, paths=None, roi=None, gt=None):
+def plot_frame(frame, i, img, out_dir, regions_in_frame=None, paths=None, roi=None, gt=None, colors=None):
     from scripts.montage import save_figure_as_image
     from core.interactions.visualization import plot_interaction
     import matplotlib.pylab as plt
     fig = plt.figure()
     plt.imshow(img)
-    colors = itertools.cycle(['red', 'blue', 'green', 'yellow', 'white'])
+    if colors is None:
+        colors = itertools.cycle(['red', 'blue', 'green', 'yellow', 'white'])
     # for path_set, color in zip(paths, ('r', 'b')):
     #                for regions in path_set:
 
@@ -578,8 +586,7 @@ def plot_frame(frame, i, img, out_dir, regions_in_frame=None, paths=None, roi=No
             frames = [r.frame for r in regions]
             try:
                 r = regions[frames.index(frame)]
-                plot_interaction(1, pred=r.to_dict(), color=color)
-                plt.plot(r.x, r.y, 'o', color=color)
+                plot_interaction(1, pred=r.to_dict(), color=color, length_px=img.shape[0] * 0.05)
             except ValueError:
                 pass
             if 'in_region' in path and path['in_region'] is not None and frame == path['in_region'].frame():
@@ -682,9 +689,58 @@ def _load(tracker_dir, project_dir):
     project = Project(project_dir)
     gt = load_mot('data/GT/Cam1_clip.avi.txt')
     # gt = None
-    gt[['x', 'y']] -= [project.video_crop_model[key] for key in ['x1', 'y1']]
+    if project.video_crop_model is not None:
+        gt[['x', 'y']] -= [project.video_crop_model[key] for key in ['x1', 'y1']]
     detector = InteractionDetector(tracker_dir, project)
     return detector, gt
+
+
+def track_video(tracker_dir, project_dir, out_dir):
+    try:
+        os.makedirs(out_dir)
+    except OSError:
+        pass
+    detector, gt = _load(tracker_dir, project_dir)
+    img_shape = detector.project.img_manager.get_whole_img(0).shape
+    # find starting frame with separated objects
+    for frame in range(detector.project.video_start_t + 1, detector.project.video_end_t + 1):
+        tracklets = [t for t in detector.project.chm.tracklets_in_frame(frame) if t.is_single()]
+        if len(tracklets) == len(detector.project.animals):
+            break
+    assert frame != detector.project.video_end_t
+    regions_tracklets = [list(RegionChunk(t, detector.project.gm, detector.project.rm)) for t in tracklets]
+    for regions in regions_tracklets:
+        head_fix(regions)
+    ellipses = [Ellipse.from_region(next(r for r in regions if r.frame() == frame)) for regions in regions_tracklets]
+    predictions = [el.to_dict() for el in ellipses]
+    frame_start = frame
+    track_ids = range(len(tracklets))
+    tracks = [[el] for el in ellipses]
+    colors = list(itertools.islice(itertools.cycle(['red', 'blue', 'green', 'yellow', 'white', 'cyan']), len(tracklets)))
+    for frame in tqdm(range(frame_start, detector.project.video_end_t + 1)):
+        predictions = [detector.detect_single_frame(frame, pred)[0] for pred in predictions]
+        ellipses = [Ellipse.from_dict(pred, frame) for pred in predictions]
+
+        # stop tracking when two tracks join
+        to_remove = set()
+        for (i, el1), (j, el2) in itertools.combinations(enumerate(ellipses), 2):
+            if el1.is_close(el2):
+                to_remove.add(j)
+        for i, el in enumerate(ellipses):
+            if el.is_outside_bounds(0, 0, img_shape[1], img_shape[0]):
+                to_remove.add(i)
+        for i in to_remove:
+            del predictions[i]
+            del ellipses[i]
+            del track_ids[i]
+            del colors[i]
+
+        # save ellipses to surviving tracks
+        for tid, el in zip(track_ids, ellipses):
+            tracks[tid].append(el)
+
+        plot_frame(frame, frame, detector.project.img_manager.get_whole_img(frame),
+                   out_dir, paths=[{'regions': [el]} for el in ellipses], colors=colors)
 
 
 def track_single_tracklets(tracker_dir, project_dir, out_dir):
@@ -762,4 +818,5 @@ if __name__ == '__main__':
         'single': track_single_tracklets,
         'multi': track_multi_tracklets,
         'dense': track_dense,
+        'video': track_video,
     })

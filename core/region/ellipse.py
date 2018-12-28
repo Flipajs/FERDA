@@ -22,9 +22,9 @@ class Ellipse(object):
         return r
 
     @classmethod
-    def from_dict(cls, region_dict):
+    def from_dict(cls, region_dict, frame=None):
         return cls(region_dict['0_x'], region_dict['0_y'], region_dict['0_angle_deg_cw'], region_dict['0_major'],
-                   region_dict['0_minor'])
+                   region_dict['0_minor'], frame)
 
     def __init__(self, x=None, y=None, angle_deg=None, major=None, minor=None, frame=None):
         self.x = x
@@ -70,6 +70,15 @@ class Ellipse(object):
         area, poly = cv2.intersectConvexConvex(self.to_poly(), el_region)
         #         poly = poly.reshape((-1, 2))
         return area
+
+    def is_close(self, ellipse, thresh_px=None, thresh_deg=10):
+        if thresh_px is None:
+            thresh_px = self.major / 10
+        return np.all(np.abs(self.xy - ellipse.xy) < thresh_px) and \
+               abs(self.angle_deg - ellipse.angle_deg) < thresh_deg
+
+    def is_outside_bounds(self, x1, y1, x2, y2):
+        return self.x < x1 or self.y < y1 or self.x > x2 or self.y > y2
 
     def to_array(self):
         return np.array([self.x, self.y, self.angle_deg, self.major, self.minor, self.frame])
