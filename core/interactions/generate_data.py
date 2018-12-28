@@ -42,7 +42,7 @@ memory = Memory('out/cache', verbose=1)
 IMAGE_SIZE_PX = 200
 
 
-#TODO: check for possible bug
+# TODO: check for possible bug
 def head_fix(tracklet_regions):
     import heapq
     q = []

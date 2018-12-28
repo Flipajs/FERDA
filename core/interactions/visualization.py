@@ -15,7 +15,7 @@ import tqdm
 import warnings
 import yaml
 from imageio import imread
-from matplotlib.patches import Ellipse
+from matplotlib.patches import Ellipse, Arrow
 from os.path import join
 from core.interactions.io import read_gt
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
@@ -82,7 +82,15 @@ def show_prediction(img, num_objects, prediction=None, gt=None, title=None):
     return ax
 
 
-def plot_interaction(num_objects, pred=None, gt=None, ax=None, color='r'):
+def angled_arrow(x, y, angle_deg, length, ax=None, color='k', width=2, **kwargs):
+    if ax is None:
+        ax = plt.gca()
+    dx = length * np.cos(np.deg2rad(angle_deg))
+    dy = length * np.sin(np.deg2rad(angle_deg))
+    ax.arrow(x, y, dx, dy, width=width, length_includes_head=True, fc=color, ec=color, **kwargs)
+
+
+def plot_interaction(num_objects, pred=None, gt=None, ax=None, color='r', length_px=20):
     """
     Visualize detected objects and/or ground truth.
 
@@ -100,28 +108,11 @@ def plot_interaction(num_objects, pred=None, gt=None, ax=None, color='r'):
     colors = itertools.cycle(['red', 'blue', 'green', 'yellow', 'white'])
     for i, c in zip(range(num_objects), colors):
         if pred is not None:
-            ax.add_patch(Ellipse((pred['%d_x' % i], pred['%d_y' % i]),
-                                 pred['%d_major' % i], pred['%d_minor' % i],
-                                 angle=pred['%d_angle_deg_cw' % i],  facecolor='none', edgecolor=color,
-                                 label='object %d prediction' % i, linewidth=1))
-            # ax.add_patch(Arc(toarray(pred[['%d_x' % i, '%d_y' % i]]).flatten(),
-            #                  pred['%d_major' % i], pred['%d_minor' % i],
-            #                  angle=pred['%d_angle_deg' % i], edgecolor=colors[i], facecolor='none',
-            #                  linewidth=4,
-            #                  theta1=-30, theta2=30))
-            plt.scatter(pred['%d_x' % i], pred['%d_y' % i], c=c)
+            angled_arrow(pred['%d_x' % i], pred['%d_y' % i], pred['%d_angle_deg_cw' % i], length_px, ax, color=color,
+                         label='object %d' % i)
         if gt is not None:
-            ax.add_patch(Ellipse((gt['%d_x' % i], gt['%d_y' % i]),
-                                 gt['%d_major' % i], gt['%d_minor' % i],
-                                 angle=gt['%d_angle_deg_cw' % i], edgecolor=color, facecolor='none',
-                                 linestyle='dotted', label='object %d gt' % i, linewidth=1))
-            # ax.add_patch(Arc(toarray(gt[['%d_x' % i, '%d_y' % i]]).flatten(),
-            #                  gt['%d_major' % i], gt['%d_minor' % i],
-            #                  angle=gt['%d_angle_deg' % i], edgecolor=colors[i], facecolor='none',
-            #                  linewidth=4,
-            #                  theta1=-30, theta2=30, linestyle='dotted'))
-
-    # plt.legend()
+            angled_arrow(gt['%d_x' % i], gt['%d_y' % i], gt['%d_angle_deg_cw' % i], length_px, ax, color=color,
+                         label='object %d gt' % i, linestyle='dotted')
 
 
 def visualize_results(experiment_dir, data_dir, image_store='images.h5:test', n_objects=None):
