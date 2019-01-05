@@ -91,6 +91,12 @@ class TwoImageSequence(Hdf5CsvSequence):
             raise IndexError
         x1, y = super(TwoImageSequence, self).__getitem__(idx)
         x0 = self.x0[idx * self.batch_size:(idx + 1) * self.batch_size] / 255.
+        return [x0, x1], y
+
+
+class StackedTwoImageSequence(TwoImageSequence):
+    def __getitem__(self, idx):
+        [x0, x1], y = super(StackedTwoImageSequence, self).__getitem__(idx)
         return np.concatenate((x0, x1), axis=3), y
 
 class TrainInteractions:
@@ -103,6 +109,7 @@ class TrainInteractions:
             '6conv_2dense': self.model_6conv_2dense,
             'mobilenet': self.model_mobilenet,
             'single_mobilenet': self.model_single_mobilenet,
+            'mobilenet_siamese': self.model_mobilenet_siamese,
             'single_concat_mp': self.model_single_concat_mp,
             'single_concat_conv3': self.model_single_concat_conv3,
             'single_concat_conv3_2inputs': self.model_single_concat_conv3_2inputs,
@@ -356,6 +363,22 @@ class TrainInteractions:
         #     layer.trainable = False
         return model
 
+    def model_mobilenet_siamese(self):
+        base_model = keras.applications.mobilenet.MobileNet(self.input_shape,
+                                                            self.parameters['mobilenet_alpha'],
+                                                            self.parameters['mobilenet_depth_multiplier'],
+                                                            include_top=False, weights=None,
+                                                            pooling='avg')  # weights='imagenet'
+        input0 = keras.layers.Input(shape=self.input_shape)
+        x0 = base_model(input0)
+        input1 = keras.layers.Input(shape=self.input_shape)
+        x1 = base_model(input1)
+        x = keras.layers.concatenate([x0, x1], axis=-1)
+        x = Dense(32, activation='relu')(x)
+        predictions = Dense(3, activation='tanh')(x)  # softmax
+        model = Model(inputs=[input0, input1], outputs=predictions)
+        return model
+
     def model_single_concat_mp(self):
         input_shape = Input(shape=self.input_shape)
         x = Conv2D(1, (1, 1), padding='same', activation='relu')(input_shape)
@@ -565,19 +588,21 @@ parameters = {'epochs': 150,
               }""")
             return
 
-        train_dataset = Hdf5CsvSequence(os.path.join(data_dir, train_img.split(':')[0]),  # TwoImageSequence Hdf5CsvSequence
-                                        train_img.split(':')[1],
-                                        join(data_dir, 'train.csv'),
-                                        parameters['batch_size'],
-                                        self.array)
-        test_dataset = Hdf5CsvSequence(os.path.join(data_dir, test_img.split(':')[0]),
-                                       test_img.split(':')[1],
-                                       join(data_dir, 'test.csv'),
-                                       parameters['batch_size'],
-                                       self.array)
+        train_dataset = TwoImageSequence(os.path.join(data_dir, train_img.split(':')[0]),  # TwoImageSequence Hdf5CsvSequence
+                                                train_img.split(':')[1],
+                                                join(data_dir, 'train.csv'),
+                                                parameters['batch_size'],
+                                                self.array)
+        test_dataset = TwoImageSequence(os.path.join(data_dir, test_img.split(':')[0]),
+                                               test_img.split(':')[1],
+                                               join(data_dir, 'test.csv'),
+                                               parameters['batch_size'],
+                                               self.array)
 
         assert parameters['model'] in self.models, 'model {} doesn\'t exist'.format(parameters['model'])
         batch_x, _ = train_dataset[0]
+        if isinstance(batch_x, list):
+            batch_x = batch_x[0]  # inspect only the first input
         parameters['input_size_px'] = batch_x.shape[1]  # (batch size, y, x, channels)
         parameters['input_channels'] = batch_x.shape[3]
         self.input_shape = batch_x.shape[1:]
