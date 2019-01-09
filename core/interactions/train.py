@@ -99,6 +99,7 @@ class StackedTwoImageSequence(TwoImageSequence):
         [x0, x1], y = super(StackedTwoImageSequence, self).__getitem__(idx)
         return np.concatenate((x0, x1), axis=3), y
 
+
 class TrainInteractions:
     def __init__(self, predicted_properties=None, error_functions=None):
         assert (predicted_properties is None and error_functions is None) or \
@@ -374,9 +375,23 @@ class TrainInteractions:
         input1 = keras.layers.Input(shape=self.input_shape)
         x1 = base_model(input1)
         x = keras.layers.concatenate([x0, x1], axis=-1)
-        x = Dense(32, activation='relu')(x)
-        predictions = Dense(3, activation='tanh')(x)  # softmax
-        model = Model(inputs=[input0, input1], outputs=predictions)
+        # x = Dense(1024, activation='relu')(x)
+        # predictions = Dense(3, activation='tanh')(x)  # softmax
+
+        if K.image_data_format() == 'channels_first':
+            shape = (int(2 * 1024 * self.parameters['mobilenet_alpha']), 1, 1)
+        else:
+            shape = (1, 1, int(2 * 1024 * self.parameters['mobilenet_alpha']))
+
+        x = keras.layers.Reshape(shape, name='reshape_1')(x)
+        x = keras.layers.Dropout(1e-3, name='dropout')(x)
+        x = keras.layers.Conv2D(3, (1, 1),
+                          padding='same',
+                          name='conv_preds')(x)
+        x = keras.layers.Activation('tanh', name='act_tanh')(x)
+        x = keras.layers.Reshape((3,), name='reshape_2')(x)
+
+        model = Model(inputs=[input0, input1], outputs=x)
         return model
 
     def model_single_concat_mp(self):
@@ -452,6 +467,7 @@ class TrainInteractions:
         callbacks.extend([
             CSVLogger(join(experiment.dir, 'log.csv'), append=True, separator=';'),
             GetBest(monitor='val_loss', verbose=1),
+            ModelCheckpoint(join(experiment.dir, 'weights_tmp.h5'), save_best_only=True, save_weights_only=True)
         ])
         if experiment.tensor_board_dir is not None:
             callbacks.append(
@@ -462,6 +478,7 @@ class TrainInteractions:
         model.fit_generator(train_dataset, epochs=experiment.params['epochs'], verbose=1, callbacks=callbacks,
                             validation_data=test_dataset)
         model.save_weights(join(experiment.dir, 'weights.h5'))
+        os.remove(join(experiment.dir, 'weights_tmp.h5'))
         return model
 
     def evaluate(self, model, dataset, experiment=None, evaluation_csv_filename=None, prediction_csv_filename=None):
@@ -640,8 +657,8 @@ parameters = {'epochs': 150,
             experiment.save_argv()
             experiment.save_params()
             m = self.models[parameters['model']]()
-            m = self.train(m, train_dataset, experiment, test_dataset, callbacks=callbacks)
             open(join(experiment.dir, 'model.yaml'), 'w').write(m.to_yaml())
+            m = self.train(m, train_dataset, experiment, test_dataset, callbacks=callbacks)
             results = self.evaluate(m, test_dataset, experiment,
                                     evaluation_csv_filename=join(experiment.dir, 'results.csv'),
                                     prediction_csv_filename=join(experiment.dir, 'predictions.csv'),

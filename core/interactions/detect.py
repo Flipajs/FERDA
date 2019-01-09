@@ -316,9 +316,9 @@ class InteractionDetector:
         :param prev_detection:
         :return:
         """
-        # img0 = self.project.img_manager.get_whole_img(frame - 1)
+        img0 = self.project.img_manager.get_whole_img(frame - 1)
         img = self.project.img_manager.get_whole_img(frame)
-        pred_dict, pred_, delta_xy, img_crop = self.detect_single(img, prev_detection) # , img0)
+        pred_dict, pred_, delta_xy, img_crop = self.detect_single(img, prev_detection, img0)
         return pred_dict, pred_, delta_xy, img_crop
 
     def detect_single_frame(self, frame, prev_detection):
@@ -345,8 +345,8 @@ class InteractionDetector:
         img_crop, delta_xy = self.get_rotated_crop(img, timg, prev_xy)
         if img0 is not None:
             img0_crop, _ = self.get_rotated_crop(img0, timg, prev_xy)
-            img_crop = np.concatenate((img0_crop, img_crop), axis=3)
-        pred = self.m.predict(img_crop)
+            # img_crop = np.concatenate((img0_crop, img_crop), axis=3)
+        pred = self.m.predict([img0_crop, img_crop])
         pred_ = pred.copy().flatten()
         pred = self.ti.postprocess_predictions(pred)
 
@@ -627,7 +627,7 @@ def plot_frame(frame, i, img, out_dir, regions_in_frame=None, paths=None, roi=No
     #     plt.plot(r.x, r.y, '.b')
     #     if r.frame == frame:
     #         plot_interaction(1, gt=r.to_dict())
-    save_figure_as_image(os.path.join(out_dir, '%03d.jpg' % i), fig)
+    save_figure_as_image(os.path.join(out_dir, '%05d.jpg' % i), fig)
     plt.close(fig)
 
 
