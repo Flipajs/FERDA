@@ -3,6 +3,7 @@ import numpy as np
 
 from core.region.region import Region
 from core.region.ep import p2e, e2p, column
+from utils.angles import angle_absolute_error_direction_agnostic, angle_absolute_error
 
 
 class Ellipse(object):
@@ -71,11 +72,16 @@ class Ellipse(object):
         #         poly = poly.reshape((-1, 2))
         return area
 
-    def is_close(self, ellipse, thresh_px=None, thresh_deg=10):
+    def is_close(self, ellipse, thresh_px=None):
         if thresh_px is None:
             thresh_px = self.major / 10
-        return np.all(np.abs(self.xy - ellipse.xy) < thresh_px) and \
-               abs(self.angle_deg - ellipse.angle_deg) < thresh_deg
+        return np.linalg.norm(self.xy - ellipse.xy) < thresh_px
+
+    def is_angle_close(self, ellipse, thresh_deg=10, direction_agnostic=False):
+        if direction_agnostic:
+            return angle_absolute_error_direction_agnostic(self.angle_deg, ellipse.angle_deg) < thresh_deg
+        else:
+            return angle_absolute_error(self.angle_deg, ellipse.angle_deg) < thresh_deg
 
     def is_outside_bounds(self, x1, y1, x2, y2):
         return self.x < x1 or self.y < y1 or self.x > x2 or self.y > y2

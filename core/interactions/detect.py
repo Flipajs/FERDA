@@ -695,37 +695,29 @@ def _load(tracker_dir, project_dir):
     return detector, gt
 
 
-def track_video(tracker_dir, project_dir, out_dir):
-    try:
-        os.makedirs(out_dir)
-    except OSError:
-        pass
-    detector, gt = _load(tracker_dir, project_dir)
-    img_shape = detector.project.img_manager.get_whole_img(0).shape
-    # find starting frame with separated objects
-    for frame in range(detector.project.video_start_t + 1, detector.project.video_end_t + 1):
-        tracklets = [t for t in detector.project.chm.tracklets_in_frame(frame) if t.is_single()]
-        if len(tracklets) == len(detector.project.animals):
-            break
-    assert frame != detector.project.video_end_t
-    regions_tracklets = [list(RegionChunk(t, detector.project.gm, detector.project.rm)) for t in tracklets]
+def track_frame_range(start_tracklets, frame_start, frame_end, detector, out_dir):
+    if frame_start == 0:
+        frame_start = 1
+    regions_tracklets = [list(RegionChunk(t, detector.project.gm, detector.project.rm)) for t in start_tracklets]
     for regions in regions_tracklets:
         head_fix(regions)
-    ellipses = [Ellipse.from_region(next(r for r in regions if r.frame() == frame)) for regions in regions_tracklets]
+    ellipses = [Ellipse.from_region(next(r for r in regions if r.frame() == frame_start)) for regions in regions_tracklets]
     predictions = [el.to_dict() for el in ellipses]
-    frame_start = frame
-    track_ids = range(len(tracklets))
+    track_ids = range(len(start_tracklets))
     tracks = [[el] for el in ellipses]
-    colors = list(itertools.islice(itertools.cycle(['red', 'blue', 'green', 'yellow', 'white', 'cyan']), len(tracklets)))
-    for frame in tqdm(range(frame_start, detector.project.video_end_t + 1)):
+    colors = list(itertools.islice(itertools.cycle(['red', 'blue', 'green', 'yellow', 'white', 'cyan']),
+                                   len(start_tracklets)))
+    img_shape = detector.project.img_manager.get_whole_img(0).shape
+    for frame in tqdm(range(frame_start, frame_end + 1), initial=frame_start, total=detector.project.video_end_t):
         predictions = [detector.detect_single_frame(frame, pred)[0] for pred in predictions]
         ellipses = [Ellipse.from_dict(pred, frame) for pred in predictions]
 
         # stop tracking when two tracks join
         to_remove = set()
         for (i, el1), (j, el2) in itertools.combinations(enumerate(ellipses), 2):
-            if el1.is_close(el2):
+            if el1.is_close(el2) and el1.is_angle_close(el2, direction_agnostic=True):
                 to_remove.add(j)
+        # stop track when it drifts out of image
         for i, el in enumerate(ellipses):
             if el.is_outside_bounds(0, 0, img_shape[1], img_shape[0]):
                 to_remove.add(i)
@@ -739,8 +731,69 @@ def track_video(tracker_dir, project_dir, out_dir):
         for tid, el in zip(track_ids, ellipses):
             tracks[tid].append(el)
 
-        plot_frame(frame, frame, detector.project.img_manager.get_whole_img(frame),
-                   out_dir, paths=[{'regions': [el]} for el in ellipses], colors=colors)
+        # plot_frame(frame, frame, detector.project.img_manager.get_whole_img(frame),
+        #            out_dir, paths=[{'regions': [el]} for el in ellipses], colors=colors)
+    return tracks
+
+
+def track_video(tracker_dir, project_dir, out_dir):
+    try:
+        os.makedirs(out_dir)
+    except OSError:
+        pass
+    detector, gt = _load(tracker_dir, project_dir)
+
+    complete_sets = list(detector.project.chm.complete_set_gen(detector.project))
+    cs_ranges = []
+    for cs in complete_sets:
+        frame_from = max([t.start_frame(detector.project.gm) for t in cs])
+        frame_to = min([t.end_frame(detector.project.gm) for t in cs])
+        cs_ranges.append((frame_from, frame_to))
+
+    all_tracks = []
+    # import pickle
+    for i, (range1, range2) in enumerate(zip(cs_ranges[:-1], cs_ranges[1:])):
+        complete_tracks = track_frame_range(complete_sets[i], range1[0], range2[0] - 1, detector, out_dir)
+        all_tracks.append(complete_tracks)
+        # pickle.dump(all_tracks, open('all_tracks.pkl', 'wb'))
+    complete_tracks = track_frame_range(complete_sets[-1], cs_ranges[-1][0], detector.project.video_end_t, detector, out_dir)
+    all_tracks.append(complete_tracks)
+    # pickle.dump(all_tracks, open('all_tracks.pkl', 'wb'))
+    # all_tracks = pickle.load(open('all_tracks.pkl', 'rb'))
+
+    complete_tracks = all_tracks[0]
+    num_objects = len(complete_tracks)
+
+    for tracks in all_tracks[1:]:
+        first_frame = tracks[0][0].frame
+        last_detections = [t[-1] for t in complete_tracks if t[-1].frame == first_frame - 1]
+        last_detections_idx = [i for i, t in enumerate(complete_tracks) if t[-1].frame == first_frame - 1]
+        first_detections = [t[0] for t in tracks]
+
+        dist_matrix = np.vectorize(lambda i, j: np.linalg.norm(last_detections[i].xy - first_detections[j].xy))(
+            *np.indices((len(last_detections), len(first_detections))))
+        ii, jj = scipy.optimize.linear_sum_assignment(dist_matrix)
+        distances = dist_matrix[ii, jj]
+        print(distances)
+
+        for i, j in zip(ii, jj):
+            complete_tracks[last_detections_idx[i]].extend(tracks[j])
+        remaining_tracks1_idx = set(range(num_objects)) - set(last_detections_idx)
+        remaining_tracks2_idx = set(range(num_objects)) - set(jj)
+        for i, j in zip(remaining_tracks1_idx, remaining_tracks2_idx):
+            complete_tracks[i].extend(tracks[j])
+
+    results = np.ones(shape=(detector.project.num_frames(), len(detector.project.animals), 2)) * np.nan
+    for i, t in enumerate(complete_tracks):
+        results[[el.frame for el in t], i, :] = [el.xy[::-1] for el in t]
+
+    if detector.project.video_crop_model is not None:
+        results[:, :, 0] += detector.project.video_crop_model['y1']
+        results[:, :, 1] += detector.project.video_crop_model['x1']
+
+    from utils.gt.mot import results_to_mot
+    df = results_to_mot(results)
+    df.to_csv(join(out_dir, 'results.txt'), header=False, index=False)
 
 
 def track_single_tracklets(tracker_dir, project_dir, out_dir):

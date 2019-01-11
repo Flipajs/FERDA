@@ -198,6 +198,14 @@ class ChunkManager:
         return filter(lambda x: (x.is_single() or x.is_multi()) and not x.is_id_decided(), affected)
 
     def complete_set_gen(self, project):
+        """
+        Complete set generator.
+
+        Complete set is set of tracklets where set cardinality is equal to the number of objects in the scene.
+
+        :param project:
+        :return: generates list of tracklets
+        """
         from sys import maxint
 
         num_animals = len(project.animals)
