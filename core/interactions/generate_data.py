@@ -391,7 +391,7 @@ class DataGenerator(object):
             h5_file.close()
 
     def write_regression_tracking_data(self, project_dir, count, out_dir=None, test_fraction=0.1, augmentation=True,
-                                       overwrite=False):
+                                       overwrite=False, bidi=False):
         """
         Write regression tracking training and testing data with optional augmentation.
 
@@ -404,6 +404,7 @@ class DataGenerator(object):
         :param test_fraction: fraction of test samples with respect to training samples
         :param augmentation: augment training samples with a disruptor object
         :param overwrite: enable to silently overwrite existing data
+        :param bidi: write bidirectional data, doubles the number of generated samples
         """
         self._load_project(project_dir)
 
@@ -430,7 +431,7 @@ class DataGenerator(object):
             h5_group_train = None
             h5_group_test = None
 
-        all_regions_idx, single_region_tracklets = self._get_single_region_tracklets()
+        all_regions_idx, single_region_tracklets = self._get_single_region_tracklets()  # limit=20)  # for debugging
 
         print('Total regions in single tracklets: {}'.format(len(all_regions_idx)))
 
@@ -445,15 +446,15 @@ class DataGenerator(object):
             idxs_augmentation = None
         self._write_regression_tracking_dataset(h5_group_train, idxs[:count],
                                                 single_region_tracklets, train_csv_filename,
-                                                None if not augmentation else idxs_augmentation[:count])
+                                                None if not augmentation else idxs_augmentation[:count], bidi)
         self._write_regression_tracking_dataset(h5_group_test, idxs[count:],
                                                 single_region_tracklets, test_csv_filename,
-                                                None if not augmentation else idxs_augmentation[count:])
+                                                None if not augmentation else idxs_augmentation[count:], bidi)
         if out_dir is not None:
             h5_file.close()
             self.show_ground_truth(train_csv_filename, join(out_dir, 'sample'), h5_filename + ':train/img1', n=20)
 
-    def _get_single_region_tracklets_cached(self, project_working_directory):
+    def _get_single_region_tracklets(self, limit=None):
         """
         :param project_working_directory: used only for caching
         :return:
@@ -480,14 +481,11 @@ class DataGenerator(object):
                 single_region_tracklets.append(region_tracklet_fixed)
                 all_regions_idx.extend([(i, j) for j in range(len(region_tracklet_fixed) - 1)])
                 i += 1
-            # if i == 10:  # for debugging
-            #     break
+            if limit is not None and i == limit:  # for debugging
+                break
         return all_regions_idx, single_region_tracklets
 
-    def _get_single_region_tracklets(self):
-        return self._get_single_region_tracklets_cached(self._project.working_directory)
-
-    def _write_regression_tracking_dataset(self, h5_group, idx, tracklets, out_csv, idxs_augmentation=None):
+    def _write_regression_tracking_dataset(self, h5_group, idx, tracklets, out_csv, idxs_augmentation=None, bidi=False):
         """
         Generate regression tracking training data.
 
@@ -496,13 +494,18 @@ class DataGenerator(object):
         :param tracklets: tracklets regions, [[Region, Region, ....], [Region, ...], ...]
         :param out_csv: out csv filename
         :param idxs_augmentation: tracklet / region indices for augmentation
+        :param bidi: write bidirectional data, doubles the number of generated samples
         """
 
         dataset_names = ['img0', 'img1']
         img_size_px = self.params['regression_tracking_image_size_px']
         if h5_group is not None:
+            if bidi:
+                h5_len = 2 * len(idx)
+            else:
+                h5_len = len(idx)
             for name in dataset_names:
-                h5_group.create_dataset(name, (len(idx), img_size_px, img_size_px, 3), np.uint8)
+                h5_group.create_dataset(name, (h5_len, img_size_px, img_size_px, 3), np.uint8)
 
         if out_csv is not None:
             # initialize csv output file
@@ -510,10 +513,26 @@ class DataGenerator(object):
             csv_file = open(out_csv, 'w')
             csv_writer = csv.DictWriter(csv_file, fieldnames=COLUMNS)
             csv_writer.writeheader()
+        else:
+            csv_writer = None
 
+        self._write_regression_tracking_images(tracklets, idx, csv_writer, dataset_names, h5_group, img_size_px,
+                                               idxs_augmentation, forward=True)
+        if bidi:
+            self._write_regression_tracking_images(tracklets, idx, csv_writer, dataset_names, h5_group, img_size_px,
+                                                   idxs_augmentation, forward=False, hdf5_start_idx=len(idx))
+
+        if out_csv is not None:
+            csv_file.close()
+
+    def _write_regression_tracking_images(self, tracklets, idx, csv_writer, dataset_names, h5_group,
+                                          img_size_px, idxs_augmentation=None, forward=True, hdf5_start_idx=0):
         for i, (tracklet_idx, region_idx) in enumerate(tqdm.tqdm(idx)):
-            # a region in the frame n and n + 1
-            consecutive_regions = [tracklets[tracklet_idx][j] for j in (region_idx, region_idx + 1)]
+            if forward:
+                region_indices = (region_idx, region_idx + 1)
+            else:
+                region_indices = (region_idx + 1, region_idx)
+            consecutive_regions = [tracklets[tracklet_idx][j] for j in region_indices]
             if idxs_augmentation:
                 aug_tracklet_idx, aug_region_idx = idxs_augmentation[i]
                 aug_consecutive_regions = [tracklets[aug_tracklet_idx][j] for j in (aug_region_idx, aug_region_idx + 1)]
@@ -532,6 +551,7 @@ class DataGenerator(object):
                 # img1 rotation around object center
                 rot_deg = np.random.normal(scale=30)
 
+            # generate both images
             for region, aug_region, dataset in zip(consecutive_regions, aug_consecutive_regions, dataset_names):
                 timg = TransformableRegion()
                 timg.set_img(self._project.img_manager.get_whole_img(region.frame()))
@@ -550,7 +570,7 @@ class DataGenerator(object):
                 img_crop, delta_xy = safe_crop(img, consecutive_regions[0].centroid()[::-1], img_size_px)
 
                 if h5_group is not None:
-                    h5_group[dataset][i] = img_crop
+                    h5_group[dataset][hdf5_start_idx + i] = img_crop
                 else:
                     ##
                     plt.imshow(save_prediction_img(None, 1, img_crop,
@@ -559,7 +579,7 @@ class DataGenerator(object):
                     plt.show()
                     ##
 
-            if out_csv is not None:
+            if csv_writer is not None:
                 model = timg.get_model_copy().move(-delta_xy)
                 csv_writer.writerow({
                     'x': model.x,
@@ -568,9 +588,6 @@ class DataGenerator(object):
                     'minor': model.minor,
                     'angle_deg_cw': model.angle_deg,
                 })
-
-        if out_csv is not None:
-            csv_file.close()
 
     def _get_bg_model(self):
         from core.bg_model.median_intensity import MedianIntensity
