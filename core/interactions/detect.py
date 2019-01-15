@@ -783,9 +783,10 @@ def track_video(tracker_dir, project_dir, out_dir):
         for i, j in zip(remaining_tracks1_idx, remaining_tracks2_idx):
             complete_tracks[i].extend(tracks[j])
 
-    results = np.ones(shape=(detector.project.num_frames(), len(detector.project.animals), 2)) * np.nan
+    results = np.ones(shape=(detector.project.num_frames(), len(detector.project.animals), 4)) * np.nan
     for i, t in enumerate(complete_tracks):
-        results[[el.frame for el in t], i, :] = [el.xy[::-1] for el in t]
+        results[[el.frame for el in t], i, :2] = [el.xy[::-1] for el in t]
+        results[[el.frame for el in t], i, 2:] = [el.get_vertices()[0][::-1] - el.xy[::-1] for el in t]  # dy, dx
 
     if detector.project.video_crop_model is not None:
         results[:, :, 0] += detector.project.video_crop_model['y1']
@@ -857,7 +858,7 @@ def track_dense(tracker_dir, project_dir, out_dir):
         #     continue
         if i not in dense_sections_tracklets:
             dense_sections_tracklets[i] = detector.track_dense(dense['graph'], dense['ids'])
-            with file(join(out_dir, 'dense_sections_tracklets.pkl'), 'wb') as fw:
+            with open(join(out_dir, 'dense_sections_tracklets.pkl'), 'wb') as fw:
                 pickle.dump(dense_sections_tracklets, fw)
         detector.visualize_tracklets(dense['graph'], dense_sections_tracklets[i], join(out_dir, '%03d' % i), gt)
 
