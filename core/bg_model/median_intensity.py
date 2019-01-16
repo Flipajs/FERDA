@@ -62,9 +62,10 @@ class MedianIntensity(object):
 if __name__ == '__main__':
     from core.project.project import Project
 
-    p = Project()
+    p = Project('/home/matej/prace/ferda/projects/2_temp/180811_0205_Camera3-5min_fixed_cardinality')  # ''/home/matej/prace/ferda/projects/2_temp/180811_0147_Sowbug3_cut_fixed_cardinality') # '/home/matej/prace/ferda/projects/2_temp/180810_2359_Cam1_ILP_cardinality_dense')
+
     # p.video_paths = ['/Volumes/Seagate Expansion Drive/IST - videos/colonies/Camera 1.avi']
-    p.video_paths = ['/Users/flipajs/Downloads/crickets-out2/out2.mp4']
+    # p.video_paths = ['/Users/flipajs/Downloads/crickets-out2/out2.mp4']
     # p.video_paths = ['/home/matej/prace/ferda/camera1_ss00-05-00_t00-05-00.mp4']
 
 
@@ -98,29 +99,31 @@ if __name__ == '__main__':
     while True:
         im, _ = vid.random_frame()
         # cv2.imshow('orig', im)
-        processed = np.subtract(0.8 * np.asarray(bg.bg_model, dtype=np.int32), np.asarray(im, dtype=np.int32))
+        # processed = np.subtract(np.asarray(bg.bg_model, dtype=np.int32), np.asarray(im, dtype=np.int32))
 
-        processed = (processed - np.min(processed))
-        processed /= np.max(processed)
+        processed = np.abs(np.asarray(bg.bg_model, dtype=np.int32) - np.asarray(im, dtype=np.int32))
 
-        plt.imshow(processed)
+        # processed = (processed - np.min(processed))
+        # processed /= np.max(processed)
+
+        plt.imshow(processed.astype(np.uint8))
         plt.show()
         # cv2.imshow('sub', processed)
-        cv2.waitKey(0)
+        # cv2.waitKey(0)
 
-        processed += -np.min(processed)
-        # print np.min(processed), np.max(processed)
-
-        processed[processed < 0] = 0
-        processed[processed > 255] = 255
-        processed = np.asarray(processed, dtype=np.uint8)
-        processed = np.invert(processed)
-
-        fg_mask = np.logical_or.reduce((model.astype(np.int) - im) > 40, axis=2)
-        cv2.imshow('foreground mask', fg_mask.astype(np.uint8) * 255)
-        im_foreground = np.copy(im)
-        im_foreground[~fg_mask] = 0
-        cv2.imshow('foreground', im_foreground)
+        # processed += -np.min(processed)
+        # # print np.min(processed), np.max(processed)
+        #
+        # processed[processed < 0] = 0
+        # processed[processed > 255] = 255
+        # processed = np.asarray(processed, dtype=np.uint8)
+        # processed = np.invert(processed)
+        #
+        # fg_mask = np.logical_or.reduce((model.astype(np.int) - im) > 40, axis=2)
+        # cv2.imshow('foreground mask', fg_mask.astype(np.uint8) * 255)
+        # im_foreground = np.copy(im)
+        # im_foreground[~fg_mask] = 0
+        # cv2.imshow('foreground', im_foreground)
 
         # ex = MSERTree(processed, p)
         # ex.show()
@@ -129,7 +132,9 @@ if __name__ == '__main__':
         # ex.setFocus()
 
         # cv2.imshow('sub', processed)
-        cv2.waitKey(0)
+
+        # cv2.waitKey(0)
+        plt.waitforbuttonpress(0.5)
 
     app.exec_()
     app.deleteLater()
