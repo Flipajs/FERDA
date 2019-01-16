@@ -20,6 +20,7 @@ import subprocess
 import shutil
 from collections import defaultdict
 import webbrowser
+from utils.experiment import Parameters, Experiment
 
 from utils.gt.mot import results_to_mot
 
@@ -135,28 +136,33 @@ def run_experiment(config):
     - run tracking
     - evaluate results
     """
-    base_experiment_name = '{}_{}'.format(time.strftime("%y%m%d_%H%M", time.localtime()),
-                                          config['dataset_name'])
-    if config['exp_name']:
-        base_experiment_name += '_' + config['exp_name']
-    base_experiment_dir = join(config['dir'], base_experiment_name)
-    try:
-        os.makedirs(base_experiment_dir)
-    except OSError:
-        pass
-    project_dir = join(config['projects_dir'], base_experiment_name)
-    shutil.copytree(config['dataset']['initial_project'], project_dir)
+    params = config.copy()  # all multiple valued parameters will create experiment batches
+    del params['dir']
+    del params['run']
+    root_experiment = Experiment.create(config['exp_name'], params=params,
+                                        config={'root_experiment_dir': join(config['dir'], config['dataset_name'])})
+    for experiment in root_experiment:
+        print(experiment.basename)
+        experiment.save_params()
+        mot_results_file = join(experiment.dir, 'results.txt')
+        if config['run'] == 'ferda_tracking':
+            # create FERDA project template
+            project_dir = join(experiment.params['projects_dir'],
+                               experiment.params['dataset_name'],
+                               experiment.basename)
+            shutil.copytree(experiment.params['dataset']['initial_project'], project_dir)
 
-    results_file = join(base_experiment_dir, 'results.txt')
-    write_experimental_info(base_experiment_dir, config)
-    run_tracking(project_dir, results_mot=results_file,
-                 reid_model_weights_path=config['dataset']['reidentification_weights'])
-    run_evaluation(results_file, config['dataset']['gt'], join(base_experiment_dir, 'evaluation.csv'))
+            run_tracking(project_dir, results_mot=mot_results_file,
+                         reid_model_weights_path=experiment.params['dataset']['reidentification_weights'])
+        elif config['run'] == 'single_object_tracking':
+            from core.interactions.detect import track_video
+            track_video(experiment.params['tracker_model'], experiment.params['dataset']['initial_project'],
+                        experiment.dir)
+        else:
+            assert False, 'unknown run: {} value in the experiments configuration'.format(config['run'])
 
-
-def write_experimental_info(experiment_dir, config):
-    with open(os.path.join(experiment_dir, 'experiment.yaml'), 'w') as fw:
-        yaml.dump(config, fw)
+        if 'gt' in experiment.params['dataset']:
+            run_evaluation(mot_results_file, experiment.params['dataset']['gt'], join(experiment.dir, 'evaluation.csv'))
 
 
 def run_benchmarks(notebook_path='experiments/tracking/benchmarking.ipynb',
@@ -223,8 +229,8 @@ def load_evaluations(experiments_config):
         if directory == experiments_config['dir']:
             continue
 
-        if ('experiment.yaml' in filenames) and ('evaluation.csv' in filenames):
-            with open(join(directory, 'experiment.yaml'), 'r') as fr:
+        if ('parameters.yaml' in filenames) and ('evaluation.csv' in filenames):
+            with open(join(directory, 'parameters.yaml'), 'r') as fr:
                 experiment_config = yaml.load(fr)
 
             experiment_config['evaluation'] = join(directory, 'evaluation.csv')
@@ -248,11 +254,11 @@ if __name__ == '__main__':
     parser.add_argument('--reidentification-weights', type=str, help='tracking: path to reidentification model weights',
                         default=None)
     parser.add_argument('--info', action='store_true', help='show project info')
-    parser.add_argument('--evaluate', action='store_true')
+    # parser.add_argument('--evaluate', action='store_true')
     parser.add_argument('--run-experiments-yaml', type=str, help='run and evaluate experiments on all datasets described in yaml file')
     parser.add_argument('--experiment-name', nargs='?', type=str, help='experiment name')
     parser.add_argument('--run-visualizations-yaml', type=str, help='visualize experiments described in yaml file')
-    parser.add_argument('--run-benchmarks', action='store_true', help='run benchmarks and store results to a html file')
+    # parser.add_argument('--run-benchmarks', action='store_true', help='run benchmarks and store results to a html file')
     args = parser.parse_args()
 
     if args.info:
@@ -305,6 +311,6 @@ if __name__ == '__main__':
                 print(dataset_name)
                 run_visualization(dataset['visualize_experiments'], evaluations[dataset_name], dataset)
 
-    if args.run_benchmarks:
-        run_benchmarks()
+    # if args.run_benchmarks:
+    #     run_benchmarks()
 

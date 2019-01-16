@@ -53,7 +53,7 @@ class Experiment(object):
         return self.basename
 
     @classmethod
-    def create(cls, name=None, prefix_datetime=True, params=None, config=None, tensorboard=True):
+    def create(cls, name=None, prefix_datetime=True, params=None, config=None, tensorboard=False):
         """
 
         :param name: experiment name
@@ -137,11 +137,19 @@ class Experiment(object):
         else:
             for batch_values in self.params.get_batches():
                 parameters = dict(zip(self.params.keys(), batch_values))
-                name = '_'.join(['{}_{}'.format(key, parameters[key]) for key in changing_keys])
+                name_parts = []
+                for key in changing_keys:
+                    value = parameters[key]
+                    if '/' in value:
+                        # it's a path, transform it
+                        value = os.path.basename(value)
+                        # value = value.replace('/', '-')
+                    name_parts.append('{}_{}'.format(key, value))
+
                 config = dict(self.config)
                 config['root_experiment_dir'] = self.dir
                 config['root_tensor_board_dir'] = self.tensor_board_dir
-                yield Experiment().create(name, prefix_datetime=False, params=parameters, config=config,
+                yield Experiment().create('_'.join(name_parts), prefix_datetime=False, params=parameters, config=config,
                                           tensorboard=self.tensorboard)
 
 
@@ -153,7 +161,7 @@ if __name__ == '__main__':
     parameters = {'speed': 1,
                   'capacity': 0.5,
                   'type': 'aaa'}
-    experiment = Experiment.create('experiment_single', params=parameters, config=config, tensorboard=False)
+    experiment = Experiment.create('experiment_single', params=parameters, config=config)
     print(experiment.basename)
     experiment.save_params()
     # ... do computation, save results to experiment.dir
@@ -162,7 +170,7 @@ if __name__ == '__main__':
     parameters = {'speed': [1, 2, 3],
                   'capacity': 0.5,
                   'type': ['aaa', 'bbb']}
-    experiment_batch = Experiment.create('experiment_batch', params=parameters, config=config, tensorboard=False)
+    experiment_batch = Experiment.create('experiment_batch', params=parameters, config=config)
     for experiment in experiment_batch:
         print(experiment.basename)
         experiment.save_params()
