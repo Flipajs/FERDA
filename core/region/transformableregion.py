@@ -46,15 +46,6 @@ class TransformableRegion:
     def set_img(self, img):
         self.img = img
 
-    def get_mask(self, alpha=False):
-        assert np.all(self.transformation[2, :] == (0, 0, 1))
-        assert self.mask is not None
-        mask = cv2.warpAffine(self.mask, self.transformation[:2], self.mask.shape[::-1])
-        if alpha is False:
-            return mask.astype(np.bool)
-        else:
-            return mask
-
     # def set_region_points_mask(self, n_dilations=0):
     #     # doesn't work on transformed region
     #     assert self.img is not None
@@ -74,16 +65,6 @@ class TransformableRegion:
     #                 (int(major_multiplier * self.region.major_axis_),
     #                  int(minor_multiplier * self.region.minor_axis_)),
     #                 -int(math.degrees(self.region.theta_)), 0, 360, 255, -1)
-
-    def set_elliptic_mask(self, major_multiplier=1, minor_multiplier=1):  # major_multiplier=4, minor_multiplier=6):
-        assert self.img is not None
-        assert self.model is not None
-        self.mask = np.zeros(shape=self.img.shape[:2], dtype=np.uint8)
-        cv2.ellipse(self.mask, tuple(self.model.xy.astype(int)),
-                    (int(major_multiplier * self.model.major / 2.) + 4,
-                     int(minor_multiplier * self.model.minor / 2.) + 4),
-                    int(self.model.angle_deg), 0, 360, 255, -1)
-        self.mask = cv2.GaussianBlur(self.mask, (5, 5), -1)
 
     def set_border(self, border_px):
         self.border_px = border_px
@@ -151,8 +132,23 @@ class TransformableRegion:
         """
         return (angle_deg - math.degrees(math.atan2(self.transformation[1, 0], self.transformation[0, 0]))) % 360
 
-    def get_img(self):
+    def get_mask(self, alpha=False):
         assert np.all(self.transformation[2, :] == (0, 0, 1))
-        return cv2.warpAffine(self.img, self.transformation[:2], self.img.shape[:2][::-1],
+        assert self.mask is not None
+        mask = cv2.warpAffine(self.mask, self.transformation[:2], self.mask.shape[::-1],
+                              borderMode=cv2.BORDER_REPLICATE)
+        if alpha is False:
+            return mask.astype(np.bool)
+        else:
+            return mask
+
+    def get_img(self, include_mask_layer=False):
+        assert np.all(self.transformation[2, :] == (0, 0, 1))
+        if not include_mask_layer:
+            img = self.img
+        else:
+            assert self.mask is not None
+            img = np.dstack((self.img, self.mask))
+        return cv2.warpAffine(img, self.transformation[:2], self.img.shape[:2][::-1],
                               borderMode=cv2.BORDER_REPLICATE)
 
