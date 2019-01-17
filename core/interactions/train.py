@@ -650,7 +650,8 @@ parameters = {'epochs': 150,
         callbacks = None
 
         root_experiment = Experiment.create(parameters.get('name', None), params=parameters,
-                                            config=yaml.load(open('interactions_config.yaml')))
+                                            config=yaml.load(open('interactions_config.yaml')),
+                                            tensorboard=True)
         root_experiment.save_params()
         for experiment in root_experiment:
             print(experiment.basename)

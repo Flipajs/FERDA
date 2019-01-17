@@ -391,7 +391,7 @@ class DataGenerator(object):
             h5_file.close()
 
     def write_regression_tracking_data(self, project_dir, count, out_dir=None, test_fraction=0.1, augmentation=True,
-                                       overwrite=False, bidi=False):
+                                       overwrite=False, forward=True, backward=False, foreground_layer=False):
         """
         Write regression tracking training and testing data with optional augmentation.
 
@@ -405,6 +405,8 @@ class DataGenerator(object):
         :param augmentation: augment training samples with a disruptor object
         :param overwrite: enable to silently overwrite existing data
         :param bidi: write bidirectional data, doubles the number of generated samples
+        TODO
+        :param foreground_layer: add foreground alpha mask as a fourth layer
         """
         self._load_project(project_dir)
 
@@ -446,10 +448,12 @@ class DataGenerator(object):
             idxs_augmentation = None
         self._write_regression_tracking_dataset(h5_group_train, idxs[:count],
                                                 single_region_tracklets, train_csv_filename,
-                                                None if not augmentation else idxs_augmentation[:count], bidi)
+                                                None if not augmentation else idxs_augmentation[:count],
+                                                forward, backward, foreground_layer)
         self._write_regression_tracking_dataset(h5_group_test, idxs[count:],
                                                 single_region_tracklets, test_csv_filename,
-                                                None if not augmentation else idxs_augmentation[count:], bidi)
+                                                None if not augmentation else idxs_augmentation[count:],
+                                                forward, backward, foreground_layer)
         if out_dir is not None:
             h5_file.close()
             self.show_ground_truth(train_csv_filename, join(out_dir, 'sample'), h5_filename + ':train/img1', n=20)
@@ -485,7 +489,8 @@ class DataGenerator(object):
                 break
         return all_regions_idx, single_region_tracklets
 
-    def _write_regression_tracking_dataset(self, h5_group, idx, tracklets, out_csv, idxs_augmentation=None, bidi=False):
+    def _write_regression_tracking_dataset(self, h5_group, idx, tracklets, out_csv, idxs_augmentation=None,
+                                           forward=True, backward=False, foreground_layer=False):
         """
         Generate regression tracking training data.
 
@@ -500,12 +505,18 @@ class DataGenerator(object):
         dataset_names = ['img0', 'img1']
         img_size_px = self.params['regression_tracking_image_size_px']
         if h5_group is not None:
-            if bidi:
-                h5_len = 2 * len(idx)
-            else:
+            if forward:
                 h5_len = len(idx)
+            else:
+                h5_len = 0
+            if backward:
+                h5_len += len(idx)
+            if foreground_layer:
+                num_layers = 4
+            else:
+                num_layers = 3
             for name in dataset_names:
-                h5_group.create_dataset(name, (h5_len, img_size_px, img_size_px, 3), np.uint8)
+                h5_group.create_dataset(name, (h5_len, img_size_px, img_size_px, num_layers), np.uint8)
 
         if out_csv is not None:
             # initialize csv output file
@@ -516,17 +527,21 @@ class DataGenerator(object):
         else:
             csv_writer = None
 
-        self._write_regression_tracking_images(tracklets, idx, csv_writer, dataset_names, h5_group, img_size_px,
-                                               idxs_augmentation, forward=True)
-        if bidi:
+        if forward:
             self._write_regression_tracking_images(tracklets, idx, csv_writer, dataset_names, h5_group, img_size_px,
-                                                   idxs_augmentation, forward=False, hdf5_start_idx=len(idx))
+                                                   idxs_augmentation, forward=True, foreground_layer=foreground_layer)
+        if backward:
+            self._write_regression_tracking_images(tracklets, idx, csv_writer, dataset_names, h5_group, img_size_px,
+                                                   idxs_augmentation, forward=False,
+                                                   hdf5_start_idx=len(idx) if forward else 0,
+                                                   foreground_layer=foreground_layer)
 
         if out_csv is not None:
             csv_file.close()
 
     def _write_regression_tracking_images(self, tracklets, idx, csv_writer, dataset_names, h5_group,
-                                          img_size_px, idxs_augmentation=None, forward=True, hdf5_start_idx=0):
+                                          img_size_px, idxs_augmentation=None, forward=True, hdf5_start_idx=0,
+                                          foreground_layer=False):
         for i, (tracklet_idx, region_idx) in enumerate(tqdm.tqdm(idx)):
             if forward:
                 region_indices = (region_idx, region_idx + 1)
@@ -554,7 +569,11 @@ class DataGenerator(object):
             # generate both images
             for region, aug_region, dataset in zip(consecutive_regions, aug_consecutive_regions, dataset_names):
                 timg = TransformableRegion()
-                timg.set_img(self._project.img_manager.get_whole_img(region.frame()))
+                img = self._project.img_manager.get_whole_img(region.frame())
+                if not foreground_layer:
+                    timg.set_img(img)
+                else:
+                    timg.set_img(np.dstack((img, self._project.img_manager.get_foreground(region.frame()))))
                 timg.set_model(Ellipse.from_region(region))
                 # undo the first frame rotation
                 timg.rotate(-consecutive_regions[0].angle_deg_cw, consecutive_regions[0].centroid())
@@ -563,7 +582,10 @@ class DataGenerator(object):
                     if dataset == 'img1':
                         timg.rotate(rot_deg, region.centroid())  # simulate rotation movement
                     aug_img = self._project.img_manager.get_whole_img(aug_region.frame())
-                    img = self._augment(timg.get_img(), timg.get_model_copy(), aug_img, Ellipse.from_region(aug_region),
+                    if foreground_layer:
+                        aug_img = np.dstack((aug_img, self._project.img_manager.get_foreground(aug_region.frame())))
+                    img = self._augment(timg.get_img(), timg.get_model_copy(),
+                                        aug_img, Ellipse.from_region(aug_region),
                                         theta_deg, phi_deg, aug_shift_px)
                 else:
                     img = timg.get_img()
@@ -596,41 +618,43 @@ class DataGenerator(object):
             self.bg_model.compute_model()
         return self.bg_model.bg_model
 
-    def _augment(self, img, ellipse, img_a, ellipse_a, theta_deg, phi_deg, aug_shift_px):
-        # base_tregion = TransformableRegion(img)
-        # # base_tregion.set_region(region)
-        # base_tregion.set_ellipse(ellipse)
-        # base_tregion.set_elliptic_mask()
-        # center_xy = region.centroid()[::-1].astype(int)
+    def _draw_elliptic_mask(self, shape, ellipse, major_multiplier=1, minor_multiplier=1, dtype=np.uint8):
+        img = np.zeros(shape=shape, dtype=dtype)
+        if dtype == np.uint8:
+            color = 255
+        else:
+            color = 1.
+        cv2.ellipse(img, tuple(ellipse.xy.astype(int)),
+                    (int(major_multiplier * ellipse.major / 2.) + 4,
+                     int(minor_multiplier * ellipse.minor / 2.) + 4),
+                    int(ellipse.angle_deg), 0, 360, color, -1)
+        return cv2.GaussianBlur(img, (5, 5), -1)
 
-        # construct alpha channel
-        bg_diff = (self._get_bg_model().astype(np.float) - img_a).mean(axis=2).clip(5, 100)
-        alpha = ((bg_diff - bg_diff.min()) / np.ptp(bg_diff))
-        img_rgba = np.concatenate((img_a, np.expand_dims(alpha * 255, 2).astype(np.uint8)), 2)
+    def _augment(self, img, ellipse, img_aug, ellipse_aug, theta_deg, phi_deg, aug_shift_px):
+        timg_aug = TransformableRegion(img_aug)
+        timg_aug.set_model(ellipse_aug)
 
-        tregion = TransformableRegion(img_rgba)
-        tregion.set_model(ellipse_a)
-        multipliers = self.params['augmentation_elliptic_mask_multipliers']
-        tregion.set_elliptic_mask(*multipliers)
+        # construct augmented image alpha channel
+        bg_diff = (self._get_bg_model().astype(np.float) - img_aug[:, :, :3]).mean(axis=2).clip(5, 100)
+        img_aug_alpha = (bg_diff - bg_diff.min()) / np.ptp(bg_diff)
+        elliptic_mask = self._draw_elliptic_mask(img_aug_alpha.shape, ellipse_aug, dtype=float,
+                                                 *self.params['augmentation_elliptic_mask_multipliers'])
+        timg_aug.set_mask(img_aug_alpha * elliptic_mask)
 
-        head_xy, _ = ellipse_a.get_vertices()
-        tregion.move(-head_xy[::-1])  # move head of object 2 to (0, 0)
-        tregion.rotate(-ellipse_a.angle_deg, (0, 0))  # normalize the rotation to 0 deg, tail is to left, head to right
-        tregion.rotate(phi_deg, (0, 0))  # approach angle
-        tregion.move((0, aug_shift_px))  # positioning closer (even overlapping) or further from object 1
+        head_xy, _ = ellipse_aug.get_vertices()
+        timg_aug.move(-head_xy[::-1])  # move head of object 2 to (0, 0)
+        timg_aug.rotate(-ellipse_aug.angle_deg, (0, 0))  # normalize the rotation to 0 deg, tail is to left, head to right
+        timg_aug.rotate(phi_deg, (0, 0))  # approach angle
+        timg_aug.move((0, aug_shift_px))  # positioning closer (even overlapping) or further from object 1
         # object 2 will be positioned head first under angle theta with respect to the main object 1
-        tregion.rotate(180 + theta_deg, (0, 0))
-        tregion.move(ellipse.get_point(theta_deg)[::-1])  # move the object 2 to the object 1 border
+        timg_aug.rotate(180 + theta_deg, (0, 0))
+        timg_aug.move(ellipse.get_point(theta_deg)[::-1])  # move the object 2 to the object 1 border
 
-        alpha_trans = tregion.get_img()[:, :, -1].astype(float)
-        alpha_trans *= tregion.get_mask(alpha=True) / 255
-        alpha_trans /= 255
-        alpha_trans = np.expand_dims(alpha_trans, 2)
+        img_aug_alpha = timg_aug.get_mask(alpha=True)[:, :, None]  # range <0, 1>, dtype=float
+        img_augmented = (img.astype(float) * (1 - img_aug_alpha) +
+                         timg_aug.get_img().astype(float) * img_aug_alpha).astype(np.uint8)
 
-        img_synthetic = (img.astype(float) * (1 - alpha_trans) +
-                         tregion.get_img()[:, :, :-1].astype(float) * alpha_trans).astype(np.uint8)
-
-        return img_synthetic
+        return img_augmented
 
     @staticmethod
     def show_ground_truth(csv_file, out_dir, image_hdf5='images.h5:train/img1', n=None):
