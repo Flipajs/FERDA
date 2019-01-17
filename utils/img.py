@@ -409,7 +409,7 @@ def apply_ellipse_mask(r, im, sigma=10, ellipse_dilation=10):
 
     deg = int(r.theta_ * 57.295)
     # angle of rotation of ellipse in anti-clockwise direction
-    cv2.ellipse(x, (x.shape[0] / 2, x.shape[1] / 2),
+    cv2.ellipse(x, (int(x.shape[0] / 2), int(x.shape[1] / 2)),
                 (int(ceil(r.a_)) + ellipse_dilation, int(ceil(r.b_)) + ellipse_dilation),
                 -deg, 0, 360, 255, -1)
 
