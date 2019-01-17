@@ -18,6 +18,7 @@ import logging.config
 import yaml
 import subprocess
 import shutil
+import itertools
 from collections import defaultdict
 import webbrowser
 from utils.experiment import Parameters, Experiment
@@ -127,7 +128,7 @@ def run_evaluation(mot_file, gt_file, out_evaluation_file, load_python3_env_cmd=
                                                      # (e.g. python3 is not available)
 
 
-def run_experiment(config):
+def run_experiment(config, force_prefix=None):
     """
     Run and evaluate an experiment.
 
@@ -139,7 +140,7 @@ def run_experiment(config):
     params = config.copy()  # all multiple valued parameters will create experiment batches
     del params['dir']
     del params['run']
-    root_experiment = Experiment.create(config['exp_name'], params=params,
+    root_experiment = Experiment.create(config['exp_name'], prefix=force_prefix, params=params,
                                         config={'root_experiment_dir': join(config['dir'], config['dataset_name'])})
     for experiment in root_experiment:
         print(experiment.basename)
@@ -203,7 +204,17 @@ def run_visualization(experiment_names, all_experiments, dataset, out_video=None
     for name in experiment_names:
         if name == 'gt':
             df_mots.append(load_mot(dataset['gt']))
-            names.append(name)
+            names.append('ground truth')
+        elif name == '*':
+            names_all = []
+            for experiment in all_experiments:
+                df_mots.append(load_mot(experiment['mot_trajectories']))
+                names_all.append(experiment['dirname'])
+            prefix = os.path.commonprefix(names_all)
+            suffix = os.path.commonprefix([n[::-1] for n in names_all])
+            names.extend([n[len(prefix):-len(suffix) if suffix != '' else None] for n in names_all])
+            if out_video is None:
+                out_video = join(os.path.dirname(all_experiments[-1]['mot_trajectories']), 'visualization.mp4')
         elif isinstance(name, int):
             exp = all_experiments[name]
             df_mots.append(load_mot(exp['mot_trajectories']))
@@ -222,20 +233,21 @@ def run_visualization(experiment_names, all_experiments, dataset, out_video=None
     # print(dataset['video'], out_video, names)
 
 
-def load_evaluations(experiments_config):
+def load_experiments(experiments_config):
     evaluations = defaultdict(list)
     for directory, dirnames, filenames in \
             sorted(os.walk(experiments_config['dir']), key=lambda x: os.path.basename(x[0])):
         if directory == experiments_config['dir']:
             continue
 
-        if ('parameters.yaml' in filenames) and ('evaluation.csv' in filenames):
+        if 'parameters.yaml' in filenames:
             with open(join(directory, 'parameters.yaml'), 'r') as fr:
                 experiment_config = yaml.load(fr)
-
-            experiment_config['evaluation'] = join(directory, 'evaluation.csv')
+            if 'evaluation.csv' in filenames:
+                experiment_config['evaluation'] = join(directory, 'evaluation.csv')
             if 'results.txt' in filenames:
                 experiment_config['mot_trajectories'] = join(directory, 'results.txt')
+            experiment_config['dirname'] = os.path.basename(directory)
             evaluations[experiment_config['dataset_name']].append(experiment_config)
         else:
             print('no experiment.yaml and/or evaluation.csv in {}'.format(directory))
@@ -257,8 +269,9 @@ if __name__ == '__main__':
     # parser.add_argument('--evaluate', action='store_true')
     parser.add_argument('--run-experiments-yaml', type=str, help='run and evaluate experiments on all datasets described in yaml file')
     parser.add_argument('--experiment-name', nargs='?', type=str, help='experiment name')
+    parser.add_argument('--force-experiment-prefix', type=str, default=None, help='force output directory prefix, use to continue experiments')
     parser.add_argument('--run-visualizations-yaml', type=str, help='visualize experiments described in yaml file')
-    # parser.add_argument('--run-benchmarks', action='store_true', help='run benchmarks and store results to a html file')
+   # parser.add_argument('--run-benchmarks', action='store_true', help='run benchmarks and store results to a html file')
     args = parser.parse_args()
 
     if args.info:
@@ -300,12 +313,12 @@ if __name__ == '__main__':
         for dataset_name, dataset in datasets.iteritems():
             experiment_config['dataset'] = dataset
             experiment_config['dataset_name'] = dataset_name
-            run_experiment(experiment_config)
+            run_experiment(experiment_config, args.force_experiment_prefix)
 
     if args.run_visualizations_yaml:
         with open(args.run_visualizations_yaml, 'r') as fr:
             experiments = yaml.load(fr)
-        evaluations = load_evaluations(experiments)
+        evaluations = load_experiments(experiments)
         for dataset_name, dataset in experiments['datasets'].iteritems():
             if 'visualize_experiments' in dataset:
                 print(dataset_name)

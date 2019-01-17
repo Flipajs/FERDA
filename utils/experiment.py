@@ -53,18 +53,21 @@ class Experiment(object):
         return self.basename
 
     @classmethod
-    def create(cls, name=None, prefix_datetime=True, params=None, config=None, tensorboard=False):
+    def create(cls, name=None, prefix=True, params=None, config=None, tensorboard=False):
         """
 
         :param name: experiment name
-        :param prefix_datetime: prefix experiment dir with current datetime
+        :param prefix: if True prefix experiment dir with current datetime, if str use specified prefix, else no prefix
         :param params: experimental parameters (loss_alpha, epochs, batch_size)
         :param config: experiment configuration (root_experiment_dir, root_tensor_board_dir)
         :param tensorboard: if True, initialize tensor_board_dir
         """
         experiment = cls()
-        if prefix_datetime:
+        if prefix is True:
             experiment.basename = time.strftime("%y%m%d_%H%M", time.localtime()) + '_'
+        elif isinstance(prefix, str):
+            experiment.basename = prefix + '_'
+
         if name is not None:
             experiment.basename += name
         assert len(experiment.basename)
@@ -149,7 +152,7 @@ class Experiment(object):
                 config = dict(self.config)
                 config['root_experiment_dir'] = self.dir
                 config['root_tensor_board_dir'] = self.tensor_board_dir
-                yield Experiment().create('_'.join(name_parts), prefix_datetime=False, params=parameters, config=config,
+                yield Experiment().create('_'.join(name_parts), prefix=False, params=parameters, config=config,
                                           tensorboard=self.tensorboard)
 
 
