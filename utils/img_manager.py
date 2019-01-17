@@ -24,6 +24,7 @@ class ImgManager:
         self.crop_properties = []
         self.max_size_mb = max_size_mb
         self.max_num_of_instances = max_num_of_instances
+        self.bg_model = None
 
     def get_whole_img(self, frame):
         """
@@ -59,6 +60,18 @@ class ImgManager:
         self.crop_properties.append(props)
         self.crop_cache[props] = image
         return image.copy()
+
+    def get_background(self):
+        from core.bg_model.median_intensity import MedianIntensity
+        if self.bg_model is None:
+            self.bg_model = MedianIntensity(self.project)
+            self.bg_model.compute_model()
+        return self.bg_model.bg_model
+
+    def get_foreground(self, frame):
+        img = self.get_whole_img(frame)
+        return np.abs(np.asarray(self.get_background(), dtype=np.int32) -
+               np.asarray(img, dtype=np.int32)).mean(axis=2).astype(np.uint8)
 
     def get_crop(self, frame, roi, margin=0, relative_margin=0, width=-1, height=-1, fill_color=(0, 0, 0),
                  max_width=-1, max_height=-1,  min_width=-1, min_height=-1, regions=[], colors={},
