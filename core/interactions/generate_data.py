@@ -43,79 +43,6 @@ IMAGE_SIZE_PX = 200
 
 
 # TODO: check for possible bug
-def head_fix(tracklet_regions):
-    import heapq
-    q = []
-    # q = Queue.PriorityQueue()
-    heapq.heappush(q, (0, [False]))
-    heapq.heappush(q, (0, [True]))
-    # q.put((0, [False]))
-    # q.put((0, [True]))
-
-    result = []
-    i = 0
-    max_i = 0
-
-    cut_diff = 10
-
-    while True:
-        i += 1
-
-        # cost, state = q.get()
-        cost, state = heapq.heappop(q)
-        if len(state) > max_i:
-            max_i = len(state)
-
-        if len(state) + cut_diff < max_i:
-            continue
-
-        # print i, cost, len(state), max_i
-
-        if len(state) == len(tracklet_regions):
-            result = state
-            break
-
-        prev_r = tracklet_regions[len(state) - 1]
-        r = tracklet_regions[len(state)]
-
-        prev_c = prev_r.centroid()
-        p1, p2 = get_region_endpoints(r)
-
-        dist = np.linalg.norm
-        d1 = dist(p1 - prev_c)
-        d2 = dist(p2 - prev_c)
-
-        prev_head, prev_tail = get_region_endpoints(prev_r)
-        if state[-1]:
-            prev_head, prev_tail = prev_tail, prev_head
-
-        d3 = dist(p1 - prev_head) + dist(p2 - prev_tail)
-        d4 = dist(p1 - prev_tail) + dist(p2 - prev_head)
-
-        # state = list(state)
-        state2 = list(state)
-        state.append(False)
-        state2.append(True)
-
-        new_cost1 = d3
-        new_cost2 = d4
-
-        # TODO: param
-        if dist(prev_c - r.centroid()) > 5:
-            new_cost1 += d2 - d1
-            new_cost2 += d1 - d2
-
-        heapq.heappush(q, (cost + new_cost1, state))
-        heapq.heappush(q, (cost + new_cost2, state2))
-        # q.put((cost + new_cost1, state))
-        # q.put((cost + new_cost2, state2))
-
-    # fix tracklet
-    for state, r in zip(result, tracklet_regions):
-        if state:
-            r.theta_ += np.pi
-            if r.theta_ >= 2 * np.pi:
-                r.theta_ -= 2 * np.pi
 
 
 class DataGenerator(object):
@@ -188,7 +115,6 @@ class DataGenerator(object):
                         # long_moving_tracklets.append(tracklet)
 
                         regions = list(region_tracklet)
-                        head_fix(regions)
                         # images = []
                         # for region in regions:
                         #     img = video.get_frame(region.frame())
@@ -481,7 +407,6 @@ class DataGenerator(object):
                     region_tracklet_fixed = region_tracklet_fixed[
                         int(n * self.params['single_tracklet_remove_fraction'] / 2):
                         int(n * (1 - self.params['single_tracklet_remove_fraction'] / 2))]
-                head_fix(region_tracklet_fixed)
                 single_region_tracklets.append(region_tracklet_fixed)
                 all_regions_idx.extend([(i, j) for j in range(len(region_tracklet_fixed) - 1)])
                 i += 1

@@ -1,11 +1,14 @@
 __author__ = 'flipajs'
 
+from os.path import join
 from chunk import Chunk
 from libs.intervaltree.intervaltree import IntervalTree
 from utils.misc import print_progress
 from tqdm import tqdm
 import warnings
 import numpy as np
+import jsonpickle
+import utils.load_jsonpickle
 
 
 class ChunkManager:
@@ -26,6 +29,21 @@ class ChunkManager:
 
     def __len__(self):
         return len(self.chunks_)
+
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        del state['itree']
+        return state
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+        self.itree = IntervalTree()
+
+    @classmethod
+    def from_dir(cls, directory, gm):
+        chm = jsonpickle.decode(open(join(directory, 'tracklets.json'), 'r').read(), keys=True)
+        chm.reset_itree(gm)
+        return chm
 
     def new_track(self, track, gm):
         track.id_ = self.id_
@@ -139,7 +157,7 @@ class ChunkManager:
         self.itree = IntervalTree()
 
         chn = len(self)
-        for i, ch in tqdm(enumerate(self.chunk_gen()), total=chn, desc='chunk_manager.reset_itree', leave=False):
+        for i, ch in tqdm(enumerate(self.chunk_gen()), total=chn, desc='ChunkManager rebuilding interval tree', leave=False):
             self._add_ch_itree(ch, gm)
 
     def add_single_vertices_chunks(self, p, frames=None):

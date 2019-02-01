@@ -9,7 +9,7 @@ from core.region.region import Region
 
 
 class ImgManager:
-    def __init__(self, project, max_size_mb=-1, max_num_of_instances=-1):
+    def __init__(self, project=None, max_size_mb=-1, max_num_of_instances=-1):
         """
         This class can be used to load images from FERDA videos. It keeps used images in cache and is able to provide
         them quickly. It also offers methods that crop_ images if necessary.
@@ -19,12 +19,25 @@ class ImgManager:
         :param max_num_of_instances: max count of images kept in cache (unlimited by default, only used when max_size_mb is not set)
         """
         self.project = project
-        self.vid = get_auto_video_manager(project)
+        if project is not None:
+            self.set_project(project)
+        self.vid = None
         self.crop_cache = {}
         self.crop_properties = []
         self.max_size_mb = max_size_mb
         self.max_num_of_instances = max_num_of_instances
         self.bg_model = None
+
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        del state['project']
+        del state['vid']
+        del state['bg_model']
+        return state
+
+    def set_project(self, project):
+        self.project = project
+        self.vid = get_auto_video_manager(project)
 
     def get_whole_img(self, frame):
         """

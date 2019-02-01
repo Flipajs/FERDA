@@ -3,6 +3,7 @@ __author__ = 'fnaiser'
 
 from core.arena.model import Model
 
+
 class PaintMask(Model):
     def __init__(self, im_height, im_width):
         super(PaintMask, self).__init__(im_height, im_width)

@@ -48,29 +48,7 @@ class RegionManager:
             # else:
             #     raise SyntaxError("Cache limit can only be set when database is used!")
         else:
-            self.use_db = True
-            self.db_path = db_wd+"/"+db_name
-            if not supress_init_print:
-                print "Initializing db at %s " % self.db_path
-            self.con = sql.connect(self.db_path)
-            self.cur = self.con.cursor()
-            # DEBUG, do not use! self.cur.execute("DROP TABLE IF EXISTS regions;")
-
-            self.cur.execute("CREATE TABLE IF NOT EXISTS regions(\
-                    id INTEGER PRIMARY KEY, \
-                    data BLOB);")
-            self.cur.execute("CREATE INDEX IF NOT EXISTS regions_index ON regions(id);")
-
-            self.use_db = True
-            # self.regions_cache_ = {}
-            # self.recent_regions_ids = []
-            # if database has been used before, get last used ID and continue from it (IDs always have to stay unique)
-            try:
-                self.cur.execute("SELECT id FROM regions ORDER BY id DESC LIMIT 1;")
-                row = self.cur.fetchone()
-                self.id_ = row[0]
-            except TypeError: # TypeError is raised when row is empty (no IDs were found)
-                self.id_ = 0
+            self.open_db(db_wd, db_name, supress_init_print)
         self.tmp_ids = []
 
         if isinstance(data, RegionManager):
@@ -80,6 +58,35 @@ class RegionManager:
             for datas in data:
                 if isinstance(datas, RegionManager):
                     self.add(datas[:])
+
+    def open_db(self, db_wd, db_name, supress_init_print=True):
+        self.use_db = True
+        db_path = db_wd + "/" + db_name
+        if not supress_init_print:
+            print("Initializing db at %s " % db_path)
+        self.con = sql.connect(db_path)
+        self.cur = self.con.cursor()
+        # DEBUG, do not use! self.cur.execute("DROP TABLE IF EXISTS regions;")
+        self.cur.execute("CREATE TABLE IF NOT EXISTS regions(\
+                    id INTEGER PRIMARY KEY, \
+                    data BLOB);")
+        self.cur.execute("CREATE INDEX IF NOT EXISTS regions_index ON regions(id);")
+        self.use_db = True
+        # self.regions_cache_ = {}
+        # self.recent_regions_ids = []
+        # if database has been used before, get last used ID and continue from it (IDs always have to stay unique)
+        try:
+            self.cur.execute("SELECT id FROM regions ORDER BY id DESC LIMIT 1;")
+            row = self.cur.fetchone()
+            self.id_ = row[0]
+        except TypeError:  # TypeError is raised when row is empty (no IDs were found)
+            self.id_ = 0
+
+    def __getstate__(self):
+        d = self.__dict__.copy()
+        del d['cur']
+        del d['con']
+        return d
 
     def add(self, regions):
         """
@@ -124,6 +131,11 @@ class RegionManager:
 
         return self.tmp_ids
 
+    def update(self, rid, region):
+        self.cur.execute("BEGIN TRANSACTION;")
+        self.cur.execute("UPDATE regions SET data = ? WHERE id = ?", (self.prepare_region(region), rid))
+        self.con.commit()
+
     def clear_cache(self):
         self.cache.clear()
         # self.regions_cache_     = {}
@@ -162,7 +174,7 @@ class RegionManager:
         #
         #         # print "Cache limit (%s) reached, popping id %s" % (self.cache_size_limit_, pop_id)
 
-    def update(self, key, region):
+    def update_recent_regions_ids(self, key, region):
         """
         Renew the position of key in recent_regions_ids
         :param key: key of the region
@@ -198,6 +210,25 @@ class RegionManager:
         self.id_ += 1
         self.tmp_ids.append(self.id_)
         return self.id_
+
+    def save_new(self, directory):
+        from os.path import join
+        import jsonpickle
+        import h5py
+        import tqdm
+        import numpy as np
+        import pandas as pd
+        from core.region.region import RegionH5
+        max_id = max([r.id() for r in self[1:] if not r.is_origin_interaction()])
+        RegionH5.create_h5_store(join(directory, 'regions.h5'), max_id + 1)
+        regions = [None] * (self.id_ + 1)
+        for r in tqdm.tqdm(self[1:]):
+            regions[r.id()] = RegionH5.from_region(r)
+
+        RegionH5.region_pts_h5.close()
+
+        open(join(directory, 'regions.json'), 'w').write(jsonpickle.encode(regions, keys=True, warn=True))
+        df = pd.DataFrame([r.__getstate(flatten=True) for r in regions.rm[1:]])
 
     def __getitem__(self, key):
         sql_ids = []
@@ -410,6 +441,14 @@ class RegionManager:
         if isinstance(item, Region):
             return len(self)+1 > item.id() > 0
         return isinstance(item, (int, long)) and len(self)+1 > item > 0
+
+
+def load_new_region_manager(directory):
+    import jsonpickle
+    from core.region.region import RegionH5
+    from os.path import join
+    RegionH5.init_h5_store(join(directory, 'regions.h5'))
+    return jsonpickle.decode(open(join(directory, 'regions.json'), 'r').read(), keys=True)
 
 
 if __name__ == "__main__":

@@ -10,12 +10,17 @@ import json
 import errno
 
 from core.graph.solver import Solver
+from core.graph.graph_manager import GraphManager
+from core.graph.chunk_manager import ChunkManager
+from core.region.region_manager import RegionManager
 from core.log import Log
 from core.project.mser_parameters import MSERParameters
 from core.project.other_parameters import OtherParameters
 from core.project.solver_parameters import SolverParameters
 from core.config import config
 from utils.img_manager import ImgManager
+import jsonpickle
+import utils.load_jsonpickle
 
 
 class ProjectNotFoundError(OSError):
@@ -128,20 +133,23 @@ class Project:
     #     with open(self.project_file, 'wb') as f:
     #         pickle.dump(p.__dict__, f, 2)
 
-    def to_json(self):
+    def __getstate__(self):
         d = self.__dict__.copy()
         del d['working_directory']
-        del d['rm']
+        # saved separately
         del d['chm']
+        del d['rm']
         del d['gm']
-        del d['arena_model']
-        del d['solver']
-        del d['img_manager']
         del d['region_cardinality_classifier']
+
+        # reinitialized
+        del d['solver']
         del d['bg_model']
         del d['color_manager']
-        del d['log']
-        return json.dumps(d, default=lambda o: o.__dict__, sort_keys=True, indent=4)
+        return d
+
+    def to_json(self):
+        return json.dumps(self.__getstate__(), default=lambda o: o.__dict__, sort_keys=True, indent=4)
 
     def from_json(self, json_content):
         d = json.loads(json_content)
@@ -156,7 +164,71 @@ class Project:
         del tmp_dict['working_directory']
         self.__dict__.update(tmp_dict)
 
+    def save_new(self, directory=None):
+        with tqdm.tqdm(total=5, desc='saving project') as pbar:
+            if directory is None:
+                directory = self.working_directory
+            try:
+                os.makedirs(directory)
+            except OSError:
+                pass
+
+            open(join(directory, 'project.json'), 'w').write(jsonpickle.encode(self, keys=True, warn=True))
+            if self.arena_model is not None:
+                self.arena_model.save_mask(join(directory, 'mask.png'))
+            pbar.update()
+
+            if self.gm is not None:
+                self.gm.save(directory)
+            pbar.update()
+            if self.rm is not None:
+                self.rm.save_new(directory)
+            pbar.update()
+            if self.chm is not None:
+                open(join(directory, 'tracklets.json'), 'w').write(jsonpickle.encode(self.chm, keys=True, warn=True))
+            pbar.update()
+            # TODO: remove after automatic cardinality estimation is integrated
+            if self.region_cardinality_classifier:
+                with open(join(directory, 'region_cardinality_clustering.pkl'), 'wb') as f:
+                    pickle.dump(self.region_cardinality_classifier, f)
+            pbar.update()
+
+    @classmethod
+    def from_dir(cls, directory, video_file=None,
+                 regions_optional=False, graph_optional=False, tracklets_optional=False):
+        with tqdm.tqdm(total=5, desc='loading project') as pbar:
+            project = jsonpickle.decode(open(join(directory, 'project.json'), 'r').read(), keys=True)
+            if project.arena_model is not None:
+                project.arena_model.load_mask(join(directory, 'mask.png'))
+            # check for video file
+            if video_file is not None:
+                project.video_paths = video_file
+            project.img_manager.set_project(project)
+            pbar.update()
+            pbar.set_description('loading regions')
+            if os.path.exists(join(directory, 'regions.json')) and os.path.exists(join(directory, 'regions.h5')):
+                from core.region.region_manager import load_new_region_manager
+                project.rm = load_new_region_manager(directory)
+            elif not regions_optional:
+                raise ProjectNotFoundError
+            pbar.update()
+            pbar.set_description('loading graph')
+            if os.path.exists(join(directory, 'graph.json')):
+                project.gm = GraphManager.from_dir(directory, project)
+            elif not graph_optional:
+                raise ProjectNotFoundError
+            pbar.update()
+            pbar.set_description('loading tracklets')
+            if project.gm is not None and os.path.exists(join(directory, 'tracklets.json')):
+                project.chm = ChunkManager.from_dir(directory, project.gm)
+            elif not tracklets_optional:
+                raise ProjectNotFoundError
+            pbar.update()
+        return project
+
     def save(self, path=None):
+        print('save!')
+        return
         if path is None:
             path = self.working_directory
 
@@ -328,11 +400,8 @@ class Project:
             pass
 
         # ARENA MODEL
-        try:
-            with open(self.working_directory+'/arena_model.pkl', 'rb') as f:
-                self.arena_model = pickle.load(f)
-        except:
-            pass
+        with open(self.working_directory+'/arena_model.pkl', 'rb') as f:
+            self.arena_model = pickle.load(f)
 
         # # CLASSES
         # try:
@@ -452,7 +521,7 @@ class Project:
                         ch.N = set()
                         ch.P = set()
 
-                self.save()
+                # self.save()
 
         self.img_manager = ImgManager(self, max_num_of_instances=500)
 
@@ -542,6 +611,15 @@ class Project:
             results[:, :, 1] += self.video_crop_model['x1']
 
         return results
+
+    def fix_regions_orientation(self):
+        from core.graph.region_chunk import RegionChunk
+        n_swaps = 0
+        for tracklet in tqdm.tqdm(self.chm.chunk_gen(), total=len(self.chm),
+                                  desc='fixing orientation of regions in single tracklets'):
+            if tracklet.is_single():
+                n_swaps += RegionChunk(tracklet, self.gm, self.rm).fix_regions_orientation()
+        return n_swaps
 
 
 def project_video_file_exists(project_dir):

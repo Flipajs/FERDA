@@ -1,15 +1,16 @@
-__author__ = 'flipajs'
-
 import graph_tool
 from core.log import LogCategories, ActionNames
 import numpy as np
 from core.region.fitting_logger import FittingLogger
+from os.path import join
+import jsonpickle
+import utils.load_jsonpickle
 
 
 class GraphManager:
-    def __init__(self, project, assignment_score):
+    def __init__(self, project=None, assignment_score=None):
         self.project = project
-        self.rm = project.rm
+        self.rm = None
         self.g = graph_tool.Graph(directed=True)
         self.g.set_fast_edge_removal(fast=True)
         self.graph_add_properties()
@@ -17,10 +18,40 @@ class GraphManager:
         self.start_t = np.inf
         self.end_t = -1
         # multiply 2 times to get ant length
-        self.major_axis_median = project.stats.major_axis_median
-        self.max_distance = project.solver_parameters.max_edge_distance_in_ant_length * 2 * self.major_axis_median
+        self.major_axis_median = None
+        self.max_distance = None
         self.assignment_score = assignment_score
         self.fitting_logger = FittingLogger()
+        if project is not None:
+            self.set_project(project)
+
+    def set_project(self, project):
+        self.project = project
+        self.rm = project.rm
+        self.major_axis_median = project.stats.major_axis_median
+        self.max_distance = project.solver_parameters.max_edge_distance_in_ant_length * 2 * self.major_axis_median
+
+    def save(self, directory):
+        self.g.save(join(directory, 'graph.xml.gz'))
+        open(join(directory, 'graph.json'), 'w').write(jsonpickle.encode(self, keys=True, warn=True))
+
+    @classmethod
+    def from_dir(cls, directory, project=None):
+        graph_manager = jsonpickle.decode(open(join(directory, 'graph.json'), 'r').read(), keys=True)
+        graph_manager.g = graph_tool.load_graph(join(directory, 'graph.xml.gz'))
+        if project is not None:
+            graph_manager.set_project(project)
+        return graph_manager
+
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        del state['g']
+        del state['rm']
+        del state['project']
+        return state
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)
 
     def graph_add_properties(self):
         # In these cases the id 0 means unassigned

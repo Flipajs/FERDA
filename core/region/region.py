@@ -1,11 +1,8 @@
-__author__ = 'fnaiser'
-
-from utils.video_manager import get_auto_video_manager
-import numpy as np
 import math
 import numbers
-from utils.roi import get_roi, get_roi_rle
+from utils.roi import get_roi, get_roi_rle, ROI
 from utils.img import createLineIterator
+import numpy as np
 
 
 class Region(object):
@@ -69,6 +66,44 @@ class Region(object):
 
     def __eq__(self, other):
         return hash(self) == hash(other)
+
+    def __getstate__(self, flatten=False):
+        state = self.__dict__.copy()
+        if 'pts_rle_' in state:
+            del state['pts_rle_']
+        if 'pts_' in state:
+            del state['pts_']
+        if flatten:
+            state['centroid_x'] = self.centroid_[1]
+            state['centroid_y'] = self.centroid_[0]
+            del state['centroid_']
+        else:
+            state['centroid_'] = state['centroid_'].tolist()
+        state['min_intensity_'] = float(state['min_intensity_'])
+        state['max_intensity_'] = float(state['max_intensity_'])
+        state['intensity_percentile'] = float(state['intensity_percentile'])
+        if flatten and self.roi_ is not None:
+            state.update({'roi_' + k: v for k, v in self.roi().as_dict().items()})
+            del state['roi_']
+        return state
+
+    def __setstate__(self, state):
+        if 'centroid_' in state:
+            state['centroid_'] = np.array(state['centroid_'])
+        else:
+            state['centroid_'] = np.array([state['centroid_y'], state['centroid_x']])
+            del state['centroid_y']
+            del state['centroid_x']
+        if 'roi_x' in state:
+            state['roi_'] = ROI(state['roi_y'], state['roi_x'], state['roi_height'], state['roi_width'])
+            del state['roi_y']
+            del state['roi_x']
+            del state['roi_height']
+            del state['roi_width']
+            for k, v in state.items():
+                if isinstance(v, (numbers.Number, np.number)) and np.isnan(v):
+                    state[k] = None
+        self.__dict__.update(state)
 
     @property
     def angle_deg_ccw(self):
@@ -213,6 +248,7 @@ class Region(object):
         :return: yx coordinates; array, shape=(n, 2)
         """
         if self.pts_ is None:
+            assert self.pts_rle_ is not None
             self.pts_ = self.pts_from_rle_(self.pts_rle_)
 
         return self.pts_
@@ -406,6 +442,54 @@ class Region(object):
 
     def get_img(self, image_manager, **kwargs):
         return image_manager.get_crop(self.frame(), self.roi(), **kwargs)
+
+import h5py
+
+class RegionH5(Region):
+    region_pts_h5 = None
+    region_pts = None
+    n_items = 0
+
+    @classmethod
+    def init_h5_store(cls, filename, num_items=None):
+        cls.region_pts_h5 = h5py.File(filename, mode='r')  # TODO 'a'
+        if not 'region_pts' in cls.region_pts_h5:
+            assert num_items is not None
+            dt = h5py.special_dtype(vlen=np.dtype('int32'))
+            cls.region_pts_h5.create_dataset('region_pts', (num_items,), dtype=dt, maxshape=(None,))  # , compression='gzip'
+        cls.region_pts = cls.region_pts_h5['region_pts']
+
+    @classmethod
+    def create_h5_store(cls, filename, num_items):
+        cls.region_pts_h5 = h5py.File(filename, mode='w')
+        dt = h5py.special_dtype(vlen=np.dtype('int32'))
+        cls.region_pts_h5.create_dataset('region_pts', (num_items,), dtype=dt, maxshape=(None,))  # , compression='gzip'
+        cls.region_pts = cls.region_pts_h5['region_pts']
+
+    @classmethod
+    def from_region(cls, region):
+        regionH5 = cls()
+        regionH5.__dict__.update(region.__dict__)
+        if regionH5.region_pts is not None:
+            try:
+                regionH5.set_pts(region.pts())
+                regionH5.pts_ = None
+                regionH5.pts_rle_ = None
+            except:
+                pass
+        return regionH5
+
+    def pts(self):
+        if self.region_pts is not None:
+            return self.region_pts[self.id()].reshape((-1, 2))
+        else:
+            return super(RegionH5, self).pts()
+
+    def set_pts(self, value):
+        if self.region_pts is not None:
+            self.region_pts[self.id()] = value.flatten()
+        else:
+            self.pts_ = value
 
 
 def encode_RLE(pts, return_area=True):

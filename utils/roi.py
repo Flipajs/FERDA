@@ -1,5 +1,3 @@
-__author__ = 'flipajs'
-
 import numpy as np
 
 
@@ -20,6 +18,13 @@ class ROI():
         s += "\nwidth: {}".format(self.width_)
 
         return s
+
+    def as_dict(self):
+        return {'x': self.x(),
+                'y': self.y(),
+                'height': self.height(),
+                'width': self.width()
+                }
 
     def y(self):
         return self.y_

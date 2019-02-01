@@ -78,3 +78,82 @@ class RegionChunk:
     def rid_gen(self):
         for r in self.regions_gen():
             yield r.id()
+
+    def fix_regions_orientation(self):
+        import heapq
+        from core.region.region import get_region_endpoints
+        import numpy as np
+        q = []
+        # q = Queue.PriorityQueue()
+        heapq.heappush(q, (0, [False]))
+        heapq.heappush(q, (0, [True]))
+        # q.put((0, [False]))
+        # q.put((0, [True]))
+
+        result = []
+        i = 0
+        max_i = 0
+
+        cut_diff = 10
+
+        while True:
+            i += 1
+
+            # cost, state = q.get()
+            cost, state = heapq.heappop(q)
+            if len(state) > max_i:
+                max_i = len(state)
+
+            if len(state) + cut_diff < max_i:
+                continue
+
+            # print i, cost, len(state), max_i
+
+            if len(state) == len(self):
+                result = state
+                break
+
+            prev_r = self[len(state) - 1]
+            r = self[len(state)]
+
+            prev_c = prev_r.centroid()
+            p1, p2 = get_region_endpoints(r)
+
+            dist = np.linalg.norm
+            d1 = dist(p1 - prev_c)
+            d2 = dist(p2 - prev_c)
+
+            prev_head, prev_tail = get_region_endpoints(prev_r)
+            if state[-1]:
+                prev_head, prev_tail = prev_tail, prev_head
+
+            d3 = dist(p1 - prev_head) + dist(p2 - prev_tail)
+            d4 = dist(p1 - prev_tail) + dist(p2 - prev_head)
+
+            # state = list(state)
+            state2 = list(state)
+            state.append(False)
+            state2.append(True)
+
+            new_cost1 = d3
+            new_cost2 = d4
+
+            # TODO: param
+            if dist(prev_c - r.centroid()) > 5:
+                new_cost1 += d2 - d1
+                new_cost2 += d1 - d2
+
+            heapq.heappush(q, (cost + new_cost1, state))
+            heapq.heappush(q, (cost + new_cost2, state2))
+            # q.put((cost + new_cost1, state))
+            # q.put((cost + new_cost2, state2))
+
+        # fix tracklet
+        n_swaps = 0
+        for do_orientation_swap, r in zip(result, self):
+            if do_orientation_swap:
+                n_swaps += 1
+                r.theta_ += np.pi
+                if r.theta_ >= 2 * np.pi:
+                    r.theta_ -= 2 * np.pi
+        return n_swaps

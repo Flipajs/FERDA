@@ -69,6 +69,17 @@ def fix_legacy_project(project_path):
     print('Fixed project.name.')
 
 
+def fix_orientation(project_path):
+    import jsonpickle
+    import utils.load_jsonpickle
+    from shutil import move
+    project = Project.from_dir(project_path)
+    n_swaps = project.fix_regions_orientation()
+    print('Swapped {} regions orientation.'.format(n_swaps))
+    move(join(project_path, 'regions.json'), join(project_path, 'regions_old_orientation.json'))
+    open(join(project_path, 'regions.json'), 'w').write(jsonpickle.encode(project.rm))
+
+
 def run_tracking(project_dir, video_file=None, force_recompute=False, reid_model_weights_path=None, results_mot=None):
     import core.segmentation
     from core.region.clustering import is_project_cardinality_classified
@@ -262,6 +273,7 @@ if __name__ == '__main__':
     parser.add_argument('--video-file', type=str, help='project input video file')
     parser.add_argument('--save-results-mot', type=str, help='write found trajectories in MOT challenge format')
     parser.add_argument('--fix-legacy-project', action='store_true', help='fix legacy project\'s Qt dependencies')
+    parser.add_argument('--fix-orientation', action='store_true', help='fix single tracklets regions orientation')
     parser.add_argument('--run-tracking', action='store_true', help='run tracking on initilized project')
     parser.add_argument('--reidentification-weights', type=str, help='tracking: path to reidentification model weights',
                         default=None)
@@ -289,6 +301,9 @@ if __name__ == '__main__':
 
     if args.fix_legacy_project:
         fix_legacy_project(args.project)
+
+    if args.fix_orientation:
+        fix_orientation(args.project)
 
     if args.run_tracking:
         project = Project()

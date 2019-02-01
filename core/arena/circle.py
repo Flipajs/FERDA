@@ -20,7 +20,11 @@ class Circle(Model):
 
         self.mask_idx_ = (self.mask_ == 0)
 
-
+    def __getstate__(self):
+        state = super(Circle, self).__getstate__()
+        state['center'] = list(self.center)
+        state['radius'] = float(self.radius)
+        return state
 
 
 if __name__ == '__main__':

@@ -1,6 +1,7 @@
 __author__ = 'fnaiser'
 
 import numpy as np
+import cv2
 
 
 class Model(object):
@@ -12,6 +13,24 @@ class Model(object):
         self.mask_idx_ = None
         # might be used for softening borders...
         self.weights_ = None
+        self.mask_filename = None
+
+    def save_mask(self, mask_filename):
+        if self.mask_ is not None:
+            cv2.imwrite(mask_filename, self.mask_)
+
+    def load_mask(self, mask_filename):
+        self.mask_ = cv2.imread(mask_filename)
+        self.mask_idx_ = (self.mask_ == 0)
+
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        del state['mask_']
+        del state['mask_idx_']
+        return state
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)
 
     def mask_image(self, img, fill=(255, 255, 255)):
         if len(img.shape) == 2:

@@ -17,7 +17,7 @@ from keras.applications.mobilenet import mobilenet
 from keras.models import model_from_yaml, model_from_json
 from tqdm import tqdm
 
-from core.interactions.generate_data import DataGenerator, head_fix
+from core.interactions.generate_data import DataGenerator
 from core.interactions.train import TrainInteractions
 from core.interactions.visualization import save_prediction_img, show_prediction
 from core.region.transformableregion import TransformableRegion
@@ -686,7 +686,7 @@ def detect_and_visualize(model_dir, in_img, x, y, out_img=None):
 
 def _load(tracker_dir, project_dir):
     from core.project.project import Project
-    project = Project(project_dir)
+    project = Project.from_dir(project_dir)
     gt = load_mot('data/GT/Cam1_clip.avi.txt')
     # gt = None
     if project.video_crop_model is not None:
@@ -699,8 +699,8 @@ def track_frame_range(start_tracklets, frame_start, frame_end, detector, out_dir
     if frame_start == 0:
         frame_start = 1
     regions_tracklets = [list(RegionChunk(t, detector.project.gm, detector.project.rm)) for t in start_tracklets]
-    for regions in regions_tracklets:
-        head_fix(regions)
+    # for regions in regions_tracklets:
+    #     head_fix(regions)
     ellipses = [Ellipse.from_region(next(r for r in regions if r.frame() == frame_start)) for regions in regions_tracklets]
     predictions = [el.to_dict() for el in ellipses]
     track_ids = range(len(start_tracklets))
