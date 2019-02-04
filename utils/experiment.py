@@ -67,7 +67,6 @@ class Experiment(object):
             experiment.basename = time.strftime("%y%m%d_%H%M", time.localtime()) + '_'
         elif isinstance(prefix, str):
             experiment.basename = prefix + '_'
-
         if name is not None:
             experiment.basename += name
         assert len(experiment.basename)

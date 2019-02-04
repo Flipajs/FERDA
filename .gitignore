@@ -2,6 +2,7 @@ matlab/
 out/
 .idea/
 .ipynb_checkpoints/
+.vscode/settings.json
 *.pyc
 autosave.arr
 ferda_drosophyla.avi
