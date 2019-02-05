@@ -30,7 +30,6 @@ from core.project.project import Project
 from core.graph.region_chunk import RegionChunk
 from utils.video_manager import get_auto_video_manager
 from core.region.transformableregion import TransformableRegion
-from core.region.region import get_region_endpoints
 from core.region.ellipse import Ellipse
 from core.interactions.visualization import save_prediction_img
 from core.interactions.io import read_gt
@@ -54,7 +53,7 @@ class DataGenerator(object):
         self.bg_model = None
         self.params = {'single_min_frames': 0,
                        'single_min_average_speed_px': 0,
-                       'regression_tracking_image_size_px': 150,
+                       'regression_tracking_image_size_px': 224,
                        'single_tracklet_min_speed': 0,
                        'single_tracklet_remove_fraction': 0,
 #                       'augmentation_elliptic_mask_multipliers': (1, 1), # fishes, sowbugs
@@ -486,8 +485,10 @@ class DataGenerator(object):
                 # approach angle, 0 rad is direction from the object centroid
                 # phi_deg = np.clip(np.random.normal(scale=90 / 2, size=n), -80, 80)
                 phi_deg = np.random.uniform(-90, 90)
-                # shift along ellipse_a major axis
-                aug_shift_px = int(round(np.random.normal(scale=5, loc=-15)))
+                # shift along synthetic object's major axis,
+                # negative means further from augmented object, positive increase overlap with the augmented object
+                # 0 is located at "head" tip of the synthetic object
+                aug_shift_px = int(round(np.random.normal(scale=10, loc=5)))
                 # img1 rotation around object center
                 rot_deg = np.random.normal(scale=30)
 
@@ -567,7 +568,7 @@ class DataGenerator(object):
         timg_aug.set_mask(img_aug_alpha * elliptic_mask)
 
         head_xy, _ = ellipse_aug.get_vertices()
-        timg_aug.move(-head_xy[::-1])  # move head of object 2 to (0, 0)
+        timg_aug.move(-head_xy[::-1])  # move head of synthetic object to (0, 0)
         timg_aug.rotate(-ellipse_aug.angle_deg, (0, 0))  # normalize the rotation to 0 deg, tail is to left, head to right
         timg_aug.rotate(phi_deg, (0, 0))  # approach angle
         timg_aug.move((0, aug_shift_px))  # positioning closer (even overlapping) or further from object 1
