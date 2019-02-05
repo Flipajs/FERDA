@@ -24,7 +24,6 @@ try:
     import keras
     from keras.models import model_from_yaml, model_from_json
     from keras.preprocessing.image import ImageDataGenerator
-    from keras.applications.mobilenet import mobilenet
     from keras.utils import Sequence
     from core.interactions.keras_utils import GetBest
 except ImportError as e:
@@ -115,6 +114,8 @@ class TrainInteractions:
             'single_concat_conv3': self.model_single_concat_conv3,
             'single_concat_conv3_2inputs': self.model_single_concat_conv3_2inputs,
             'single_concat_conv3_dense32': self.model_single_concat_conv3_dense32,
+            'mobilenet2_siamese': self.model_mobilenet2_siamese,
+            'resnet_siamese': self.model_resnet_siamese,
         }
         if predicted_properties is None:
             self.PREDICTED_PROPERTIES = ['x', 'y', 'angle_deg_cw']  # , 'major', 'minor']
@@ -365,6 +366,7 @@ class TrainInteractions:
         return model
 
     def model_mobilenet_siamese(self):
+        from keras.applications.mobilenet import mobilenet
         base_model = keras.applications.mobilenet.MobileNet(self.input_shape,
                                                             self.parameters['mobilenet_alpha'],
                                                             self.parameters['mobilenet_depth_multiplier'],
@@ -391,6 +393,35 @@ class TrainInteractions:
         x = keras.layers.Activation('tanh', name='act_tanh')(x)
         x = keras.layers.Reshape((3,), name='reshape_2')(x)
 
+        model = Model(inputs=[input0, input1], outputs=x)
+        return model
+
+    def model_mobilenet2_siamese(self):
+        from keras.applications.mobilenet_v2 import MobileNetV2
+        base_model = MobileNetV2(self.input_shape, self.parameters['mobilenet_alpha'],
+                                 self.parameters['mobilenet_depth_multiplier'],
+                                 include_top=False, weights='imagenet',  # 'imagenet',
+                                 pooling='avg')
+        input0 = keras.layers.Input(shape=self.input_shape)
+        x0 = base_model(input0)
+        input1 = keras.layers.Input(shape=self.input_shape)
+        x1 = base_model(input1)
+        x = keras.layers.concatenate([x0, x1], axis=-1)
+        x = keras.layers.Dense(3, activation='tanh', use_bias=True, name='3xtanh')(x)
+
+        model = Model(inputs=[input0, input1], outputs=x)
+        return model
+
+    def model_resnet_siamese(self):
+        from keras.applications.resnet50 import ResNet50
+        base_model = ResNet50(input_shape=self.input_shape, include_top=False, pooling='avg')  # weights='imagenet',
+        input0 = keras.layers.Input(shape=self.input_shape)
+        x0 = base_model(input0)
+        input1 = keras.layers.Input(shape=self.input_shape)
+        x1 = base_model(input1)
+        x = keras.layers.concatenate([x0, x1], axis=-1)
+        x = keras.Flatten()(x)
+        x = keras.Dense(3, activation='tanh', name='3xtanh')(x)
         model = Model(inputs=[input0, input1], outputs=x)
         return model
 
