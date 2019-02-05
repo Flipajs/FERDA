@@ -47,11 +47,14 @@ class InteractionDetector:
         self.TRACKING_COST_WEIGHT = 0.8
         self.TRACKING_CONFIDENCE_LOC = 20
         self.TRACKING_CONFIDENCE_SCALE = 0.2
+        from keras.layers import ReLU
         keras_custom_objects = {
-            'relu6': mobilenet.relu6,
+#             'relu6': mobilenet.relu6,
+            'relu6': ReLU(6.),
         }
         self.config = yaml.load(open(join(model_dir, 'config.yaml')))
         self.parameters = yaml.load(open(join(model_dir, 'parameters.yaml')))
+        self.enable_template_tracking = False
         self.ti = TrainInteractions()  # TODO: remove dependency
         self.ti.parameters = self.parameters
 
@@ -188,10 +191,13 @@ class InteractionDetector:
 
         i = 0
         regions = []
+        template_img = None
         while (start_frame <= frame <= end_frame) and i <= max_frames:  # overlap > 0 and
             prev_prediction = prediction.copy()
 
-            prediction, _, _, _ = self.detect_single_frame(frame, prev_prediction)
+            prediction, _, _, img_crop = self.detect_single_frame(frame, prev_prediction, template_img)
+            if self.enable_template_tracking and template_img is None:
+                template_img = img_crop
             prediction_r = Ellipse.from_dict(prediction)
             prediction_r.frame = frame
 
@@ -305,7 +311,7 @@ class InteractionDetector:
             '0_angle_deg_cw': -np.rad2deg(r.theta_),
         })
 
-    def _detect_single_frame(self, video_file, frame, prev_detection):
+    def _detect_single_frame(self, video_file, frame, prev_detection, template_img):
         """
         Detect object in single frame.
 
@@ -316,13 +322,22 @@ class InteractionDetector:
         :param prev_detection:
         :return:
         """
-        img0 = self.project.img_manager.get_whole_img(frame - 1)
+        if template_img is None:
+            img0 = self.project.img_manager.get_whole_img(frame - 1)
+            if self.parameters['input_channels'] == 4:
+                img0 = np.dstack((img0, self.project.img_manager.get_foreground(frame - 1)))
+        else:
+            img0 = None
+
         img = self.project.img_manager.get_whole_img(frame)
-        pred_dict, pred_, delta_xy, img_crop = self.detect_single(img, prev_detection, img0)
+        if self.parameters['input_channels'] == 4:
+            img = np.dstack((img, self.project.img_manager.get_foreground(frame)))
+
+        pred_dict, pred_, delta_xy, img_crop = self.detect_single(img, prev_detection, img0, template_img)
         return pred_dict, pred_, delta_xy, img_crop
 
-    def detect_single_frame(self, frame, prev_detection):
-        return self._detect_single_frame(basename(self.project.video_paths), frame, prev_detection)
+    def detect_single_frame(self, frame, prev_detection, template_img=None):
+        return self._detect_single_frame(basename(self.project.video_paths), frame, prev_detection, template_img)
 
     def get_rotated_crop(self, img, timg, xy):
         timg.set_img(img)
@@ -330,7 +345,7 @@ class InteractionDetector:
         img_crop, delta_xy = safe_crop(img_rotated, xy, self.parameters['input_size_px'])
         return np.expand_dims(img_crop, 0).astype(np.float) / 255., delta_xy
 
-    def detect_single(self, img, prev_detection, img0=None):
+    def detect_single(self, img, prev_detection, img0=None, template_img=None):
         """
         Detect objects in interaction.
 
@@ -343,10 +358,14 @@ class InteractionDetector:
         prev_xy = (prev_detection['0_x'], prev_detection['0_y'])
         timg.rotate(-prev_detection['0_angle_deg_cw'], prev_xy[::-1])
         img_crop, delta_xy = self.get_rotated_crop(img, timg, prev_xy)
-        if img0 is not None:
+        if template_img is not None:
+            pred = self.m.predict([template_img, img_crop])
+        elif img0 is not None:
             img0_crop, _ = self.get_rotated_crop(img0, timg, prev_xy)
             # img_crop = np.concatenate((img0_crop, img_crop), axis=3)
-        pred = self.m.predict([img0_crop, img_crop])
+            pred = self.m.predict([img0_crop, img_crop])
+        else:
+            assert False, 'not implemented'
         pred_ = pred.copy().flatten()
         pred = self.ti.postprocess_predictions(pred)
 
@@ -444,6 +463,8 @@ class InteractionDetector:
         for frame in tqdm(range(start_frame, end_frame + 1), desc='gathering regions'):
             regions_in_frame = []
             for t in self.project.chm.tracklets_in_frame(frame):
+                if t.is_origin_interaction():
+                    continue
                 r = t.get_region_in_frame(self.project.gm, frame)
                 yx = r.contour_without_holes()
                 if t.is_single():
@@ -479,6 +500,7 @@ class InteractionDetector:
                 return dists[i], frames[i]
 
         incoming, outcoming, _ = self.get_tracklets_from_dense(graph)
+
         fwd = []
         for t in tqdm(incoming, desc='incoming'):
             regions_path = self.track_single_object_in_dense_subgraph(graph, ids, t, forward=True)
@@ -708,8 +730,15 @@ def track_frame_range(start_tracklets, frame_start, frame_end, detector, out_dir
     colors = list(itertools.islice(itertools.cycle(['red', 'blue', 'green', 'yellow', 'white', 'cyan']),
                                    len(start_tracklets)))
     img_shape = detector.project.img_manager.get_whole_img(0).shape
+    templates = [None] * len(start_tracklets)
     for frame in tqdm(range(frame_start, frame_end + 1), initial=frame_start, total=detector.project.video_end_t):
-        predictions = [detector.detect_single_frame(frame, pred)[0] for pred in predictions]
+        cur_predictions = []
+        for i, (pred, template_img) in enumerate(zip(predictions, templates)):
+            current_prediction, _, _, img_crop = detector.detect_single_frame(frame, pred, template_img)
+            if detector.enable_template_tracking and template_img is None:
+                templates[i] = img_crop
+            cur_predictions.append(current_prediction)
+        predictions = cur_predictions
         ellipses = [Ellipse.from_dict(pred, frame) for pred in predictions]
 
         # stop tracking when two tracks join
@@ -726,6 +755,7 @@ def track_frame_range(start_tracklets, frame_start, frame_end, detector, out_dir
             del ellipses[i]
             del track_ids[i]
             del colors[i]
+            del templates[i]
 
         # save ellipses to surviving tracks
         for tid, el in zip(track_ids, ellipses):
@@ -849,16 +879,16 @@ def track_dense(tracker_dir, project_dir, out_dir):
 
     try:
         dense_sections_tracklets = pickle.load(
-            open(join(out_dir, 'dense_sections_tracklets.pkl'), 'rb'))
+            open(join(out_dir, 'dense_sections_tracklets_3.pkl'), 'rb'))
     except:
         dense_sections_tracklets = {}
 
     for i, dense in enumerate(tqdm(dense_subgraphs)):
-        # if i != 8:
-        #     continue
+        if i < 3:
+            continue
         if i not in dense_sections_tracklets:
             dense_sections_tracklets[i] = detector.track_dense(dense['graph'], dense['ids'])
-            with open(join(out_dir, 'dense_sections_tracklets.pkl'), 'wb') as fw:
+            with open(join(out_dir, 'dense_sections_tracklets_3.pkl'), 'wb') as fw:
                 pickle.dump(dense_sections_tracklets, fw)
         detector.visualize_tracklets(dense['graph'], dense_sections_tracklets[i], join(out_dir, '%03d' % i), gt)
 
