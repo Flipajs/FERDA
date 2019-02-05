@@ -143,15 +143,23 @@ def run_experiment(config, force_prefix=None):
     """
     Run and evaluate an experiment.
 
-    - copy project template
-    - create new experiment dir
-    - run tracking
-    - evaluate results
+    Use force_prefix to resume experiments, e.g. force_prefix='190107_2102'.
+
+    ferda_tracking experiments:
+        - copy project template
+        - create new experiment dir
+        - run tracking
+        - evaluate results
+
+    single_object_tracking experiments:
+        - run single object trackers on a video
+        - save trajectories to results.txt
     """
     params = config.copy()  # all multiple valued parameters will create experiment batches
     del params['dir']
     del params['run']
-    root_experiment = Experiment.create(config['exp_name'], prefix=force_prefix, params=params,
+    root_experiment = Experiment.create(config.get('exp_name'),
+                                        prefix=force_prefix if force_prefix is not None else True, params=params,
                                         config={'root_experiment_dir': join(config['dir'], config['dataset_name'])})
     for experiment in root_experiment:
         print(experiment.basename)
@@ -208,13 +216,31 @@ def run_benchmarks(notebook_path='experiments/tracking/benchmarking.ipynb',
         webbrowser.open(html_output_path)
 
 
-def run_visualization(experiment_names, all_experiments, dataset, out_video=None):
+def run_visualization(experiment_names, all_experiments, gt_file, in_video_file, out_video_file):
+    """
+    Create visualization of tracking results overlaid on a video.
+
+    Results of multiple experiments are visualized in a grid.
+
+    :param experiment_names: experiments to visualize
+                             list of experiment names (partial matches are supported) or "gt" or
+                             indices to all_experiments (e.g. -1 for last experiment) or
+                             "*" for all experiments
+    :param all_experiments: list of dicts, {'mot_trajectories', 'dirname' or 'exp_name'}
+    :param gt_file: ground truth mot filename
+    :param in_video_file: input video filename
+    :param out_video_file: output visualization filename
+    """
     from utils.gt.mot import visualize_mot, load_mot
     df_mots = []
     names = []
+    # fix for missing exp_name keys
+    for exp in all_experiments:
+        if 'exp_name' not in exp and 'dirname' in exp:
+            exp['exp_name'] = exp['dirname']
     for name in experiment_names:
         if name == 'gt':
-            df_mots.append(load_mot(dataset['gt']))
+            df_mots.append(load_mot(gt_file))
             names.append('ground truth')
         elif name == '*':
             names_all = []
@@ -224,28 +250,25 @@ def run_visualization(experiment_names, all_experiments, dataset, out_video=None
             prefix = os.path.commonprefix(names_all)
             suffix = os.path.commonprefix([n[::-1] for n in names_all])
             names.extend([n[len(prefix):-len(suffix) if suffix != '' else None] for n in names_all])
-            if out_video is None:
-                out_video = join(os.path.dirname(all_experiments[-1]['mot_trajectories']), 'visualization.mp4')
         elif isinstance(name, int):
             exp = all_experiments[name]
             df_mots.append(load_mot(exp['mot_trajectories']))
             names.append(exp['exp_name'])
-            if out_video is None:
-                out_video = join(os.path.dirname(exp['mot_trajectories']), 'visualization.mp4')
         else:
             matching_experiments = [e for e in all_experiments if e['exp_name'] == name]
+            if len(matching_experiments) != 1:
+                matching_experiments = [e for e in all_experiments if name in e['exp_name']]
             assert len(matching_experiments) == 1, \
                 'experiment {} not found or ambiguous match: {}'.format(name, matching_experiments)
             df_mots.append(load_mot(matching_experiments[0]['mot_trajectories']))
             names.append(name)
 
-    assert out_video is not None
-    visualize_mot(dataset['video'], out_video, df_mots, names)
-    # print(dataset['video'], out_video, names)
+    assert out_video_file is not None
+    visualize_mot(in_video_file, out_video_file, df_mots, names)
 
 
-def load_experiments(experiments_config):
-    evaluations = defaultdict(list)
+def load_experiments(experiments_config, evaluation_required=False, trajectories_required=False):
+    experiments = defaultdict(list)
     for directory, dirnames, filenames in \
             sorted(os.walk(experiments_config['dir']), key=lambda x: os.path.basename(x[0])):
         if directory == experiments_config['dir']:
@@ -253,16 +276,37 @@ def load_experiments(experiments_config):
 
         if 'parameters.yaml' in filenames:
             with open(join(directory, 'parameters.yaml'), 'r') as fr:
-                experiment_config = yaml.load(fr)
+                parameters = yaml.load(fr)
+            if parameters.get('dataset_name') not in experiments_config['datasets']:
+                # print('skipping experiment {}, unknown dataset {}'.format(directory, parameters.get('dataset_name')))
+                continue
             if 'evaluation.csv' in filenames:
-                experiment_config['evaluation'] = join(directory, 'evaluation.csv')
+                parameters['evaluation'] = join(directory, 'evaluation.csv')
+            elif evaluation_required:
+                continue
             if 'results.txt' in filenames:
-                experiment_config['mot_trajectories'] = join(directory, 'results.txt')
-            experiment_config['dirname'] = os.path.basename(directory)
-            evaluations[experiment_config['dataset_name']].append(experiment_config)
-        else:
-            print('no experiment.yaml and/or evaluation.csv in {}'.format(directory))
-    return evaluations
+                parameters['mot_trajectories'] = join(directory, 'results.txt')
+            elif trajectories_required:
+                continue
+            parameters['dirname'] = os.path.basename(directory)
+            if 'datetime' not in parameters:
+                from datetime import datetime
+                try:
+                    parameters['datetime'] = datetime.strptime(parameters['dirname'][:11], "%y%m%d_%H%M")
+                except ValueError:
+                    try:
+                        parameters['datetime'] = datetime.strptime(parameters['exp_name'][:11], "%y%m%d_%H%M")
+                    except ValueError:
+                        pass
+            if 'name' in parameters and 'exp_name' not in parameters:
+                parameters['exp_name'] = parameters['name']
+            experiments[parameters['dataset_name']].append(parameters)
+            # print(parameters['exp_name'])
+        # else:
+        #     print('no parameters.yaml in {}'.format(directory))
+    for dataset, dataset_experiments in experiments.items():
+        experiments[dataset] = sorted(dataset_experiments, key=lambda x: x['datetime'])
+    return experiments
 
 
 if __name__ == '__main__':
@@ -319,11 +363,11 @@ if __name__ == '__main__':
 
     if args.run_experiments_yaml:
         with open(args.run_experiments_yaml, 'r') as fr:
-            experiments = yaml.load(fr)
+            experiments_config = yaml.load(fr)
         if args.experiment_name:
-            experiments['exp_name'] = args.experiment_name
-        datasets = experiments['datasets']
-        experiment_config = experiments.copy()
+            experiments_config['exp_name'] = args.experiment_name
+        datasets = experiments_config['datasets']
+        experiment_config = experiments_config.copy()
         del experiment_config['datasets']
         for dataset_name, dataset in datasets.iteritems():
             experiment_config['dataset'] = dataset
@@ -332,12 +376,15 @@ if __name__ == '__main__':
 
     if args.run_visualizations_yaml:
         with open(args.run_visualizations_yaml, 'r') as fr:
-            experiments = yaml.load(fr)
-        evaluations = load_experiments(experiments)
-        for dataset_name, dataset in experiments['datasets'].iteritems():
+            experiments_config = yaml.load(fr)
+        experiments = load_experiments(experiments_config, trajectories_required=True)
+        for dataset_name, dataset in experiments_config['datasets'].iteritems():
             if 'visualize_experiments' in dataset:
                 print(dataset_name)
-                run_visualization(dataset['visualize_experiments'], evaluations[dataset_name], dataset)
+                run_visualization(dataset['visualize_experiments'], experiments[dataset_name],
+                                  dataset['gt'], dataset['video'],
+                                  join(experiments_config['dir'],
+                                       time.strftime("%y%m%d_%H%M", time.localtime()) + '_visualization.mp4'))
 
     # if args.run_benchmarks:
     #     run_benchmarks()
