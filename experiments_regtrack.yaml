@@ -1,10 +1,13 @@
-dir: /datagrid/personal/smidm1/ferda/experiments_regtrack
+dir: /datagrid/personal/smidm1/ferda/experiments_regtrack/tracking
 tracker_model:
-    - /datagrid/personal/smidm1/ferda/experiments_regtrack/190107_2102_mobilenet_siamese_orig_top_alpha/loss_alpha_0.4
-    - /datagrid/personal/smidm1/ferda/experiments_regtrack/190107_2102_mobilenet_siamese_orig_top_alpha/loss_alpha_0.6
-    - /datagrid/personal/smidm1/ferda/experiments_regtrack/190111_1523_mobilenet_siamese_bidi
-    - /datagrid/personal/smidm1/ferda/experiments_regtrack/190111_2052_mobilenet_siamese_fg
-    - /datagrid/personal/smidm1/ferda/experiments_regtrack/190111_2237_mobilenet_siamese_bidi_fg
+#    - /datagrid/personal/smidm1/ferda/experiments_regtrack/190107_2102_mobilenet_siamese_orig_top_alpha/loss_alpha_0.4
+#    - /datagrid/personal/smidm1/ferda/experiments_regtrack/190107_2102_mobilenet_siamese_orig_top_alpha/loss_alpha_0.6
+#    - /datagrid/personal/smidm1/ferda/experiments_regtrack/190111_1523_mobilenet_siamese_bidi
+#    - /datagrid/personal/smidm1/ferda/experiments_regtrack/190111_2052_mobilenet_siamese_fg
+#    - /datagrid/personal/smidm1/ferda/experiments_regtrack/190111_2237_mobilenet_siamese_bidi_fg
+#     - /datagrid/personal/smidm1/ferda/experiments_regtrack/190124_1550_mobilenet2_siamese_bidi
+     - /datagrid/personal/smidm1/ferda/experiments_regtrack/190124_2126_mobilenet_siamese_bidi_fg_overlaps
+     - /datagrid/personal/smidm1/ferda/experiments_regtrack/190124_2127_mobilenet2_siamese_bidi_overlaps
 run: single_object_tracking
 datasets:
 #    5Zebrafish_nocover_22min:
@@ -15,16 +18,19 @@ datasets:
 #        video: /datagrid/ferda/data/youtube/Sowbug3_cut.mp4
 #        gt: data/GT/Sowbug3_cut.txt
 #        initial_project: /datagrid/ferda/projects/1_initial_projects_180921_ILP/180819_Sowbug3_cut_new_setup_ILP_cardinality
-
-#    Cam1_clip:
-#        video: /datagrid/ferda/data/ants_ist/camera_1/Cam1_clip.avi
-#        gt: data/GT/Cam1_clip.avi.txt
-#        initial_project: /datagrid/ferda/projects/1_initial_projects_180921_ILP/180810_2359_Cam1_ILP_cardinality
-#        visualize_experiments: [-1, gt]
+    Cam1_clip:
+        video: /datagrid/ferda/data/ants_ist/camera_1/Cam1_clip.avi
+        gt: data/GT/Cam1_clip.avi.txt
+        initial_project: /datagrid/ferda/projects/1_initial_projects_190131_open_format/190131_1415_Cam1_ILP_cardinality_dense_fixed_orientation_json
+        # /datagrid/ferda/projects/1_initial_projects_180921_ILP/180810_2359_Cam1_ILP_cardinality
+        visualize_experiments: [-1, -2, -3, orig_top_alpha_0.4, gt]
 #    Camera3-5min:
 #        video: /datagrid/ferda/data/ants_ist/Camera3-5min.mp4
 #        gt: data/GT/Camera3-5min.mp4.txt
 #        initial_project: /datagrid/ferda/projects/1_initial_projects_180921_ILP/180811_0205_Camera3-5min_ILP_cardinality
-    camera_1_ss45:
-        video: /datagrid/ferda/data/ants_ist/camera_1/camera_1_ss00:45:00_t00:05:00.mp4
-        initial_project: /datagrid/ferda/projects/1_initial_projects_1901/camera_1_ss45
+#        visualize_experiments: ['*', gt]
+#    camera_1_ss45:
+#        video: /datagrid/ferda/data/ants_ist/camera_1/camera_1_ss00:45:00_t00:05:00.mp4
+#        initial_project: /datagrid/ferda/projects/1_initial_projects_1901/190116_camera_1_ss45_cardinality_old
+#        visualize_experiments: ['*', ]
+
