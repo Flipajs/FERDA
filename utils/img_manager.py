@@ -19,14 +19,14 @@ class ImgManager:
         :param max_num_of_instances: max count of images kept in cache (unlimited by default, only used when max_size_mb is not set)
         """
         self.project = project
-        if project is not None:
-            self.set_project(project)
         self.vid = None
         self.crop_cache = {}
         self.crop_properties = []
         self.max_size_mb = max_size_mb
         self.max_num_of_instances = max_num_of_instances
         self.bg_model = None
+        if project is not None:
+            self.set_project(project)
 
     def __getstate__(self):
         state = self.__dict__.copy()
