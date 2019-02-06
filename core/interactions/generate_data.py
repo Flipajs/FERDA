@@ -43,6 +43,184 @@ IMAGE_SIZE_PX = 200
 
 # TODO: check for possible bug
 
+class ImageIOFile(object):
+    def __init__(self, filename_template):
+        self.filename_template = filename_template
+        self.next_idx = 0
+
+    def add_item(self, image):
+        cv2.imwrite(self.filename_template.format(self.next_idx), image)
+        self.next_idx += 1
+
+    def read_item(self):
+        return cv2.imread(self.filename_template.format(self.next_idx))
+        self.next_idx += 1
+
+    def close(self):
+        pass
+
+
+class MultiImageIOFile(object):
+    def __init__(self, filename_template, names):
+        self.filename_template = filename_template
+        self.names = names
+        self.next_idx = 0
+
+    def add_item(self, images):
+        for name, image in zip(self.names, images):
+            cv2.imwrite(
+                self.filename_template.format(idx=self.next_idxm, name=name),
+                image)
+        self.next_idx += 1
+
+    def read_item(self):
+        images = []
+        for name in self.names:
+            images.append(cv2.imread(self.filename_template.format(
+                idx=self.next_idx, name=name)))
+        self.next_idx += 1
+        return images
+
+    def close(self):
+        pass
+
+
+class ImageIOHdf5(object):
+    def __init__(self, dataset):
+        self.dataset = dataset
+        self.next_idx = 0
+
+    def add_item(self, image):
+        self.dataset[self.next_idx] = image
+        self.next_idx += 1
+
+    def read_item(self):
+        image = self.dataset[self.next_idx]
+        self.next_idx += 1
+        return image
+
+
+class MultiImageIOHdf5(object):
+    def __init__(self, h5group, dataset_names, shapes):
+        self.datasets = []
+        if len(shapes) != len(dataset_names) or not isinstance(shapes, list):
+            shapes = [shapes] * len(dataset_names)
+        for name, shape in zip(dataset_names, shapes):
+            self.datasets.append(h5group.create_dataset(name, shape, np.uint8))
+        self.next_idx = 0
+
+    def add_item(self, images):
+        for dataset, image in zip(self.datasets, images):
+            dataset[self.next_idx] = image
+        self.next_idx += 1
+
+    def read_item(self):
+        images = [dataset[self.next_idx] for dataset in self.datasets]
+        self.next_idx += 1
+        return images
+
+    def close(self):
+        pass
+
+
+class DataIOCSV(object):
+    def __init__(self, filename, columns=None):
+        if columns is not None:
+            self.csv_file = open(filename, 'w')
+            self.writer = csv.DictWriter(self.csv_file, fieldnames=columns)
+            self.writer.writeheader()
+            self.reader = None
+        else:
+            assert False
+            # df = pd.read_csv(filename)
+            self.reader = None
+            self.writer = None
+
+    def add_item(self, data):
+        self.writer.writerow(data)
+
+    def read_item(self):
+        assert False
+
+    def close(self):
+        self.csv_file.close()
+
+
+class DataIOVot(object):
+    def __init__(self, filename_template, image_filename_template=None, image_shape=None):
+        self.template = '<annotation><folder>GeneratedData_Train</folder>' \
+                 '<filename>{filename}</filename>' \
+                 '<path>{path}</path>' \
+                 '<source>' \
+                 '<database>Unknown</database>' \
+                 '</source>' \
+                 '<size>' \
+                 '<width>{width}</width>' \
+                 '<height>{height}</height>' \
+                 '<depth>{depth}</depth>' \
+                 '</size>' \
+                 '<segmented>0</segmented>' \
+                 '{annotation}</annotation>'
+        self.bbox_template = '<object><name>{name}</name><bndbox>' \
+                             '<xmin>{xmin}</xmin><xmax>{xmax}</xmax>' \
+                             '<ymin>{ymin}</ymin><ymax>{ymax}</ymax></bndbox></object>'
+        self.next_idx = 0
+        self.filename_template = filename_template
+        if image_filename_template is not None and image_shape is not None:
+            # writing
+            self.image_filename_template = image_filename_template
+            self.template_data = {'height': image_shape[0], 'width': image_shape[1],
+                                  'depth': image_shape[2], 'path': ''}
+        else:
+            assert False
+
+    def add_item(self, data):
+        if isinstance(data, dict):
+            data = [data]
+        assert isinstance(data, list)
+        bboxes_str = ''
+        for i, bbox in enumerate(data):
+            bbox['name'] = i
+            bboxes_str += self.bbox_template.format(**bbox)
+        annotation = self.template.format(annotation=bboxes_str,
+                                          filename=self.image_filename_template.format(self.next_idx),
+                                          **self.template_data)
+        open(self.filename_template.format(self.next_idx), 'w').write(annotation)
+        self.next_idx += 1
+
+    def read_item(self):
+        annotation = open(self.filename_template.format(self.next_idx), 'w').read()
+        # parse xml
+        assert False
+
+    def close(self):
+        pass
+
+
+class Dataset(object):
+    def __init__(self, image_io, data_io):
+        self.image_io = image_io
+        self.data_io = data_io
+
+    def add_item(self, image, data):
+        self.image_io.add_item(image)
+        self.data_io.add_item(data)
+
+    def read_item(self):
+        return self.image_io.read_item(), self.data_io.read_item()
+
+    def close(self):
+        self.image_io.close()
+        self.data_io.close()
+
+
+class DummyDataset(object):
+    def add_item(self, image, data):
+        pass
+
+    def close(self):
+        pass
+
 
 class DataGenerator(object):
     def __init__(self):
@@ -316,7 +494,8 @@ class DataGenerator(object):
             h5_file.close()
 
     def write_regression_tracking_data(self, project_dir, count, out_dir=None, test_fraction=0.1, augmentation=True,
-                                       overwrite=False, forward=True, backward=False, foreground_layer=False):
+                                       overwrite=False, forward=True, backward=False, foreground_layer=False,
+                                       data_format='csv', image_format='hdf5'):
         """
         Write regression tracking training and testing data with optional augmentation.
 
@@ -334,29 +513,70 @@ class DataGenerator(object):
         :param foreground_layer: add foreground alpha mask as a fourth layer
         """
         self._load_project(project_dir)
-
         if out_dir is not None:
+            img_shape = (self.params['regression_tracking_image_size_px'],
+                         self.params['regression_tracking_image_size_px'],
+                         3 if not foreground_layer else 4)
+            padding = ':0{}d'.format(len(str(count)))
             self._makedirs(out_dir)
             self._write_params(out_dir)
-            h5_filename = join(out_dir, 'images.h5')
-            train_csv_filename = join(out_dir, 'train.csv')
-            test_csv_filename = join(out_dir, 'test.csv')
-
-            if not overwrite:
-                if os.path.exists(h5_filename):
-                    raise OSError(errno.EEXIST, 'HDF5 file %s already exists.' % h5_filename)
-                if os.path.exists(train_csv_filename):
-                    raise OSError(errno.EEXIST, 'file %s already exists.' % train_csv_filename)
-                if os.path.exists(test_csv_filename):
-                    raise OSError(errno.EEXIST, 'file %s already exists.' % test_csv_filename)
-            h5_file = h5py.File(h5_filename, mode='w')
-            h5_group_train = h5_file.create_group('train')
-            h5_group_test = h5_file.create_group('test')
+            if image_format == 'hdf5':
+                if forward:
+                    n_train = count
+                    n_test = int(count * test_fraction)
+                else:
+                    n_train = 0
+                    n_test = 0
+                if backward:
+                    n_train += count
+                    n_test += int(count * test_fraction)
+                h5_filename = join(out_dir, 'images.h5')
+                if not overwrite:
+                    if os.path.exists(h5_filename):
+                        raise OSError(errno.EEXIST, 'HDF5 file %s already exists.' % h5_filename)
+                h5_file = h5py.File(h5_filename, mode='w')
+                train_image_io = MultiImageIOHdf5(h5_file.create_group('train'), ['img0', 'img1'],
+                                                  (n_train, ) + img_shape)
+                test_image_io = MultiImageIOHdf5(h5_file.create_group('test'), ['img0', 'img1'],
+                                                 (n_test,) + img_shape)
+            elif image_format == 'file':
+                out_dir_train = join(out_dir, 'train')
+                self._makedirs(out_dir_train)
+                train_image_io = MultiImageIOFile(join(out_dir_train, '{idx' + padding + '}_{name}.jpg'), ['0', '1'])
+                out_dir_test = join(out_dir, 'test')
+                self._makedirs(out_dir_test)
+                test_image_io = MultiImageIOFile(join(out_dir_test, '{idx' + padding + '}_{name}.jpg'), ['0', '1'])
+            else:
+                assert False, 'unknown image_format'
+            if data_format == 'csv':
+                train_csv_filename = join(out_dir, 'train.csv')
+                test_csv_filename = join(out_dir, 'test.csv')
+                if not overwrite:
+                    if os.path.exists(train_csv_filename):
+                        raise OSError(errno.EEXIST, 'file %s already exists.' % train_csv_filename)
+                    if os.path.exists(test_csv_filename):
+                        raise OSError(errno.EEXIST, 'file %s already exists.' % test_csv_filename)
+                columns = ['x', 'y', 'major', 'minor', 'angle_deg_cw']
+                train_data_io = DataIOCSV(train_csv_filename, columns)
+                test_data_io = DataIOCSV(test_csv_filename, columns)
+            elif data_format == 'vot':
+                out_dir_train = join(out_dir, 'train')
+                self._makedirs(out_dir_train)
+                train_data_io = DataIOVot(join(out_dir_train, '{idx' + padding + '}.xml'),
+                                          join(out_dir_train, '{idx' + padding + '}.jpg'),
+                                          img_shape)
+                out_dir_test = join(out_dir, 'test')
+                self._makedirs(out_dir_test)
+                test_data_io = DataIOVot(join(out_dir_test, '{idx' + padding + '}.xml'),
+                                         join(out_dir_test, '{idx' + padding + '}.jpg'),
+                                         img_shape)
+            else:
+                assert False, 'uknown data_format'
+            train_dataset = Dataset(train_image_io, train_data_io)
+            test_dataset = Dataset(test_image_io, test_data_io)
         else:
-            train_csv_filename = None
-            test_csv_filename = None
-            h5_group_train = None
-            h5_group_test = None
+            train_dataset = DummyDataset()
+            test_dataset = DummyDataset()
 
         all_regions_idx, single_region_tracklets = self._get_single_region_tracklets()  # limit=20)  # for debugging
 
@@ -371,15 +591,17 @@ class DataGenerator(object):
             idxs_augmentation = random.sample(all_regions_idx, int(count * (1 + test_fraction)))
         else:
             idxs_augmentation = None
-        self._write_regression_tracking_dataset(h5_group_train, idxs[:count],
-                                                single_region_tracklets, train_csv_filename,
+        self._write_regression_tracking_dataset(train_dataset, idxs[:count],
+                                                single_region_tracklets,
                                                 None if not augmentation else idxs_augmentation[:count],
                                                 forward, backward, foreground_layer)
-        self._write_regression_tracking_dataset(h5_group_test, idxs[count:],
-                                                single_region_tracklets, test_csv_filename,
+        self._write_regression_tracking_dataset(test_dataset, idxs[count:],
+                                                single_region_tracklets,
                                                 None if not augmentation else idxs_augmentation[count:],
                                                 forward, backward, foreground_layer)
         if out_dir is not None:
+            train_dataset.close()
+            test_dataset.close()
             h5_file.close()
             self.show_ground_truth(train_csv_filename, join(out_dir, 'sample'), h5_filename + ':train/img1', n=20)
 
@@ -413,58 +635,26 @@ class DataGenerator(object):
                 break
         return all_regions_idx, single_region_tracklets
 
-    def _write_regression_tracking_dataset(self, h5_group, idx, tracklets, out_csv, idxs_augmentation=None,
+    def _write_regression_tracking_dataset(self, dataset, idx, tracklets, idxs_augmentation=None,
                                            forward=True, backward=False, foreground_layer=False):
         """
         Generate regression tracking training data.
 
-        :param h5_group: h5 group or dataset or None to display the images
+        :param dataset: Dataset()
         :param idx: tracklet / region indices, [(tracklet_idx, region_idx), (tracklet_idx, region_idx), ...]
         :param tracklets: tracklets regions, [[Region, Region, ....], [Region, ...], ...]
-        :param out_csv: out csv filename
         :param idxs_augmentation: tracklet / region indices for augmentation
         :param bidi: write bidirectional data, doubles the number of generated samples
         """
-
-        dataset_names = ['img0', 'img1']
-        img_size_px = self.params['regression_tracking_image_size_px']
-        if h5_group is not None:
-            if forward:
-                h5_len = len(idx)
-            else:
-                h5_len = 0
-            if backward:
-                h5_len += len(idx)
-            if foreground_layer:
-                num_layers = 4
-            else:
-                num_layers = 3
-            for name in dataset_names:
-                h5_group.create_dataset(name, (h5_len, img_size_px, img_size_px, num_layers), np.uint8)
-
-        if out_csv is not None:
-            # initialize csv output file
-            COLUMNS = ['x', 'y', 'major', 'minor', 'angle_deg_cw']  # , 'region1_id', 'region2_id']
-            csv_file = open(out_csv, 'w')
-            csv_writer = csv.DictWriter(csv_file, fieldnames=COLUMNS)
-            csv_writer.writeheader()
-        else:
-            csv_writer = None
-
         if forward:
-            self._write_regression_tracking_images(tracklets, idx, csv_writer, dataset_names, h5_group, img_size_px,
-                                                   idxs_augmentation, forward=True, foreground_layer=foreground_layer)
+            self._write_regression_tracking_images(tracklets, idx, dataset, idxs_augmentation,
+                                                   forward=True, foreground_layer=foreground_layer)
         if backward:
-            self._write_regression_tracking_images(tracklets, idx, csv_writer, dataset_names, h5_group, img_size_px,
-                                                   idxs_augmentation, forward=False,
-                                                   hdf5_start_idx=len(idx) if forward else 0,
-                                                   foreground_layer=foreground_layer)
+            self._write_regression_tracking_images(tracklets, idx, dataset, idxs_augmentation,
+                                                   forward=False, foreground_layer=foreground_layer)
 
-        if out_csv is not None:
-            csv_file.close()
-
-    def _write_regression_tracking_images(self, tracklets, idx, csv_writer, dataset_names, h5_group,
-                                          img_size_px, idxs_augmentation=None, forward=True, hdf5_start_idx=0,
+    def _write_regression_tracking_images(self, tracklets, idx, dataset,
+                                          idxs_augmentation=None, forward=True,
                                           foreground_layer=False):
         for i, (tracklet_idx, region_idx) in enumerate(tqdm.tqdm(idx)):
             if forward:
@@ -493,7 +683,8 @@ class DataGenerator(object):
                 rot_deg = np.random.normal(scale=30)
 
             # generate both images
-            for region, aug_region, dataset in zip(consecutive_regions, aug_consecutive_regions, dataset_names):
+            images = []
+            for region, aug_region, image_idx in zip(consecutive_regions, aug_consecutive_regions, (0, 1)):
                 timg = TransformableRegion()
                 img = self._project.img_manager.get_whole_img(region.frame())
                 if not foreground_layer:
@@ -505,7 +696,7 @@ class DataGenerator(object):
                 timg.rotate(-consecutive_regions[0].angle_deg_cw, consecutive_regions[0].centroid())
 
                 if idxs_augmentation is not None:
-                    if dataset == 'img1':
+                    if image_idx == 1:
                         timg.rotate(rot_deg, region.centroid())  # simulate rotation movement
                     aug_img = self._project.img_manager.get_whole_img(aug_region.frame())
                     if foreground_layer:
@@ -515,21 +706,19 @@ class DataGenerator(object):
                                         theta_deg, phi_deg, aug_shift_px)
                 else:
                     img = timg.get_img()
-                img_crop, delta_xy = safe_crop(img, consecutive_regions[0].centroid()[::-1], img_size_px)
+                img_crop, delta_xy = safe_crop(img, consecutive_regions[0].centroid()[::-1],
+                                               self.params['regression_tracking_image_size_px'])
 
-                if h5_group is not None:
-                    h5_group[dataset][hdf5_start_idx + i] = img_crop
-                else:
-                    ##
+                images.append(img_crop)
+
+                if isinstance(dataset, DummyDataset):
                     plt.imshow(save_prediction_img(None, 1, img_crop,
                                                    timg.get_model_copy().move(-delta_xy).to_dict(),
                                                    title=dataset))
                     plt.show()
-                    ##
 
-            if csv_writer is not None:
-                model = timg.get_model_copy().move(-delta_xy)
-                csv_writer.writerow({
+            model = timg.get_model_copy().move(-delta_xy)
+            dataset.add_item(images, {
                     'x': model.x,
                     'y': model.y,
                     'major': model.major,
