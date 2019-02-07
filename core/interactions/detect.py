@@ -717,21 +717,26 @@ def _load(tracker_dir, project_dir):
     return detector, gt
 
 
-def track_frame_range(start_tracklets, frame_start, frame_end, detector, out_dir):
-    if frame_start == 0:
-        frame_start = 1
-    regions_tracklets = [list(RegionChunk(t, detector.project.gm, detector.project.rm)) for t in start_tracklets]
+def track_frame_range(initial_tracklets, frame_start, frame_end, detector, out_dir=None):
+    assert frame_start != frame_end
+    if frame_start < frame_end:
+        step = 1
+    else:
+        step = -1
+    # if frame_start == 0:
+    #     frame_start = 1
+    regions_tracklets = [list(RegionChunk(t, detector.project.gm, detector.project.rm)) for t in initial_tracklets]
     # for regions in regions_tracklets:
     #     head_fix(regions)
     ellipses = [Ellipse.from_region(next(r for r in regions if r.frame() == frame_start)) for regions in regions_tracklets]
     predictions = [el.to_dict() for el in ellipses]
-    track_ids = range(len(start_tracklets))
+    track_ids = range(len(initial_tracklets))
     tracks = [[el] for el in ellipses]
     colors = list(itertools.islice(itertools.cycle(['red', 'blue', 'green', 'yellow', 'white', 'cyan']),
-                                   len(start_tracklets)))
+                                   len(initial_tracklets)))
     img_shape = detector.project.img_manager.get_whole_img(0).shape
-    templates = [None] * len(start_tracklets)
-    for frame in tqdm(range(frame_start, frame_end + 1), initial=frame_start, total=detector.project.video_end_t):
+    templates = [None] * len(initial_tracklets)
+    for frame in tqdm(range(frame_start + step, frame_end, step)):
         cur_predictions = []
         for i, (pred, template_img) in enumerate(zip(predictions, templates)):
             current_prediction, _, _, img_crop = detector.detect_single_frame(frame, pred, template_img)
@@ -766,38 +771,61 @@ def track_frame_range(start_tracklets, frame_start, frame_end, detector, out_dir
     return tracks
 
 
-def track_video(tracker_dir, project_dir, out_dir):
+def generate_tracking_ranges(complete_sets, video_start_frame, video_end_frame, forward=True):
+    tracking_ranges = []
+    assert len(complete_sets) > 0
+    for i, (cs0, cs1) in enumerate(zip(complete_sets[:-1], complete_sets[1:])):
+        if forward:
+            tracking_ranges.extend([
+                {'from': cs0.start_frame, 'to': cs0.end_frame, 'tracklets': cs0.tracklets},
+                {'from': cs0.end_frame, 'to': cs1.start_frame, 'tracklets': cs0.tracklets}
+                ])
+        else:
+            tracking_ranges.extend([
+                {'from': cs0.end_frame, 'to': cs0.start_frame, 'tracklets': cs0.tracklets},
+                {'from': cs1.start_frame, 'to': cs0.end_frame, 'tracklets': cs1.tracklets},
+                ])
+
+    last_cs = complete_sets[-1]
+    if forward:
+        tracking_ranges.extend([
+            {'from': last_cs.start_frame, 'to': last_cs.end_frame, 'tracklets': last_cs.tracklets},
+            {'from': last_cs.end_frame, 'to': video_end_frame, 'tracklets': last_cs.tracklets}
+        ])
+    else:
+        tracking_ranges.append({'from': last_cs.end_frame, 'to': last_cs.start_frame, 'tracklets': last_cs.tracklets})
+        first_cs = complete_sets[0]
+        tracking_ranges.insert(0,
+                {'from': first_cs.start_frame, 'to': video_start_frame, 'tracklets': first_cs.tracklets})
+        tracking_ranges = tracking_ranges[::-1]
+    return [tr for tr in tracking_ranges if tr['from'] != tr['to']]
+
+
+def track_video(tracker_dir, project_dir, out_dir, forward=True):
     try:
         os.makedirs(out_dir)
     except OSError:
         pass
     detector, gt = _load(tracker_dir, project_dir)
 
-    complete_sets = list(detector.project.chm.complete_set_gen(detector.project))
-    cs_ranges = []
-    for cs in complete_sets:
-        frame_from = max([t.start_frame(detector.project.gm) for t in cs])
-        frame_to = min([t.end_frame(detector.project.gm) for t in cs])
-        cs_ranges.append((frame_from, frame_to))
+    tracking_ranges = generate_tracking_ranges(list(detector.project.chm.get_complete_sets(detector.project)),
+                                               detector.project.video_start_t, detector.project.video_end_t,
+                                               forward)
+    all_tracks = [track_frame_range(tr['tracklets'], tr['from'], tr['to'], detector) for tr in
+                  tqdm(tracking_ranges, desc='tracking ranges')]
+    import pickle
+    pickle.dump(all_tracks, open('all_tracks.pkl', 'wb'))
 
-    all_tracks = []
-    # import pickle
-    for i, (range1, range2) in enumerate(zip(cs_ranges[:-1], cs_ranges[1:])):
-        complete_tracks = track_frame_range(complete_sets[i], range1[0], range2[0] - 1, detector, out_dir)
-        all_tracks.append(complete_tracks)
-        # pickle.dump(all_tracks, open('all_tracks.pkl', 'wb'))
-    complete_tracks = track_frame_range(complete_sets[-1], cs_ranges[-1][0], detector.project.video_end_t, detector, out_dir)
-    all_tracks.append(complete_tracks)
-    # pickle.dump(all_tracks, open('all_tracks.pkl', 'wb'))
-    # all_tracks = pickle.load(open('all_tracks.pkl', 'rb'))
-
+    if forward:
+        step = 1
+    else:
+        step = -1
     complete_tracks = all_tracks[0]
     num_objects = len(complete_tracks)
-
     for tracks in all_tracks[1:]:
         first_frame = tracks[0][0].frame
-        last_detections = [t[-1] for t in complete_tracks if t[-1].frame == first_frame - 1]
-        last_detections_idx = [i for i, t in enumerate(complete_tracks) if t[-1].frame == first_frame - 1]
+        last_detections = [t[-1] for t in complete_tracks if t[-1].frame == first_frame - step]
+        last_detections_idx = [i for i, t in enumerate(complete_tracks) if t[-1].frame == first_frame - step]
         first_detections = [t[0] for t in tracks]
 
         dist_matrix = np.vectorize(lambda i, j: np.linalg.norm(last_detections[i].xy - first_detections[j].xy))(
@@ -904,3 +932,7 @@ if __name__ == '__main__':
         'dense': track_dense,
         'video': track_video,
     })
+
+# example arguments:
+#       dense /datagrid/personal/smidm1/ferda/experiments_regtrack/models/190112_1436_mobilenet_siamese_bwd_fg/ /datagrid/ferda/projects/1_initial_projects_190201_open_format/180810_2359_Cam1_ILP_cardinality/ /datagrid/personal/smidm1/ferda/experiments_regtrack/dense/Cam1_clip/190201_mobilenet_siamese_bwd_bg
+#       video /datagrid/personal/smidm1/ferda/experiments_regtrack/models/190111_2052_mobilenet_siamese_fg/ /datagrid/ferda/projects/1_initial_projects_190201_open_format/180810_2359_Cam1_ILP_cardinality out False
