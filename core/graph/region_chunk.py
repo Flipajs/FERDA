@@ -1,7 +1,7 @@
 __author__ = 'flipajs'
 
 
-class RegionChunk:
+class RegionChunk(object):
     """
     this class is kind of wrapper which simplifies access to the regions when one gets chunk (which stores
     vertices_ids if >= 0 else regions ids.

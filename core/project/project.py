@@ -28,7 +28,7 @@ class ProjectNotFoundError(OSError):
         super(ProjectNotFoundError, self).__init__(*args, **kwargs)
 
 
-class Project:
+class Project(object):
     """
     This class encapsulates one experiment using FERDA
     """
