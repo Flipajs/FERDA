@@ -2,11 +2,12 @@ import cv2
 import numpy as np
 
 from core.region.region import Region
+from core.region.shape import Shape
 from core.region.ep import p2e, e2p, column
 from utils.angles import angle_absolute_error_direction_agnostic, angle_absolute_error
 
 
-class Ellipse(object):
+class Ellipse(Shape):
     @classmethod
     def from_region(cls, region):
         yx = region.centroid()
@@ -28,24 +29,28 @@ class Ellipse(object):
                    region_dict['0_minor'], frame)
 
     def __init__(self, x=None, y=None, angle_deg=None, major=None, minor=None, frame=None):
+        super(Ellipse, self).__init__(frame)
         self.x = x
         self.y = y
         self.angle_deg = angle_deg  # positive means clockwise (image axes)
         self.major = major  # == 2 * semi major axis
         self.minor = minor  # == 2 * semi minor axis
-        self.frame = frame
 
     def __str__(self):
         return('Ellipse xy ({x:.1f},{y:.1f}), angle {angle_deg:.1f} deg, major {major:.1f} px, minor {minor:.1f} px, '
                'frame {frame}'.format(**self.__dict__))
 
-    def to_dict(self):
+    def to_dict(self, idx=0):
+        if idx is None:
+            idx_str = ''
+        else:
+            idx_str = str(idx) + '_'
         return ({
-            '0_x': self.x,
-            '0_y': self.y,
-            '0_angle_deg_cw': self.angle_deg,
-            '0_major': self.major,
-            '0_minor': self.minor,
+            '{}x'.format(idx_str): self.x,
+            '{}y'.format(idx_str): self.y,
+            '{}angle_deg_cw'.format(idx_str): self.angle_deg,
+            '{}major'.format(idx_str): self.major,
+            '{}minor'.format(idx_str): self.minor,
         })
 
     @property
@@ -57,25 +62,14 @@ class Ellipse(object):
         self.x = xy[0]
         self.y = xy[1]
 
-    @property
-    def area(self):
-        return cv2.contourArea(self.to_poly())
-
     def to_poly(self):
         return cv2.ellipse2Poly((int(self.x), int(self.y)), (int(self.major / 2.), int(self.minor / 2.)),
                                 int(self.angle_deg), 0, 360, 30)
 
-    def get_overlap(self, el_region):
-        if isinstance(el_region, Ellipse):
-            el_region = el_region.to_poly()
-        area, poly = cv2.intersectConvexConvex(self.to_poly(), el_region)
-        #         poly = poly.reshape((-1, 2))
-        return area
-
-    def is_close(self, ellipse, thresh_px=None):
+    def is_close(self, another_object, thresh_px=None):
         if thresh_px is None:
             thresh_px = self.major / 10
-        return np.linalg.norm(self.xy - ellipse.xy) < thresh_px
+        return super(Ellipse, self).is_close(another_object, thresh_px)
 
     def is_angle_close(self, ellipse, thresh_deg=10, direction_agnostic=False):
         if direction_agnostic:
