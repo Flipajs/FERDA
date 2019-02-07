@@ -33,8 +33,8 @@ def get_eigenfaces(chunk_matrix):
 
 def get_chunks_regions(ch, chm, gm):
     chunk = chm[ch]
-    chunk_start = chunk.start_frame(gm)
-    chunk_end = chunk.end_frame(gm)
+    chunk_start = chunk.start_frame()
+    chunk_end = chunk.end_frame()
     while chunk_start <= chunk_end:
         yield project.gm.region(chunk[chunk_start])
         chunk_start += 1
