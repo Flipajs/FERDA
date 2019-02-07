@@ -304,14 +304,14 @@ class CompleteSetMatching:
         all_intersecting_t = list(self.p.chm.singleid_tracklets_intersecting_t_gen(t, self.p.gm))
         # skip already decided...
         all_intersecting_t = filter(lambda x: len(x.P) == 0, all_intersecting_t)
-        t_start = t.start_frame(self.p.gm)
-        t_end = t.end_frame(self.p.gm)
+        t_start = t.start_frame()
+        t_end = t.end_frame()
         #       for simplicity - find frame with biggest # of intersecting undecided tracklets
         important_frames = {t_start: 1, t_end: 1}
         important_frames_score = {t_start: len(t), t_end: len(t)}
         for t_ in all_intersecting_t:
-            ts = t_.start_frame(self.p.gm)
-            te = t_.end_frame(self.p.gm)
+            ts = t_.start_frame()
+            te = t_.end_frame()
             if ts >= t_start:
                 important_frames.setdefault(ts, 0)
                 important_frames_score.setdefault(ts, 0)
@@ -572,7 +572,7 @@ class CompleteSetMatching:
         return track1
 
     def add_to_N_set(self, track_id, tracklet):
-        for t in self.p.chm.chunks_in_interval(tracklet.start_frame(self.p.gm), tracklet.end_frame(self.p.gm)):
+        for t in self.p.chm.chunks_in_interval(tracklet.start_frame(), tracklet.end_frame()):
             if t.is_single() and t != tracklet:
                 t.N.add(track_id)
 
@@ -747,7 +747,7 @@ class CompleteSetMatching:
 
                     frame = min([self.track_end_frame(t) for t in singles_group]) + 1
                 else:
-                    frame = min([t.end_frame(self.p.gm) for t in group]) + 1
+                    frame = min([t.end_frame() for t in group]) + 1
 
                 i += 1
                 pbar.update(frame - old_frame)
@@ -868,17 +868,17 @@ class CompleteSetMatching:
         return perm, quality
 
     def track_end_frame(self, track):
-        return max([t.end_frame(self.p.gm) for t in self.tracks[track]])
+        return max([t.end_frame() for t in self.tracks[track]])
 
     def track_start_frame(self, track):
-        return min([t.start_frame(self.p.gm) for t in self.tracks[track]])
+        return min([t.start_frame() for t in self.tracks[track]])
 
     def track_end_node(self, track):
         end_node = None
         end_frame = 0
 
         for t in self.tracks[track]:
-            t_end_f = t.end_frame(self.p.gm)
+            t_end_f = t.end_frame()
             if t_end_f > end_frame:
                 end_frame = t_end_f
                 end_node = t.end_node()
@@ -890,7 +890,7 @@ class CompleteSetMatching:
         start_frame = np.inf
 
         for t in self.tracks[track]:
-            t_start_f = t.start_frame(self.p.gm)
+            t_start_f = t.start_frame()
             if t_start_f < start_frame:
                 start_frame = t_start_f
                 start_node = t.start_node()
@@ -979,7 +979,7 @@ class CompleteSetMatching:
 
     def get_mean_descriptor(self, tracklet):
         descriptors = []
-        for r_id in tracklet.rid_gen(self.p.gm):
+        for r_id in tracklet.rid_gen():
             if r_id in self.descriptors:
                 descriptors.append(self.descriptors[r_id])
 
@@ -1178,7 +1178,7 @@ class CompleteSetMatching:
         X = []
         r_ids = []
 
-        r_ids_arr = tracklet.rid_gen(self.p.gm)
+        r_ids_arr = tracklet.rid_gen()
 
         # r_ids_arr = []
         # import os
@@ -1278,7 +1278,7 @@ class CompleteSetMatching:
 
         max_d = 0
         for i in range(len(tracklet)):
-            r = tracklet.get_region(self.p.gm, i)
+            r = tracklet.get_region(i)
             max_d = max(max_d, self.dist(prev_region, r))
 
             prev_region = r
@@ -1363,7 +1363,7 @@ class CompleteSetMatching:
                 # TODO
 
 
-            start_frame = t.start_frame(self.p.gm)
+            start_frame = t.start_frame()
 
             rs = {}
             for id_ in range(cardinality):
@@ -1404,7 +1404,7 @@ class CompleteSetMatching:
                     # PRE tracklets
                     pre_tracklets = self.p.chm.tracklets_in_frame(start_frame - 1)
                     # only tracklets which end before interaction are possible options
-                    pre_tracklets = filter(lambda x: x.end_frame(self.p.gm) == start_frame - 1 and x.is_single(), pre_tracklets)
+                    pre_tracklets = filter(lambda x: x.end_frame() == start_frame - 1 and x.is_single(), pre_tracklets)
 
                     # TODO: do optimization instead of greedy approach
                     best_start_t = None
@@ -1419,7 +1419,7 @@ class CompleteSetMatching:
 
                     # POST tracklets
                     post_tracklets = self.p.chm.tracklets_in_frame(end_frame + 1)
-                    post_tracklets = filter(lambda x: x.start_frame(self.p.gm) == end_frame + 1 and x.is_single(), post_tracklets)
+                    post_tracklets = filter(lambda x: x.start_frame() == end_frame + 1 and x.is_single(), post_tracklets)
 
                     best_end_t = None
                     best_d = np.inf

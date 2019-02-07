@@ -75,7 +75,7 @@ class InteractionDetector:
         # self._detect_single_frame = memory.cache(self._detect_single_frame, ignore=['self'])  # uncomment to enable caching
 
     def _add_tracklet_to_graph(self, t, graph, vertices):
-        for t2 in self.project.gm.get_incoming_tracklets(t.start_vertex(self.project.gm)):
+        for t2 in self.project.gm.get_incoming_tracklets(t.start_vertex()):
             if t2.is_multi() or t2.is_single():
                 if t2.id() not in vertices:
                     v = graph.add_vertex()
@@ -92,7 +92,7 @@ class InteractionDetector:
             else:
                 print(t2)
 
-        for t2 in self.project.gm.get_outcoming_tracklets(t.end_vertex(self.project.gm)):
+        for t2 in self.project.gm.get_outcoming_tracklets(t.end_vertex()):
             if t2.is_multi() or t2.is_single():
                 if t2.id() not in vertices:
                     v = graph.add_vertex()
@@ -178,8 +178,8 @@ class InteractionDetector:
     def track_single_object(self, starting_region, multi_tracklet=None, forward=True, max_frames=np.inf):
         prediction = starting_region.to_dict()
         if multi_tracklet is not None:
-            start_frame = multi_tracklet.start_frame(self.project.gm)
-            end_frame = multi_tracklet.end_frame(self.project.gm)
+            start_frame = multi_tracklet.start_frame()
+            end_frame = multi_tracklet.end_frame()
         else:
             start_frame = starting_region.frame
             assert not np.isinf(max_frames)
@@ -202,7 +202,7 @@ class InteractionDetector:
             prediction_r.frame = frame
 
             if multi_tracklet is not None:
-                multi_region = multi_tracklet.get_region_in_frame(self.project.gm, frame)
+                multi_region = multi_tracklet.get_region_in_frame(frame)
                 # img = self.project.img_manager.get_whole_img(frame)
                 # multi_poly = get_hull_poly(multi_region)
                 # cv2.polylines(img, [prediction_r.to_poly()], True, (255, 0, 0), 1)
@@ -294,7 +294,7 @@ class InteractionDetector:
         else:
             adjacent_region_idx = 0
 
-        regions_path = [Ellipse.from_region(single_tracklet.get_region(self.project.gm, adjacent_region_idx))]
+        regions_path = [Ellipse.from_region(single_tracklet.get_region(adjacent_region_idx))]
         processed_tracklets = []
         track_recursive(v, graph, regions_path, processed_tracklets, forward)
         regions_path = regions_path[1:]  # remove adjacent single_tracklet region
@@ -409,28 +409,28 @@ class InteractionDetector:
         for v in graph.vertices():
             t = graph.vp.tracklet[v]
             if graph.vp.category[v] == 'multi':
-                rois.extend([r.roi() for r in t.r_gen(self.project.gm, self.project.rm)])
+                rois.extend([r.roi() for r in t.r_gen(self.project.rm)])
             elif graph.vp.category[v] == 'in':
-                rois.append(t.get_region(self.project.gm, -1).roi())
+                rois.append(t.get_region(-1).roi())
             elif graph.vp.category[v] == 'out':
-                rois.append(t.get_region(self.project.gm, 0).roi())
+                rois.append(t.get_region(0).roi())
             elif graph.vp.category[v] == 'in_out':
-                rois.append(t.get_region(self.project.gm, 0).roi())
-                rois.append(t.get_region(self.project.gm, -1).roi())
+                rois.append(t.get_region(0).roi())
+                rois.append(t.get_region(-1).roi())
             else:
                 assert False
         roi_union = reduce(lambda x, y: x.union(y), rois)
         incoming, outcoming, multi = self.get_tracklets_from_dense(graph)
         try:
-            start_frame = min([t.end_frame(self.project.gm) for t in incoming])
+            start_frame = min([t.end_frame() for t in incoming])
         except ValueError:
             # dense sections without incoming single tracklets - on the start of the video sequence
-            start_frame = min([t.end_frame(self.project.gm) for t in multi])
+            start_frame = min([t.end_frame() for t in multi])
         try:
-            end_frame = max([t.start_frame(self.project.gm) for t in outcoming])
+            end_frame = max([t.start_frame() for t in outcoming])
         except ValueError:
             # dense sections without outcoming single tracklets - on the end of the video sequence
-            end_frame = max([t.start_frame(self.project.gm) for t in multi])
+            end_frame = max([t.start_frame() for t in multi])
         return roi_union, (start_frame, end_frame)
 
     def visualize_single_tracklet(self, regions, gt, out_dir):
@@ -465,7 +465,7 @@ class InteractionDetector:
             for t in self.project.chm.tracklets_in_frame(frame):
                 if t.is_origin_interaction():
                     continue
-                r = t.get_region_in_frame(self.project.gm, frame)
+                r = t.get_region_in_frame(frame)
                 yx = r.contour_without_holes()
                 if t.is_single():
                     color = 'white'
@@ -506,13 +506,13 @@ class InteractionDetector:
             regions_path = self.track_single_object_in_dense_subgraph(graph, ids, t, forward=True)
             fwd.append({'regions': regions_path,
                         'in_tracklet': t,
-                        'in_region': t.get_region(self.project.gm, -1)})
+                        'in_region': t.get_region(-1)})
         bwd = []
         for t in tqdm(outcoming, desc='outcoming'):
             regions_path = self.track_single_object_in_dense_subgraph(graph, ids, t, forward=False)
             bwd.append({'regions': regions_path,
                         'out_tracklet': t,
-                        'out_region': t.get_region(self.project.gm, 0)})
+                        'out_region': t.get_region(0)})
 
         if len(bwd) != 0 and len(fwd) != 0:
             # np.fromfunction(np.vectorize(lambda i, j: min_dist(fwd[i[0]], bwd[j[1]])), (len(fwd), len(bwd)))
@@ -860,13 +860,13 @@ def track_multi_tracklets(tracker_dir, project_dir, out_dir):
         incoming, outcoming, _ = detector.get_tracklets_from_dense(dense['graph'])
         try:
             # min_frame = min([t.end_frame(detector.project.gm) for t in incoming])
-            max_frame = max([t.start_frame(detector.project.gm) for t in outcoming])
+            max_frame = max([t.start_frame() for t in outcoming])
         except ValueError:
             continue
         for j, tracklet in enumerate(tqdm(incoming, desc='incoming tracklets')):  # [t for t in incoming if t.start_frame(detector.project.gm) == min_frame]):
             regions, last_frame, success = detector.track_single_object(
-                Ellipse.from_region(tracklet.get_region(detector.project.gm, -1)),
-                forward=True, max_frames=max_frame - tracklet.end_frame(detector.project.gm))  # max_frame-min_frame
+                Ellipse.from_region(tracklet.get_region(-1)),
+                forward=True, max_frames=max_frame - tracklet.end_frame())  # max_frame-min_frame
             detector.visualize_single_tracklet(regions, gt, join(out_dir, '%03d_%d' % (i, j)))
         break
 

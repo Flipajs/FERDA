@@ -429,7 +429,7 @@ class DataGenerator(object):
             if write_masks:
                 mask = np.zeros(shape=img_shape[:2], dtype=np.uint8)
                 for t in self._project.chm.tracklets_in_frame(frame):
-                    r = t.get_region_in_frame(self._project.gm, frame)
+                    r = t.get_region_in_frame(frame)
                     yx = r.contour_without_holes()
                     if single_color:
                         color = 255
@@ -467,8 +467,8 @@ class DataGenerator(object):
             h5_group_test = None
 
         multi_tracklets = [t for t in self._project.chm.chunk_gen() if t.is_multi()]
-        frames_with_multi = set(itertools.chain(*[range(t.start_frame(self._project.gm),
-                                                        t.end_frame(self._project.gm) + 1) for t in multi_tracklets]))
+        frames_with_multi = set(itertools.chain(*[range(t.start_frame(),
+                                                        t.end_frame() + 1) for t in multi_tracklets]))
         frames_without_multi = list(set(range(self._project.video_start_t,
                                               self._project.video_end_t + 1)) - frames_with_multi)
         frames_selected = random.sample(frames_without_multi, int(n * (1 + test_fraction)))

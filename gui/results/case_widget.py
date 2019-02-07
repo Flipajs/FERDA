@@ -272,8 +272,8 @@ class CaseWidget(QtGui.QWidget):
 
         is_merged = False
         if ch:
-            ch_start = ch.start_frame(self.project.gm)
-            ch_end = ch.end_frame(self.project.gm)
+            ch_start = ch.start_frame()
+            ch_end = ch.end_frame()
 
             ch_start_vertex = self.project.gm.g.vertex(ch.start_node())
 

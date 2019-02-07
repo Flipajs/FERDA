@@ -796,7 +796,7 @@ def expand_based_on_movement_model(p):
 
         if t.length() > 1:
             while True:
-                v = t.start_vertex(p.gm)
+                v = t.start_vertex()
                 if v.in_degree() > 0:
                     options = []
 
@@ -813,14 +813,14 @@ def expand_based_on_movement_model(p):
 
                     if ratio > THRESH:
                         v2 = options[0][1]
-                        t.append_left(v2, p.gm)
+                        t.append_left(v2)
                     else:
                         break
                 else:
                     break
 
             while True:
-                v = t.end_vertex(p.gm)
+                v = t.end_vertex()
                 if v.out_degree() > 0:
                     options = []
 
@@ -837,7 +837,7 @@ def expand_based_on_movement_model(p):
 
                     if ratio > THRESH:
                         v2 = options[0][1]
-                        t.append_right(v2, p.gm)
+                        t.append_right(v2)
                     else:
                         break
                 else:
@@ -1077,7 +1077,7 @@ def solve_nearby_passings(p):
 
 
 def add_single_chunks(p, frames):
-    p.chm.reset_itree(p.gm)
+    p.chm.reset_itree()
 
     for n in p.gm.g.vertices():
         r = p.gm.region(n)
@@ -1089,7 +1089,7 @@ def add_single_chunks(p, frames):
 
         p.chm.new_chunk([int(n)], p.gm)
 
-    p.chm.reset_itree(p.gm)
+    p.chm.reset_itree()
 
     with open('/Users/flipajs/Documents/wd/FERDA/Cam1_playground/temp/part0_tracklets_expanded.pkl', 'wb') as f:
         pic = pickle.Pickler(f)
@@ -1110,7 +1110,7 @@ def build_tracklets_from_others(p):
                 if p.gm.get_chunk(v2) is None:
                     p.chm.new_chunk([int(v), int(v2)], p.gm)
 
-    p.chm.reset_itree(p.gm)
+    p.chm.reset_itree()
 
     with open('/Users/flipajs/Documents/wd/FERDA/Cam1_playground/temp/part0_tracklets_expanded.pkl', 'wb') as f:
         pic = pickle.Pickler(f)
@@ -1163,7 +1163,7 @@ def decide_one2one(p):
     solver.confirm_edges(confirm_later)
 
     p.gm.update_nodes_in_t_refs()
-    p.chm.reset_itree(p.gm)
+    p.chm.reset_itree()
 
 
 def tracklet_stats(p):
@@ -1408,7 +1408,7 @@ def process_project(p):
     load_p_checkpoint(p, 'edge_cost_updated')
 
     p.gm.update_nodes_in_t_refs()
-    p.chm.reset_itree(p.gm)
+    p.chm.reset_itree()
     #
     solver = Solver(p)
 
@@ -1434,7 +1434,7 @@ def process_project(p):
         decide_one2one(p)
 
         p.gm.update_nodes_in_t_refs()
-        p.chm.reset_itree(p.gm)
+        p.chm.reset_itree()
 
         save_p_checkpoint(p, 'eps_edge_filter')
         tracklet_stats(p)
@@ -1534,7 +1534,7 @@ if __name__ == '__main__':
         else:
             load_p_checkpoint(p, 'isolation_score')
             p.gm.update_nodes_in_t_refs()
-            p.chm.reset_itree(p.gm)
+            p.chm.reset_itree()
 
             # TODO: deal with noise...
             d = hickle.load('/Users/flipajs/Desktop/temp/prepare_region_cardinality_samples/labels.pkl')
@@ -1578,7 +1578,7 @@ if __name__ == '__main__':
             decide_one2one(p)
 
             # p.gm.update_nodes_in_t_refs()
-            p.chm.reset_itree(p.gm)
+            p.chm.reset_itree()
 
             save_p_checkpoint(p, 'strongly_better_filter')
             tracklet_stats(p)
@@ -1682,7 +1682,7 @@ if __name__ == '__main__':
             # expand_based_on_movement_model(p)
             # add_single_chunks(p, set(range(100)))
 
-            p.chm.reset_itree(p.gm)
+            p.chm.reset_itree()
             # TODO: hack... no check for 1 to 1 assignment
             # build_tracklets_from_others(p)
 

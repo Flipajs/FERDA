@@ -11,10 +11,10 @@ class GhostTracklet(Chunk):
     def __len__(self):
         return self.end - self.start
 
-    def start_frame(self, gm=None):
+    def start_frame(self):
         return self.start
 
-    def end_frame(self, gm=None):
+    def end_frame(self):
         return self.end
 
     def __getitem__(self, item):

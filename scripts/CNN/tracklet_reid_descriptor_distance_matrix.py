@@ -44,7 +44,7 @@ def get_distance_matrix(project_path, gt_path):
     # add gt id to tracklets
     for t in tqdm.tqdm(tracklets):
         try:
-            gt_ids = [gt_matches[frame].index(t.id()) for frame in range(t.start_frame(p.gm), t.end_frame(p.gm))]
+            gt_ids = [gt_matches[frame].index(t.id()) for frame in range(t.start_frame(), t.end_frame())]
             if len(set(gt_ids)) == 1:
                 t.animal_id_ = gt_ids[0]
         except ValueError:

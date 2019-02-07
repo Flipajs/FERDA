@@ -262,8 +262,8 @@ class GraphVisualizer(QtGui.QWidget):
         ch = self.loader.project.chm[ch_id]
         if ch is None:
             raise AttributeError("Chunk with id {0} does not exist!".format(ch_id))
-        start_frame = ch.start_frame(self.loader.project.gm)
-        end_frame = ch.end_frame(self.loader.project.gm)
+        start_frame = ch.start_frame()
+        end_frame = ch.end_frame()
         if start_frame > self.last_frame or end_frame < self.first_frame:
             raise AttributeError("Chunk with id {0} out of range!".format(ch_id))
         if start_frame < self.first_frame:

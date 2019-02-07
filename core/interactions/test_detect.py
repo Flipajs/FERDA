@@ -22,14 +22,14 @@ class InteractionDetectorTestCase(unittest.TestCase):
         self.im = self.project.img_manager
         self.cm = self.project.chm
         self.tracklets_multi = [t for t in self.cm.chunk_gen() if t.is_multi()]
-        self.tracklets_two = [t for t in self.tracklets_multi if t.get_cardinality(self.gm) == 2]
+        self.tracklets_two = [t for t in self.tracklets_multi if t.get_cardinality() == 2]
         self.tracklets_two.sort(lambda x, y: cmp(len(x), len(y)), reverse=True)  # descending by tracklet length
         self.detector = InteractionDetector('/home/matej/prace/ferda/experiments/180830_1637_single_50')
         # assert len(self.detector.ti.PREDICTED_PROPERTIES) == 3
 
     def test_detect(self):
         t = np.random.choice(self.tracklets_two)
-        regions = list(t.r_gen(self.gm, self.rm))
+        regions = list(t.r_gen(self.rm))
         r = np.random.choice(regions)
         img = self.im.get_whole_img(r.frame())
         detections = self.detector.detect(img, r.centroid()[::-1])
@@ -37,7 +37,7 @@ class InteractionDetectorTestCase(unittest.TestCase):
 
     def test_single_detect(self):
         t = self.project.chm[3463]
-        r = t.get_region(self.project.gm, -1)
+        r = t.get_region(-1)
         img = self.im.get_whole_img(r.frame() + 1)
         detections = self.detector.detect_single(img, self.detector.region_to_dict(r))
 
@@ -45,7 +45,7 @@ class InteractionDetectorTestCase(unittest.TestCase):
     def get_detections(self, tracklet):
         images = []
         detections = []
-        for r in tracklet.r_gen(self.gm, self.rm):
+        for r in tracklet.r_gen(self.rm):
             img = self.im.get_whole_img(r.frame())
             pred = self.detector.detect(img, r.centroid()[::-1])
             for obj_i in range(2):
@@ -68,7 +68,7 @@ class InteractionDetectorTestCase(unittest.TestCase):
     def test_solve(self):
         # t = np.random.choice(self.tracklets_two)
         t = self.tracklets_two[13]
-        print t.solve_interaction(self.detector, self.gm, self.rm, self.im)
+        print t.solve_interaction(self.detector, self.rm, self.im)
 
 
 if __name__ == '__main__':

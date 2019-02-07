@@ -149,8 +149,8 @@ class GraphWidgetLoader(QtGui.QWidget):
             # replace tracklet ends with their ends in range
             # only tracklets can be partial
             r1, r2 = region_chunk[0], region_chunk[-1]
-            left_overlap = tracklet.start_frame(self.graph_manager) < frames[0]
-            right_overlap = tracklet.end_frame(self.graph_manager) > frames[-1]
+            left_overlap = tracklet.start_frame() < frames[0]
+            right_overlap = tracklet.end_frame() > frames[-1]
             c = self.assign_color(tracklet)
 
             if left_overlap or right_overlap:

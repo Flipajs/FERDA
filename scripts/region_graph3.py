@@ -715,7 +715,7 @@ class NodeGraphVisualizer(QtGui.QWidget):
 
         self.project.log.add(LogCategories.USER_ACTION, ActionNames.JOIN_CHUNKS, {'ch1': ch1, 'ch2': ch2})
 
-        ch1.merge_and_interpolate(ch2, self.solver)
+        ch1.merge_and_interpolate(ch2)
 
         self.picked_node = ch1.end_n
         self.update_view(n1, n2)

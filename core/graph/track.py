@@ -23,7 +23,7 @@ class Track(Chunk):
 
         # tracklets and spaces...
         self._data=[]
-        tracklets = sorted(tracklets, key=lambda x:x.start_frame(gm))
+        tracklets = sorted(tracklets, key=lambda x: x.start_frame())
 
         self.P = set()
         self.N = set()
@@ -37,9 +37,9 @@ class Track(Chunk):
                 return
 
         for t in tracklets:
-            sf = t.start_frame(gm)
+            sf = t.start_frame()
             if len(self._data):
-                ef = self._data[-1].end_frame(gm)
+                ef = self._data[-1].end_frame()
                 if ef + 1 != sf:
                     self._data.append(GhostTracklet(ef, sf - 1))
 
@@ -53,8 +53,8 @@ class Track(Chunk):
         self.color = self._data[0].color
         self.segmentation_class = self._data[0].segmentation_class
 
-        self.start = self._data[0].start_frame(gm)
-        self.end = self._data[-1].end_frame(gm)
+        self.start = self._data[0].start_frame()
+        self.end = self._data[-1].end_frame()
 
     def __str__(self):
         s = "Track --- id: "+str(self.id_)+" length: "+str(len(self))+"\n"
@@ -103,11 +103,11 @@ class Track(Chunk):
         return self._num_regions
 
     # gm is tracklet compability
-    def start_frame(self, gm=None):
+    def start_frame(self):
         return self.start
 
     # gm is tracklet compability
-    def end_frame(self, gm=None):
+    def end_frame(self):
         return self.end
 
     def add_tracklet(self, tracklet, gm):
@@ -122,31 +122,31 @@ class Track(Chunk):
     def __len__(self):
         return self.end - self.start + 1
 
-    def print_info(self, gm):
+    def print_info(self):
         s = "TRACKLET --- id: "+str(self.id_)+" length: "+str(len(self.nodes_))+"\n"
-        s += "\tstarts at: "+str(self.start_frame(gm))+" ends at: "+str(self.end_frame(gm))
+        s += "\tstarts at: " + str(self.start_frame()) + " ends at: " + str(self.end_frame())
 
         print s
 
-    def append_left(self, vertex, gm, undo_action=False):
+    def append_left(self, vertex, undo_action=False):
         warn("Not implemented for Track...")
 
-    def append_right(self, vertex, gm, undo_action=False):
+    def append_right(self, vertex, undo_action=False):
         warn("Not implemented for Track...")
 
-    def pop_first(self, gm, undo_action=False):
+    def pop_first(self, undo_action=False):
         warn("Not implemented for Track...")
 
-    def pop_last(self, gm, undo_action=False):
+    def pop_last(self, undo_action=False):
         warn("Not implemented for Track...")
 
-    def merge(self, ch2, gm, undo_action=False):
+    def merge(self, ch2):
         warn("Not implemented for Track...")
 
-    def merge_and_interpolate(self, ch2, gm, undo_action=False):
+    def merge_and_interpolate(self, ch2):
         warn("Not implemented for Track...")
 
-    def split_at(self, frame, gm):
+    def split_at(self, frame):
         warn("Not implemented for Track...")
 
     def id(self):
@@ -158,19 +158,19 @@ class Track(Chunk):
     def end_vertex_id(self):
         return self._data[-1].nodes_[-1]
 
-    def end_vertex(self, gm):
+    def end_vertex(self):
         return gm.g.vertex(self.end_vertex_id())
 
     def end_node(self):
         return self.end_vertex_id()
 
-    def start_vertex(self, gm):
+    def start_vertex(self):
         return gm.g.vertex(self.start_vertex_id())
 
     def start_node(self):
         return self._data[0].start_vertex_id()
 
-    def chunk_reconnect_(self, gm):
+    def chunk_reconnect_(self):
         warn("Not implemented for Track")
 
     def v_gen(self):
@@ -178,15 +178,15 @@ class Track(Chunk):
             for v in t.nodes_:
                 yield v
 
-    def rid_gen(self, gm):
+    def rid_gen(self):
         for t in self._data:
             for id_ in t.nodes_:
                 yield gm.region_id(id_)
 
-    def v_id_in_t(self, frame, gm):
+    def v_id_in_t(self, t):
         tracklet = self._tracklet(frame, gm)
 
-        frame = frame - self.start_frame(gm)
+        frame = frame - self.start_frame()
         if -1 < frame < len(tracklet.nodes_):
             return tracklet.nodes_[frame]
         else:
@@ -195,13 +195,13 @@ class Track(Chunk):
     def _tracklet(self, frame, gm):
         # TODO: improve...
         for t in self._data:
-            if frame >= t.start_frame(gm) and frame <= t.end_frame(gm):
+            if frame >= t.start_frame() and frame <= t.end_frame():
                 return t
 
-    def r_id_in_t(self, frame, gm):
+    def r_id_in_t(self, t):
         tracklet = self._tracklet(frame, gm)
         # TODO: find proper chunk...
-        return gm.region_id(tracklet.v_id_in_t(frame, gm))
+        return gm.region_id(tracklet.v_id_in_t(frame))
 
     def is_tracklet(self):
         return False

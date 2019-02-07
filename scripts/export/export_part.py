@@ -105,7 +105,7 @@ class Exporter:
                 continue
 
             rch = RegionChunk(ch, self.gm, self.rm)
-            d = self.init_struct_(rch[0], ch.end_frame(self.gm))
+            d = self.init_struct_(rch[0], ch.end_frame())
 
             for r in rch.regions_gen():
                 self.add_line_mat(d, r)

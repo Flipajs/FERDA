@@ -180,7 +180,7 @@ class LearningProcess:
             #     if len(t) < 10:
             #         continue
 
-                r_ids = [id_ for id_ in t.rid_gen(self.p.gm)]
+                r_ids = [id_ for id_ in t.rid_gen()]
 
                 ff = []
                 for fm in self.fms:
@@ -435,7 +435,7 @@ class LearningProcess:
 
         values = None
         region = None
-        for frame in range(tracklet.start_frame(self.p.gm), tracklet.end_frame(self.p.gm) + 1):
+        for frame in range(tracklet.start_frame(), tracklet.end_frame() + 1):
             if frame in self.GT:
                 values = self.GT[frame]
                 rch = RegionChunk(tracklet, self.p.gm, self.p.rm)
@@ -466,8 +466,8 @@ class LearningProcess:
         best_value = -1
         for t_id in self.undecided_tracklets:
             tracklet = self.p.chm[t_id]
-            in_time = set(self.p.chm.chunks_in_interval(tracklet.start_frame(self.p.gm),
-                                                        tracklet.end_frame(self.p.gm)))
+            in_time = set(self.p.chm.chunks_in_interval(tracklet.start_frame(),
+                                                        tracklet.end_frame()))
             # find tracklet which overlaps with max number of other tracklets
             if strategy == 'max_tracklets':
                 val = len(in_time)
@@ -476,11 +476,11 @@ class LearningProcess:
                 min_t = np.inf
                 max_t = 0
                 for t in in_time:
-                    if t.start_frame(self.p.gm) < min_t:
-                        min_t = t.start_frame(self.p.gm)
+                    if t.start_frame() < min_t:
+                        min_t = t.start_frame()
 
-                    if t.end_frame(self.p.gm) > max_t:
-                        max_t = t.start_frame(self.p.gm)
+                    if t.end_frame() > max_t:
+                        max_t = t.start_frame()
 
                 val = max_t - min_t
 
@@ -525,7 +525,7 @@ class LearningProcess:
 
     def assembly_tracklet_probs(self, t):
         probs = []
-        for r_id in t.rid_gen(self.p.gm):
+        for r_id in t.rid_gen():
             if r_id in self.cnn_results_map:
                 if r_id not in self.not_reliable_rids:
                     probs.append(self.cnn_results_map[r_id])
@@ -846,7 +846,7 @@ class LearningProcess:
         try:
             if self.classifier_name == CNN_SOFTMAX:
                 probs = []
-                for r_id in ch.rid_gen(self.p.gm):
+                for r_id in ch.rid_gen():
                     if r_id in self.cnn_results_map:
                         probs.append(self.cnn_results_map[r_id])
                     else:
@@ -1134,7 +1134,7 @@ class LearningProcess:
 
             # TODO: if track... ? more advanced chunks in interval
             # set of all other relevant regions (single regions in tracklet timespan overlap)
-            C = self.p.chm.chunks_in_interval(tracklet.start_frame(self.p.gm), tracklet.end_frame(self.p.gm))
+            C = self.p.chm.chunks_in_interval(tracklet.start_frame(), tracklet.end_frame())
 
             term1 = 1
             term2 = 0
@@ -1223,7 +1223,7 @@ class LearningProcess:
             p1 = self.get_p1(x_, k)
 
             # set of all other relevant regions (single regions in tracklet timespan overlap)
-            C = self.p.chm.chunks_in_interval(tracklet.start_frame(self.p.gm), tracklet.end_frame(self.p.gm))
+            C = self.p.chm.chunks_in_interval(tracklet.start_frame(), tracklet.end_frame())
 
             term1 = 1
             term2 = 0
@@ -1339,8 +1339,8 @@ class LearningProcess:
         if id_ is None:
             id_ = self.__DEBUG_get_answer_from_GT(tracklet)
 
-        in_time = set(self.p.chm.chunks_in_interval(tracklet.start_frame(self.p.gm),
-                                                    tracklet.end_frame(self.p.gm)))
+        in_time = set(self.p.chm.chunks_in_interval(tracklet.start_frame(),
+                                                    tracklet.end_frame()))
 
         conflicts = []
         for t in in_time:
@@ -1436,7 +1436,7 @@ class LearningProcess:
         if self.id_N_propagate:
             if not skip_out:
                 # update all outcoming
-                for v_out in tracklet.end_vertex(self.p.gm).out_neighbors():
+                for v_out in tracklet.end_vertex().out_neighbors():
                     t_ = self.p.gm.get_chunk(v_out)
 
                     if len(t_.P) > 0:
@@ -1452,7 +1452,7 @@ class LearningProcess:
 
             if not skip_in:
                 # update all incoming
-                for v_in in tracklet.start_vertex(self.p.gm).in_neighbors():
+                for v_in in tracklet.start_vertex().in_neighbors():
                     t_ = self.p.gm.get_chunk(v_in)
 
                     if len(t_.P) > 0:
@@ -1483,7 +1483,7 @@ class LearningProcess:
         return len(self.all_ids) - 1 == len(tracklet.N)
 
     def print_tracklet(self, tracklet):
-        tracklet.print_info(self.p.gm)
+        tracklet.print_info()
         try:
             print "\tGT id: ", self.__DEBUG_get_answer_from_GT(tracklet)
         except:
@@ -1607,7 +1607,7 @@ class LearningProcess:
             if type == 'P':
                 self.assign_identity(id_, tracklet, learn=True, user=False, gt=True)
 
-                for r_id in tracklet.rid_gen(self.p.gm):
+                for r_id in tracklet.rid_gen():
                     region_X.append(self.get_appearance_features(self.p.rm[r_id]))
 
             elif type == 'N':
@@ -1707,7 +1707,7 @@ class LearningProcess:
                 pass
 
         if self.verbose > 2:
-            print "ASSIGNING ID: ", id_, " to tracklet: ", tracklet.id(), "length: ", tracklet.length(), "start: ", tracklet.start_frame(self.p.gm), tracklet.end_frame(self.p.gm)
+            print "ASSIGNING ID: ", id_, " to tracklet: ", tracklet.id(), "length: ", tracklet.length(), "start: ", tracklet.start_frame(), tracklet.end_frame()
             try:
                 print "\t\tcertainty: ", self.tracklet_certainty[tracklet.id()], " measurements: ", self.tracklet_measurements[tracklet.id()]
             except:
@@ -1969,8 +1969,8 @@ class LearningProcess:
                         ti = self.p.chm[t_id_i]
                         tj = self.p.chm[t_id_j]
 
-                        ef = ti.end_frame(self.p.gm)
-                        sf = tj.start_frame(self.p.gm)
+                        ef = ti.end_frame()
+                        sf = tj.start_frame()
 
                         # something smaller than np.inf to guarantee at least one best_ti, best_tj
                         d = 10000000
@@ -2054,7 +2054,7 @@ class LearningProcess:
             t.P = P
             t.N = full_set.difference(P)
 
-            for tt in self.p.chm.chunks_in_interval(t.start_frame(self.p.gm), t.end_frame(self.p.gm)):
+            for tt in self.p.chm.chunks_in_interval(t.start_frame(), t.end_frame()):
                 if not len(tt.P):
                     tt.N = tt.N.union(P)
 
@@ -2089,9 +2089,9 @@ class LearningProcess:
                     for t in singles_group:
                         unique_tracklets.add(t)
 
-                    frame = min([t.end_frame(self.p.gm) for t in singles_group]) + 1
+                    frame = min([t.end_frame() for t in singles_group]) + 1
                 else:
-                    frame = min([t.end_frame(self.p.gm) for t in group]) + 1
+                    frame = min([t.end_frame() for t in group]) + 1
 
                 i += 1
                 pbar.update(frame - old_frame)
@@ -2359,8 +2359,8 @@ class LearningProcess:
             max_frame = 0
 
             for t in tcs.tracklets:
-                sf = t.start_frame(self.p.gm)
-                ef = t.end_frame(self.p.gm)
+                sf = t.start_frame()
+                ef = t.end_frame()
 
                 min_frame = min(sf, min_frame)
                 max_frame = max(ef, max_frame)
@@ -2385,7 +2385,7 @@ class LearningProcess:
             # g = sorted(g, key=lambda x: x.id())
             c = np.random.rand(3, 1)
 
-            frame = max([t.start_frame(self.p.gm) for t in cs.tracklets])
+            frame = max([t.start_frame() for t in cs.tracklets])
             plt.plot([frame, frame], [0, len(self.p.animals)], c=c)
             plt.hold(True)
 
@@ -2407,7 +2407,7 @@ class LearningProcess:
                 pos = positions[t]
 
                 # offset = 0
-                plt.plot([t.start_frame(self.p.gm), t.end_frame(self.p.gm)], [pos+offset, pos+offset], c=c)
+                plt.plot([t.start_frame(), t.end_frame()], [pos + offset, pos + offset], c=c)
 
         plt.grid()
         plt.show()
@@ -2434,7 +2434,7 @@ class LearningProcess:
             g = sorted(g, key=lambda x: x.id())
             c = np.random.rand(3, 1)
 
-            frame = max([t.start_frame(self.p.gm) for t in g])
+            frame = max([t.start_frame() for t in g])
             plt.plot([frame, frame], [0, len(self.p.animals)], c=c)
             plt.hold(True)
 
@@ -2456,7 +2456,7 @@ class LearningProcess:
                 pos = positions[t]
 
                 # offset = 0
-                plt.plot([t.start_frame(self.p.gm), t.end_frame(self.p.gm)], [pos+offset, pos+offset], c=c)
+                plt.plot([t.start_frame(), t.end_frame()], [pos + offset, pos + offset], c=c)
 
         plt.grid()
         plt.show()
@@ -2481,7 +2481,7 @@ class LearningProcess:
             tracklet_ids[t.id()] = id_
             self.user_decisions.append({'tracklet_id_set': t.id(), 'type': 'P', 'ids': [id_]})
 
-        max_best_frame = max(t.start_frame(self.p.gm) for t in groups[best_g_i])
+        max_best_frame = max(t.start_frame() for t in groups[best_g_i])
 
         try:
             # path = '/Users/flipajs/Documents/dev/ferda/data/GT/Cam1_.pkl'
@@ -2603,7 +2603,7 @@ class LearningProcess:
                     max_best_frame = frame
                     max_best_score = mm
 
-            new_frame = min([t.end_frame(self.p.gm) for t in group]) + 1
+            new_frame = min([t.end_frame() for t in group]) + 1
             # speedup "hack". In extreme cases might be slightly suboptimal
             frame = max(new_frame, frame+30)
 
@@ -2719,8 +2719,8 @@ class LearningProcess:
         best_t_id_ = -1
         len_ = 0
         for tid in id2tid[id_least]:
-            start = self.p.chm[tid].start_frame(self.p.gm)
-            end = self.p.chm[tid].end_frame(self.p.gm)
+            start = self.p.chm[tid].start_frame()
+            end = self.p.chm[tid].end_frame()
 
             for tid2 in possibilities:
                 if tid2 in id2tid[id_least]:
@@ -2735,10 +2735,10 @@ class LearningProcess:
 
                 t = self.p.chm[tid2]
 
-                if 0 <= t.start_frame(self.p.gm) - end <= max_frame_d:
+                if 0 <= t.start_frame() - end <= max_frame_d:
                     best_t_id_ = t.id()
                     len_ = t2.length()
-                elif 0 <=start - t.end_frame(self.p.gm) <= max_frame_d:
+                elif 0 <=start - t.end_frame() <= max_frame_d:
                     best_t_id_ = t.id()
                     len_ = t2.length()
 

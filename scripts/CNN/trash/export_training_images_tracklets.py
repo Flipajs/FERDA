@@ -91,7 +91,7 @@ if __name__ == '__main__':
             i = 0
             imgs[key] = []
             for t in tracklets:
-                for r_id in p.chm[t].rid_gen(p.gm):
+                for r_id in p.chm[t].rid_gen():
                     r = p.rm[r_id]
                     img = p.img_manager.get_whole_img(r.frame())
 
@@ -122,7 +122,7 @@ if __name__ == '__main__':
             if not t.is_single():
                 continue
 
-            for r_id in t.rid_gen(p.gm):
+            for r_id in t.rid_gen():
                 r = p.rm[r_id]
                 img = p.img_manager.get_whole_img(r.frame())
 

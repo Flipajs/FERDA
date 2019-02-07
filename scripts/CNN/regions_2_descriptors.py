@@ -74,7 +74,7 @@ if __name__ == '__main__':
         img = None
         for tracklet in p.chm.tracklets_in_frame(frame):
             if tracklet.is_single():
-                region = tracklet.get_region_in_frame(p.gm, frame)
+                region = tracklet.get_region_in_frame(frame)
 
                 # optimization for frames where are 0 single-ID tracklets
                 if img is None:

@@ -11,7 +11,7 @@ import jsonpickle
 import utils.load_jsonpickle
 
 
-class ChunkManager:
+class ChunkManager(object):
     def __init__(self):
         # default value in graph properties will be 0, so we can easily test...
         self.id_ = 1
@@ -20,6 +20,7 @@ class ChunkManager:
         self.eps1 = 0.01
         self.eps2 = 0.1
         self.track_refs = {}
+        self._gm = None
 
     def __getitem__(self, index):
         # if index in self.track_refs:
@@ -33,16 +34,29 @@ class ChunkManager:
     def __getstate__(self):
         state = self.__dict__.copy()
         del state['itree']
+        del state['gm']
         return state
 
     def __setstate__(self, state):
         self.__dict__.update(state)
         self.itree = IntervalTree()
+        self._gm = None
+
+    @property
+    def gm(self):
+        return self._gm
+
+    @gm.setter
+    def gm(self, gm):
+        self._gm = gm
+        for t in self.tracklet_gen():
+            t.gm = gm
 
     @classmethod
     def from_dir(cls, directory, gm):
         chm = jsonpickle.decode(open(join(directory, 'tracklets.json'), 'r').read(), keys=True)
-        chm.reset_itree(gm)
+        chm.gm = gm
+        chm.reset_itree()
         return chm
 
     def new_track(self, track, gm):
@@ -88,11 +102,11 @@ class ChunkManager:
         return l
 
     def _add_ch_itree(self, ch, gm):
-        self.itree.addi(ch.start_frame(gm)-self.eps1, ch.end_frame(gm)+self.eps1, ch)
+        self.itree.addi(ch.start_frame() - self.eps1, ch.end_frame() + self.eps1, ch)
 
     def _try_ch_itree_delete(self, ch, gm):
         try:
-            self.itree.removei(ch.start_frame(gm)-self.eps1, ch.end_frame(gm)+self.eps1, ch)
+            self.itree.removei(ch.start_frame() - self.eps1, ch.end_frame() + self.eps1, ch)
         except ValueError:
             # TODO: when is it happening?
             # print "delete failed"
@@ -137,7 +151,7 @@ class ChunkManager:
         return self.get_chunks_from_intervals_(intervals)
 
     def tracklets_intersecting_t_gen(self, t, gm):
-        for t_ in self.chunks_in_interval(t.start_frame(gm), t.end_frame(gm)):
+        for t_ in self.chunks_in_interval(t.start_frame(), t.end_frame()):
             if t_ != t:
                 yield t_
 
@@ -153,15 +167,15 @@ class ChunkManager:
         for t in self.chunks_.itervalues():
             yield t
 
-    def reset_itree(self, gm):
+    def reset_itree(self):
         self.itree = IntervalTree()
 
         chn = len(self)
         for i, ch in tqdm(enumerate(self.chunk_gen()), total=chn, desc='ChunkManager rebuilding interval tree', leave=False):
-            self._add_ch_itree(ch, gm)
+            self._add_ch_itree(ch, self.gm)
 
     def add_single_vertices_chunks(self, p, frames=None):
-        self.reset_itree(p.gm)
+        self.reset_itree()
 
         nn = p.gm.g.num_vertices()
 
@@ -179,7 +193,7 @@ class ChunkManager:
 
             self.new_chunk([int(n)], p.gm)
 
-        self.reset_itree(p.gm)
+        self.reset_itree()
 
     def reset_PN_sets(self, project):
         full_set = set(range(len(project.animals)))
@@ -210,8 +224,8 @@ class ChunkManager:
                         update_N_callback(id_set, t)
 
     def get_affected_undecided_tracklets(self, tracklet, project):
-        affected = set(self.chunks_in_interval(tracklet.start_frame(project.gm),
-                                                     tracklet.end_frame(project.gm)))
+        affected = set(self.chunks_in_interval(tracklet.start_frame(),
+                                               tracklet.end_frame()))
 
         return filter(lambda x: (x.is_single() or x.is_multi()) and not x.is_id_decided(), affected)
 
@@ -237,7 +251,7 @@ class ChunkManager:
 
             min_end_frame = maxint
             for tracklet in s:
-                min_end_frame = min(min_end_frame, tracklet.end_frame(project.gm))
+                min_end_frame = min(min_end_frame, tracklet.end_frame())
 
             frame = min_end_frame + 1
 
@@ -257,6 +271,6 @@ class ChunkManager:
     def show_tracklets(self, gm, rm):
         import matplotlib.pylab as plt
         for t in self.chunk_gen():
-            yx = np.array([r.centroid() for r in t.r_gen(gm, rm)])
+            yx = np.array([r.centroid() for r in t.r_gen(rm)])
             plt.plot(yx[:, 1], yx[:, 0])
 

@@ -474,11 +474,11 @@ class LearningWidget(QtGui.QWidget):
                     self.tracklets_table.setItem(i, 1, item)
 
                     item = it()
-                    item.setData(QtCore.Qt.EditRole, t.start_frame(self.project.gm))
+                    item.setData(QtCore.Qt.EditRole, t.start_frame())
                     self.tracklets_table.setItem(i, 2, item)
 
                     item = it()
-                    item.setData(QtCore.Qt.EditRole, t.end_frame(self.project.gm))
+                    item.setData(QtCore.Qt.EditRole, t.end_frame())
                     self.tracklets_table.setItem(i, 3, item)
 
                     self.tracklets_table.setItem(i, 4, QCustomTableWidgetItem(self.__f2str(self.lp.tracklet_certainty[t_id])))
@@ -529,7 +529,7 @@ class LearningWidget(QtGui.QWidget):
             if self.test_one_id_in_tracklet(t):
                 coverage += t.length()
 
-            end_f_ = t.end_frame(self.project.gm)
+            end_f_ = t.end_frame()
             max_ = max(max_, end_f_)
 
         full_coverage = coverage / float(max_*len(self.project.animals))

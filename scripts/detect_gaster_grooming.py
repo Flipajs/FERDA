@@ -87,7 +87,7 @@ rids = []
 print "preparing HH1_POST data..."
 for t in tqdm(p_post.chm.chunk_gen(), total=len(p_post.chm)):
     if t.is_single():
-        for r_id in t.rid_gen(p_post.gm):
+        for r_id in t.rid_gen():
             r = p_post.rm[r_id]
             X_post.append(lp.get_appearance_features(r))
             rids.append(r.id())

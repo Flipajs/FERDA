@@ -176,11 +176,11 @@ class CropWidget(QtGui.QWidget):
         return pixmap
 
     def generate_next_region(self, chunk):
-        chunk_start = chunk.start_frame(self.graph_manager)
+        chunk_start = chunk.start_frame()
         i = chunk_start
         if i < self.start_frame:
             i = self.start_frame
-        end = chunk.end_frame(self.graph_manager)
+        end = chunk.end_frame()
         while i <= self.end_frame and i <= end:
             yield self.graph_manager.region(chunk[i - chunk_start]), i
             i += self.step

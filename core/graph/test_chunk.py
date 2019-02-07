@@ -41,19 +41,19 @@ class TestChunk(unittest.TestCase):
 
     def test_append_left(self):
         ch = Chunk([1, 2], 1, self.gm)
-        ch.append_left(self.gm.g.vertex(0), self.gm)
+        ch.append_left(self.gm.g.vertex(0))
         self.assertEqual(ch.start_vertex_id(), 0)
 
     def test_append_right(self):
         ch = Chunk([0, 1], 1, self.gm)
-        ch.append_right(self.gm.g.vertex(2), self.gm)
+        ch.append_right(self.gm.g.vertex(2))
         self.assertEqual(self.gm.g.vertex(2), ch.end_vertex_id())
 
     def test_merge(self):
         ch1 = Chunk([0, 1], 1, self.gm)
         ch2 = Chunk([2, 3, 4, 5, 6], 2, self.gm)
 
-        ch1.merge(ch2, self.gm)
+        ch1.merge(ch2)
 
         self.assertEqual(7, ch1.length())
         self.assertEqual(ch1.start_vertex_id(), self.gm.g.vertex(0))

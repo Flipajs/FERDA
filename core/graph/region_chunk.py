@@ -46,11 +46,11 @@ class RegionChunk:
             return self.gm_.region(id)
 
     def start_frame(self):
-        return self.chunk_.start_frame(self.gm_)
+        return self.chunk_.start_frame()
         # return self[0].frame_
 
     def end_frame(self):
-        return self.chunk_.end_frame(self.gm_)
+        return self.chunk_.end_frame()
         # return self[-1].frame_
 
     def region_in_t(self, t):

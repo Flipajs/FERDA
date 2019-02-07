@@ -495,19 +495,17 @@ class Project:
 
         self.gm.project = self
         self.gm.rm = self.rm
+
+        self.chm.gm = self.gm
+        self.chm.reset_itree()
+
         # self.gm.update_nodes_in_t_refs()
 
         if not lightweight:
             # fix itree in chm...
             if self.chm is not None and self.gm is not None and self.rm is not None:
                 if not hasattr(self.chm, 'itree'):
-                    from libs.intervaltree.intervaltree import IntervalTree
-                    self.chm.itree = IntervalTree()
-                    self.chm.eps1 = 0.01
-                    self.chm.eps2 = 0.1
-
-                    for ch in self.chm.chunk_gen():
-                        self.chm._add_ch_itree(ch, self.gm)
+                    self.chm.reset_itree()
 
                 for ch in self.chm.chunk_gen():
                     if hasattr(ch, 'color') and ch.color is not None:
@@ -604,7 +602,7 @@ class Project:
                         import warnings
                         warnings.warn("id_ > num animals t_id: {} id: {}".format(t.id(), id_))
                         continue
-                    results[frame, id_] = self.rm[t.r_id_in_t(frame - self.video_start_t, self.gm)].centroid()  # yx
+                    results[frame, id_] = self.rm[t.r_id_in_t(frame - self.video_start_t)].centroid()  # yx
 
         if self.video_crop_model is not None:
             results[:, :, 0] += self.video_crop_model['y1']

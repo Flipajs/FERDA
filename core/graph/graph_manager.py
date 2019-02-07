@@ -7,7 +7,7 @@ import jsonpickle
 import utils.load_jsonpickle
 
 
-class GraphManager:
+class GraphManager(object):
     def __init__(self, project=None, assignment_score=None):
         self.project = project
         self.rm = None
@@ -109,7 +109,7 @@ class GraphManager:
         if disassembly:
             ch, chunk_end = self.is_chunk(vertex)
             if ch:
-                ch.pop_last(self) if chunk_end else ch.pop_first(self)
+                ch.pop_last() if chunk_end else ch.pop_first()
 
         # save all edges
         in_edges = [e for e in vertex.in_edges()]
@@ -335,13 +335,13 @@ class GraphManager:
         in_frame = []
         for ch_id in self.project.chm.chunk_list():
             ch = self.project.chm[ch_id]
-            if ch.start_frame(self.project.gm) <= frame <= ch.end_frame(self.project.gm):
+            if ch.start_frame() <= frame <= ch.end_frame():
                 in_frame.append(ch)
         return in_frame
 
     def chunks_in_frame_generator(self, start_frame, end_frame):
         for ch in self.project.chm.chunk_gen():
-            if ch.start_frame(self.project.gm) <= end_frame and ch.end_frame(self.project.gm) >= start_frame:
+            if ch.start_frame() <= end_frame and ch.end_frame() >= start_frame:
                yield ch
 
     def start_nodes(self):
@@ -747,7 +747,7 @@ class GraphManager:
         """
         regions = []
         for t in self.project.chm.tracklets_in_frame(frame):
-            r_id = t.r_id_in_t(frame, self.project.gm)
+            r_id = t.r_id_in_t(frame)
             regions.append((r_id, t.id()))
 
         return regions
@@ -767,7 +767,4 @@ class GraphManager:
 
     def get_outcoming_tracklets(self, vertex):
         return self._get_tracklets_from_gen(vertex.out_neighbors())
-
-
-
 

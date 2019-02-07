@@ -42,7 +42,7 @@ def compute_descriptors(project_dir, model_weights_path, add_missing=False):
         tracklets = filter(lambda x: x.is_single(), p.chm.tracklets_in_frame(frame))
 
         for tracklet in tracklets:
-            region = tracklet.get_region_in_frame(p.gm, frame)
+            region = tracklet.get_region_in_frame(frame)
             if region.id() in descriptors:
                 continue
 

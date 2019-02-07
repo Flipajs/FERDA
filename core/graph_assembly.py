@@ -130,7 +130,7 @@ def graph_assembly(project, graph_solver, do_semi_merge=False):
 
     update_t = time.time()
     p.gm.update_nodes_in_t_refs()
-    p.chm.reset_itree(p.gm)
+    p.chm.reset_itree()
     print("\tupdate t: {:.2f}s".format(time.time() - update_t))
 
     tracklet_stats(p)
@@ -159,7 +159,7 @@ def graph_assembly(project, graph_solver, do_semi_merge=False):
         # tracklet_stats(p)
 
         p.gm.update_nodes_in_t_refs()
-        p.chm.reset_itree(p.gm)
+        p.chm.reset_itree()
 
     p.save_semistate('eps_edge_filter')
     p.solver = graph_solver

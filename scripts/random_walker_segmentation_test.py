@@ -14,7 +14,7 @@ if __name__ == '__main__':
     ch = p.chm[257]
 
     rch = RegionChunk(ch, p.gm, p.rm)
-    start_vertex = ch.start_vertex(p.gm)
+    start_vertex = ch.start_vertex()
 
     in_regions = []
     for n in start_vertex.in_neighbors():

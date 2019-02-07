@@ -8,7 +8,7 @@ from core.region.region import Region
 from random import randint
 
 
-class Chunk:
+class Chunk():  # object
     def __init__(self, vertices_ids, id_, gm, color=None, origin_interaction=False):
         assert color is None or isinstance(color, np.ndarray)
         # if not isinstance(vertices_ids, list):
@@ -25,6 +25,7 @@ class Chunk:
         self.P = set()
         self.N = set()
         self.segmentation_class = -1
+        self.gm = gm
 
         self.origin_interaction = origin_interaction
 
@@ -51,10 +52,10 @@ class Chunk:
                             # for e in v.in_edges():
                             #     gm.remove_edge_(e)
 
-            self.chunk_reconnect_(gm)
+            self.chunk_reconnect_()
 
     def __str__(self):
-        s = "CHUNK --- id: "+str(self.id_)+" length: "+str(len(self.nodes_))+" "+str(self.P)+"\n"
+        s = "Tracklet --- id: "+str(self.id_)+" length: "+str(len(self.nodes_))+" "+str(self.P)+"\n"
         return s
 
     def __len__(self):
@@ -100,217 +101,202 @@ class Chunk:
     def set_random_color(self, low=0, high=255):
         self.color = np.random.randint(low, high, 3)
 
-    def print_info(self, gm):
+    def print_info(self):
         s = "TRACKLET --- id: "+str(self.id_)+" length: "+str(len(self.nodes_))+"\n"
-        s += "\tstarts at: "+str(self.start_frame(gm))+" ends at: "+str(self.end_frame(gm))
+        s += "\tstarts at: " + str(self.start_frame()) + " ends at: " + str(self.end_frame())
+        print(s)
 
-        print s
-
-    def append_left(self, vertex, gm, undo_action=False):
+    def append_left(self, vertex):
         if int(vertex) == 4:
             print vertex
 
         # test: there cannot be any outgoing edge...
         out_edges = [e for e in vertex.out_edges()]
         for e in out_edges:
-            gm.remove_edge_(e)
-
+            self.gm.remove_edge_(e)
 
         vertex_id = int(vertex)
-        region = gm.region(vertex_id)
-        if region.frame() + 1 != self.start_frame(gm):
+        region = self.gm.region(vertex_id)
+        if region.frame() + 1 != self.start_frame():
             # print ("DISCONTINUITY in chunk.py/append_left region_frame: %d, ch_start_frame: %d", region.frame(), self.start_frame(gm))
             # print "DISCONTINUITY in chunk.py/append_left", region.frame(), self.start_frame(gm), region, self.project.gm.region(self.start_node())
             raise Exception("DISCONTINUITY in chunk.py/append_left")
 
         first = self.start_node()
 
-        ch2, _ = gm.is_chunk(vertex)
+        ch2, _ = self.gm.is_chunk(vertex)
         if ch2:
-            ch2.merge(self, gm, undo_action=undo_action)
+            ch2.merge(self)
             return
         else:
             self.nodes_.insert(0, vertex_id)
 
-        if not undo_action:
-            gm.remove_vertex(first, False)
-            self.chunk_reconnect_(gm)
+        self.gm.remove_vertex(first, False)
+        self.chunk_reconnect_()
 
-    def append_right(self, vertex, gm, undo_action=False):
+    def append_right(self, vertex):
         # test: there cannot be any incomming edge...
         in_edges = [e for e in vertex.in_edges()]
         for e in in_edges:
-            gm.remove_edge_(e)
+            self.gm.remove_edge_(e)
 
         vertex_id = int(vertex)
-        region = gm.region(vertex_id)
-        if region.frame() != self.end_frame(gm) + 1:
+        region = self.gm.region(vertex_id)
+        if region.frame() != self.end_frame() + 1:
             # print "DISCONTINUITY in chunk.py/append_right", region.frame(), self.end_frame(gm), region, self.end_node()
             raise Exception("DISCONTINUITY in chunk.py/append_right, frame: {}, r_id: {}".format(region.frame(), region.id()))
 
         last = self.end_node()
 
-        ch2, _ = gm.is_chunk(vertex)
+        ch2, _ = self.gm.is_chunk(vertex)
         if ch2:
-            self.merge(ch2, gm, undo_action=undo_action)
+            self.merge(ch2)
             return
         else:
             self.nodes_.append(vertex_id)
 
-        if not undo_action:
-            gm.remove_vertex(last, False)
-            self.chunk_reconnect_(gm)
+        self.gm.remove_vertex(last, False)
+        self.chunk_reconnect_()
 
-    def pop_first(self, gm, undo_action=False):
+    def pop_first(self):
         first = self.nodes_.pop(0)
 
         # if last node was popped (e.g. during whole chunk fitting)
         if self.length() > 1:
             new_start = self.start_node()
 
-            if not undo_action:
-                new_start = gm.add_vertex(gm.region(new_start))
-                # it is necessary to verride vertex_id as the ids inside chunk are not vertices ids but -region_ids
-                self.nodes_[0] = int(new_start)
+            new_start = self.gm.add_vertex(self.gm.region(new_start))
+            # it is necessary to verride vertex_id as the ids inside chunk are not vertices ids but -region_ids
+            self.nodes_[0] = int(new_start)
 
-            if not undo_action:
-                gm.remove_edge(gm.g.vertex(first), gm.g.vertex(self.end_node()))
-                prev_nodes = gm.get_vertices_in_t(gm.region(new_start).frame() - 1)
-                gm.add_edges_(prev_nodes, [new_start])
+            self.gm.remove_edge(self.gm.g.vertex(first), self.gm.g.vertex(self.end_node()))
+            prev_nodes = self.gm.get_vertices_in_t(self.gm.region(new_start).frame() - 1)
+            self.gm.add_edges_(prev_nodes, [new_start])
 
-        if not undo_action:
-            if len(self.nodes_) > 1:
-                self.chunk_reconnect_(gm)
+        if len(self.nodes_) > 1:
+            self.chunk_reconnect_()
 
-        gm.g.vp['chunk_start_id'][gm.g.vertex(first)] = 0
-        gm.g.vp['chunk_end_id'][gm.g.vertex(first)] = 0
+        self.gm.g.vp['chunk_start_id'][self.gm.g.vertex(first)] = 0
+        self.gm.g.vp['chunk_end_id'][self.gm.g.vertex(first)] = 0
 
         return first
 
-    def pop_last(self, gm, undo_action=False):
+    def pop_last(self):
         last = self.nodes_.pop()
 
         # if last node was popped (e.g. during whole chunk fitting)
-        new_end = None
         if self.length() > 1:
             new_end = self.end_node()
 
-            if not undo_action:
-                new_end = gm.add_vertex(gm.region(new_end))
-                # it is necessary to override vertex_id, as it was inside chunk, thus the id was -region_id
-                self.nodes_[-1] = int(new_end)
+            new_end = self.gm.add_vertex(self.gm.region(new_end))
+            # it is necessary to override vertex_id, as it was inside chunk, thus the id was -region_id
+            self.nodes_[-1] = int(new_end)
 
-            if not undo_action:
-                gm.remove_edge(gm.g.vertex(self.start_node()), gm.g.vertex(last))
+            self.gm.remove_edge(self.gm.g.vertex(self.start_node()), self.gm.g.vertex(last))
 
-                next_nodes = gm.get_vertices_in_t(gm.region(new_end).frame() + 1)
-                gm.add_edges_([new_end], next_nodes)
+            next_nodes = self.gm.get_vertices_in_t(self.gm.region(new_end).frame() + 1)
+            self.gm.add_edges_([new_end], next_nodes)
 
-                self.chunk_reconnect_(gm)
+            self.chunk_reconnect_()
 
-        gm.g.vp['chunk_start_id'][gm.g.vertex(last)] = 0
-        gm.g.vp['chunk_end_id'][gm.g.vertex(last)] = 0
+        self.gm.g.vp['chunk_start_id'][self.gm.g.vertex(last)] = 0
+        self.gm.g.vp['chunk_end_id'][self.gm.g.vertex(last)] = 0
 
         return last
 
-    def merge(self, ch2, gm, undo_action=False):
+    def merge(self, ch2):
         """
         |ch1.start| ... |ch1.end|   |ch2.start|... |ch2.end|
         -> |ch1.start| ... |ch2.end|
 
         :param second_chunk:
-        :param undo_action:
         :return:
         """
-        if self.start_frame(gm) > ch2.start_frame(gm):
-            ch2.merge(self, gm)
+        if self.start_frame() > ch2.start_frame():
+            ch2.merge(self)
             return
 
         ch1end = self.end_node()
         ch2start = ch2.start_node()
 
-        gm.project.chm.remove_chunk(ch2, gm)
-        gm.project.chm._try_ch_itree_delete(self, gm)
+        self.gm.project.chm.remove_chunk(ch2, self.gm)
+        self.gm.project.chm._try_ch_itree_delete(self, self.gm)
 
-        if not undo_action:
-            if self.length() > 1:
-                gm.remove_vertex(ch1end, disassembly=False)
-            if ch2.length() > 1:
-                gm.remove_vertex(ch2start, disassembly=False)
+        if self.length() > 1:
+            self.gm.remove_vertex(ch1end, disassembly=False)
+        if ch2.length() > 1:
+            self.gm.remove_vertex(ch2start, disassembly=False)
 
         self.nodes_.extend(ch2.nodes_)
 
-        if not undo_action:
-            self.chunk_reconnect_(gm)
+        self.chunk_reconnect_()
 
-        gm.project.chm._add_ch_itree(self, gm)
+        self.gm.project.chm._add_ch_itree(self, self.gm)
 
-    def merge_and_interpolate(self, ch2, gm, undo_action=False):
-        if self.end_frame(gm) > ch2.start_frame(gm):
-            ch2.merge_and_interpolate(self, gm, undo_action=undo_action)
+    def merge_and_interpolate(self, ch2):
+        if self.end_frame() > ch2.start_frame():
+            ch2.merge_and_interpolate(self)
             return
 
-        gap_len = ch2.start_frame(gm) - self.end_frame(gm) - 1
+        gap_len = ch2.start_frame() - self.end_frame() - 1
         if gap_len > 0:
-            ch2start_region = gm.region(ch2.start_node())
-            ch1end_region = gm.region(self.end_node())
+            ch2start_region = self.gm.region(ch2.start_node())
+            ch1end_region = self.gm.region(self.end_node())
 
             c_diff_part = (ch2start_region.centroid() - ch1end_region.centroid()) / gap_len
 
             i = 1
-            for f in range(self.end_frame(gm)+1, ch2.start_frame(gm)):
+            for f in range(self.end_frame() + 1, ch2.start_frame()):
                 r = Region(frame=f)
                 r.is_origin_interaction_ = True
                 c = ch1end_region.centroid() + np.array(c_diff_part * i)
                 r.centroid_ = c.copy()
 
                 # TODO: log...
-                node = gm.add_vertex(r)
+                node = self.gm.add_vertex(r)
                 self.append_right(node)
 
                 i += 1
 
-        self.merge(ch2, gm, undo_action)
+        self.merge(ch2)
 
-    def split_at(self, frame, gm):
+    def split_at(self, frame):
         """
         splits tracklet so the node in t=frame stays in the left tracklet
 
         Args:
             frame:
-            gm:
 
         Returns:
 
         """
-        start_frame = self.start_frame(gm)
+        start_frame = self.start_frame()
 
         key = frame - start_frame
         left_nodes = []
         right_nodes = []
 
-        if key >= 0 and key < self.length():
+        if 0 <= key < self.length():
             left_nodes = list(self.nodes_[:key+1])
             right_nodes = self.nodes_[key+1:]
 
-            # TODO: undo action?
             # TODO: what if chunk is of length 2?
             new_end = left_nodes[-1]
-            new_end = gm.add_vertex(gm.region(new_end))
+            new_end = self.gm.add_vertex(self.gm.region(new_end))
             left_nodes[-1] = int(new_end)
 
             # remove previous edge...
-            gm.remove_edge(gm.g.vertex(self.start_node()), gm.g.vertex(right_nodes[-1]))
-            next_nodes = gm.get_vertices_in_t(gm.region(new_end).frame() + 1)
-            gm.add_edges_([new_end], next_nodes)
+            self.gm.remove_edge(self.gm.g.vertex(self.start_node()), self.gm.g.vertex(right_nodes[-1]))
+            next_nodes = self.gm.get_vertices_in_t(self.gm.region(new_end).frame() + 1)
+            self.gm.add_edges_([new_end], next_nodes)
 
-            gm.g.vp['chunk_start_id'][gm.g.vertex(right_nodes[-1])] = 0
-            gm.g.vp['chunk_end_id'][gm.g.vertex(right_nodes[-1])] = 0
+            self.gm.g.vp['chunk_start_id'][self.gm.g.vertex(right_nodes[-1])] = 0
+            self.gm.g.vp['chunk_end_id'][self.gm.g.vertex(right_nodes[-1])] = 0
 
             # not last node of tracklet... because it is already in graph
             if key < self.length() - 1:
                 new_start = right_nodes[0]
-                new_start = gm.add_vertex(gm.region(new_start))
+                new_start = self.gm.add_vertex(self.gm.region(new_start))
                 right_nodes[0] = int(new_start)
 
             # self.nodes_ = left_nodes
@@ -327,23 +313,23 @@ class Chunk:
     def end_vertex_id(self):
         return self.nodes_[-1]
 
-    def end_vertex(self, gm):
-        return gm.g.vertex(self.end_vertex_id())
+    def end_vertex(self):
+        return self.gm.g.vertex(self.end_vertex_id())
 
     def end_node(self):
         return self.end_vertex_id()
 
-    def start_vertex(self, gm):
-        return gm.g.vertex(self.start_vertex_id())
+    def start_vertex(self):
+        return self.gm.g.vertex(self.start_vertex_id())
 
     def start_node(self):
         return self.start_vertex_id()
 
-    def start_frame(self, gm):
-        return gm.region(self.start_node()).frame()
+    def start_frame(self):
+        return self.gm.region(self.start_node()).frame()
 
-    def end_frame(self, gm):
-        return gm.region(self.end_node()).frame()
+    def end_frame(self):
+        return self.gm.region(self.end_node()).frame()
 
     def length(self):
         return len(self)
@@ -351,50 +337,50 @@ class Chunk:
     def is_empty(self):
         return True if self.length() == 0 else False
 
-    def chunk_reconnect_(self, gm):
+    def chunk_reconnect_(self):
         if len(self.nodes_) > 1:
-            if self.start_vertex(gm).out_degree() > 0:
-                gm.remove_outgoing_edges(self.start_vertex(gm))
+            if self.start_vertex().out_degree() > 0:
+                self.gm.remove_outgoing_edges(self.start_vertex())
 
-            gm.add_edge(self.start_node(), self.end_node(), 1.0)
+            self.gm.add_edge(self.start_node(), self.end_node(), 1.0)
 
-        gm.g.vp['chunk_start_id'][gm.g.vertex(self.start_node())] = self.id()
-        gm.g.vp['chunk_end_id'][gm.g.vertex(self.start_node())] = 0
+        self.gm.g.vp['chunk_start_id'][self.gm.g.vertex(self.start_node())] = self.id()
+        self.gm.g.vp['chunk_end_id'][self.gm.g.vertex(self.start_node())] = 0
 
-        gm.g.vp['chunk_start_id'][gm.g.vertex(self.end_node())] = 0
-        gm.g.vp['chunk_end_id'][gm.g.vertex(self.end_node())] = self.id()
+        self.gm.g.vp['chunk_start_id'][self.gm.g.vertex(self.end_node())] = 0
+        self.gm.g.vp['chunk_end_id'][self.gm.g.vertex(self.end_node())] = self.id()
 
-    def is_only_one_id_assigned(self, num_animals):
+    def is_only_one_id_assigned(self, num_objects):
         # if there is one and only one ID assigned to chunk
         return len(self.P) == 1 and \
-               len(self.N) == num_animals - 1
+               len(self.N) == num_objects - 1
 
     def v_gen(self):
         for v in self.nodes_:
             yield v
 
-    def rid_gen(self, gm):
+    def rid_gen(self):
         for id_ in self.nodes_:
-            yield gm.region_id(id_)
+            yield self.gm.region_id(id_)
 
-    def get_region(self, gm, i):
-        return gm.region(self.nodes_[i])
+    def get_region(self, i):
+        return self.gm.region(self.nodes_[i])
 
-    def get_region_in_frame(self, gm, frame):
-        sf = self.start_frame(gm)
+    def get_region_in_frame(self, frame):
+        sf = self.start_frame()
         try:
-            return self.get_region(gm, frame-sf)
+            return self.get_region(frame - sf)
         except Exception as e:
             import warnings
             warnings.warn(e.message)
             return None
 
-    def r_gen(self, gm, rm):
-        for rid in self.rid_gen(gm):
+    def r_gen(self, rm):
+        for rid in self.rid_gen():
             yield rm[rid]
 
-    def v_id_in_t(self, t, gm):
-        t = t - self.start_frame(gm)
+    def v_id_in_t(self, t):
+        t = t - self.start_frame()
         if -1 < t < len(self.nodes_):
             return self.nodes_[t]
         else:
@@ -406,8 +392,8 @@ class Chunk:
         except:
             return False
 
-    def r_id_in_t(self, t, gm):
-        return gm.region_id(self.v_id_in_t(t, gm))
+    def r_id_in_t(self, t):
+        return self.gm.region_id(self.v_id_in_t(t))
 
     def is_single(self):
         return self.segmentation_class == 0
@@ -445,13 +431,13 @@ class Chunk:
     def is_track(self):
         return False
 
-    def num_outcoming_edges(self, gm):
-        return self.end_vertex(gm).out_degree()
+    def num_outcoming_edges(self):
+        return self.end_vertex().out_degree()
 
-    def num_incoming_edges(self, gm):
-        return self.start_vertex(gm).in_degree()
+    def num_incoming_edges(self):
+        return self.start_vertex().in_degree()
 
-    def get_cardinality(self, gm):
+    def get_cardinality(self):
         """
         cardinality = #IDS in given tracklet
 
@@ -469,8 +455,8 @@ class Chunk:
         if self.is_multi():
             # first try INcoming...
             cardinality_based_on_in = 0
-            for ch in gm.get_incoming_tracklets(self.start_vertex(gm)):
-                if ch.is_single() and ch.num_outcoming_edges(gm) == 1:
+            for ch in self.gm.get_incoming_tracklets(self.start_vertex()):
+                if ch.is_single() and ch.num_outcoming_edges() == 1:
                     cardinality_based_on_in += 1
                 else:
                     cardinality_based_on_in = 0
@@ -478,8 +464,8 @@ class Chunk:
 
             cardinality_based_on_out = 0
             # lets try OUTcoming...
-            for ch in gm.get_outcoming_tracklets(self.end_vertex(gm)):
-                if ch.is_single() and ch.num_incoming_edges(gm) == 1:
+            for ch in self.gm.get_outcoming_tracklets(self.end_vertex()):
+                if ch.is_single() and ch.num_incoming_edges() == 1:
                     cardinality_based_on_out += 1
                 else:
                     return -1
@@ -492,25 +478,24 @@ class Chunk:
 
         return -1
 
-    def entering_tracklets(self, gm):
-        return gm.get_incoming_tracklets(self.start_vertex(gm))
+    def entering_tracklets(self):
+        return self.gm.get_incoming_tracklets(self.start_vertex())
 
-    def exiting_tracklets(self, gm):
-        return gm.get_outcoming_tracklets(self.end_vertex(gm))
+    def exiting_tracklets(self):
+        return self.gm.get_outcoming_tracklets(self.end_vertex())
 
-    def solve_interaction(self, detector, gm, rm, im):
+    def solve_interaction(self, detector, rm, im):
         """
         Find tracks in chunks containing two objects.
 
         :param detector: InteractionDetector() object
-        :param gm:
         :param rm:
         :param im:
         :return: pandas.DataFrame - two tracks
         """
-        assert self.get_cardinality(gm) == 2
+        assert self.get_cardinality() == 2
         detections = []
-        for r in self.r_gen(gm, rm):
+        for r in self.r_gen(rm):
             img = im.get_whole_img(r.frame())
             pred = detector.detect(img, r.centroid()[::-1])
             detections.append(pred)
@@ -520,6 +505,6 @@ class Chunk:
     def is_id_decided(self):
         return len(self.P) == 1
 
-    def get_random_region(self, gm):
-        r_frame = randint(self.start_frame(gm), self.end_frame(gm))
-        return self.get_region_in_frame(gm, r_frame)
+    def get_random_region(self):
+        r_frame = randint(self.start_frame(), self.end_frame())
+        return self.get_region_in_frame(r_frame)

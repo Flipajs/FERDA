@@ -530,14 +530,14 @@ class ResultsWidget(QtGui.QWidget):
     def tracklet_begin(self):
         if self.active_tracklet_id > -1:
             tracklet = self.project.chm[self.active_tracklet_id]
-            frame = tracklet.start_frame(self.project.gm)
+            frame = tracklet.start_frame()
 
             self.video_player.goto(frame)
 
     def tracklet_end(self):
         if self.active_tracklet_id > -1:
             tracklet = self.project.chm[self.active_tracklet_id]
-            frame = tracklet.end_frame(self.project.gm)
+            frame = tracklet.end_frame()
 
             self.video_player.goto(frame)
 
@@ -555,9 +555,9 @@ class ResultsWidget(QtGui.QWidget):
 
             while True:
                 if forward:
-                    frame = t.end_frame(self.project.gm)
+                    frame = t.end_frame()
                 else:
-                    frame = t.start_frame(self.project.gm)
+                    frame = t.start_frame()
 
                 new_t_found = False
                 for new_t in self.project.chm.tracklets_in_frame(frame+frame_step):
@@ -568,9 +568,9 @@ class ResultsWidget(QtGui.QWidget):
                             self.active_tracklet_id = new_t.id()
                             t = new_t
                             if forward:
-                                frame = t.end_frame(self.project.gm)
+                                frame = t.end_frame()
                             else:
-                                frame = t.start_frame(self.project.gm)
+                                frame = t.start_frame()
                             new_t_found = True
 
                 if not new_t_found:
@@ -601,7 +601,7 @@ class ResultsWidget(QtGui.QWidget):
 
         t_id = None
         for t in self.project.chm.tracklets_in_frame(frame):
-            if id_ in t.rid_gen(self.project.gm):
+            if id_ in t.rid_gen():
                 t_id = t.id()
                 break
 
@@ -624,7 +624,7 @@ class ResultsWidget(QtGui.QWidget):
         if tracklet is None:
             return
 
-        frame = tracklet.start_frame(self.project.gm)
+        frame = tracklet.start_frame()
         self.video_player.goto(frame)
         print id_
         self._set_active_tracklet_id(id_)
@@ -634,8 +634,8 @@ class ResultsWidget(QtGui.QWidget):
 
         # frame=-1 ... start from beginning
 
-        self.loop_begin = max(0, tracklet.start_frame(self.project.gm) - margin)
-        self.loop_end = min(tracklet.end_frame(self.project.gm) + margin, self.video_player.total_frame_count()-1)
+        self.loop_begin = max(0, tracklet.start_frame() - margin)
+        self.loop_end = min(tracklet.end_frame() + margin, self.video_player.total_frame_count() - 1)
         self.loop_highlight_tracklets = [tracklet.id()]
 
         if frame < 0:
@@ -1306,7 +1306,7 @@ class ResultsWidget(QtGui.QWidget):
         p_ = S_.visualization.tracklet_len_per_px
         if p_:
             tlen = int(len(tracklet)/float(p_))
-            ptr = int((frame - tracklet.start_frame(self.project.gm)) / float(p_))
+            ptr = int((frame - tracklet.start_frame()) / float(p_))
 
         c = self.get_tracklet_class_color(tracklet)
 
@@ -1360,14 +1360,14 @@ class ResultsWidget(QtGui.QWidget):
         r = rch.region_in_t(f)
 
         s = "tracklet (id: " + str(id_) + ")"
-        if ch.start_frame(self.project.gm) == f:
-            s += "\n in_degree: " + str(ch.start_vertex(self.project.gm).in_degree())
+        if ch.start_frame() == f:
+            s += "\n in_degree: " + str(ch.start_vertex().in_degree())
 
-        if ch.end_frame(self.project.gm) == f:
-            s += "\n out degree: " + str(ch.end_vertex(self.project.gm).out_degree())
+        if ch.end_frame() == f:
+            s += "\n out degree: " + str(ch.end_vertex().out_degree())
 
-        s += "\n length: " + str(ch.length()) + " s: " + str(ch.start_frame(self.project.gm)) + " e: " + str(
-            ch.end_frame(self.project.gm))
+        s += "\n length: " + str(ch.length()) + " s: " + str(ch.start_frame()) + " e: " + str(
+            ch.end_frame())
 
         s += "\n tracklet class: "+ch.segmentation_class_str()
 
@@ -1561,8 +1561,8 @@ class ResultsWidget(QtGui.QWidget):
         t_id = -1
 
         for t in self.project.chm.tracklets_in_frame(frame):
-            if min_frame > t.end_frame(self.project.gm):
-                min_frame = t.end_frame(self.project.gm)
+            if min_frame > t.end_frame():
+                min_frame = t.end_frame()
                 t_id = t.id()
 
         if min_frame == frame and frame < self.video_player.total_frame_count() - 1:
@@ -1581,8 +1581,8 @@ class ResultsWidget(QtGui.QWidget):
         max_frame = 0
         t_id = -1
         for t in self.project.chm.tracklets_in_frame(frame):
-            if max_frame < t.start_frame(self.project.gm):
-                max_frame = t.start_frame(self.project.gm)
+            if max_frame < t.start_frame():
+                max_frame = t.start_frame()
                 t_id = t.id()
 
         if max_frame == frame and frame > 0:
@@ -1728,7 +1728,7 @@ class ResultsWidget(QtGui.QWidget):
                 used_ids = used_ids.union(t.P)
 
                 possible_ids = possible_ids.union(full_set - t.N)
-                next_frame = min(next_frame, t.end_frame(self.project.gm))
+                next_frame = min(next_frame, t.end_frame())
 
             if len(possible_ids) != len(self.project.animals):
                 problemsB.append((frame, full_set - possible_ids))
@@ -1762,7 +1762,7 @@ class ResultsWidget(QtGui.QWidget):
             tracklet = self.project.chm[self.active_tracklet_id]
             frame = self.video_player.current_frame()
 
-            left_nodes, right_nodes = tracklet.split_at(frame, self.project.gm)
+            left_nodes, right_nodes = tracklet.split_at(frame)
             if len(left_nodes) and len(right_nodes):
                 self.project.chm.remove_chunk(tracklet, self.project.gm)
 
@@ -1971,13 +1971,13 @@ class ResultsWidget(QtGui.QWidget):
 
         if self.active_tracklet_id > 0:
             t = self.project.chm[self.active_tracklet_id]
-            sf = t.start_frame(self.project.gm)
+            sf = t.start_frame()
             vertex = t[frame - sf]
             if isinstance(vertex, int):
                 vertex = self.project.gm.g.vertex(vertex)
 
             v1 = None
-            if frame != t.start_frame(self.project.gm) and t.length() > 1:
+            if frame != t.start_frame() and t.length() > 1:
                 v1 = self.project.gm.g.vertex(t[frame-sf-1])
             else:
                 best_e = None
@@ -2097,7 +2097,7 @@ class ResultsWidget(QtGui.QWidget):
                 if t.is_only_one_id_assigned(num_animals):
                     a_id = list(t.P)[0]
 
-                    v_id = t.v_id_in_t(frame, self.project.gm)
+                    v_id = t.v_id_in_t(frame)
                     if v_id == 0:
                         continue
 
@@ -2172,8 +2172,8 @@ class ResultsWidget(QtGui.QWidget):
                 if len(singles_group) == len(self.p.animals) and min([len(t) for t in singles_group]) >= 1:
                     groups.append(singles_group)
 
-                    overlap = min([t.end_frame(self.p.gm) for t in singles_group]) \
-                              - max([t.start_frame(self.p.gm) for t in singles_group])
+                    overlap = min([t.end_frame() for t in singles_group]) \
+                              - max([t.start_frame() for t in singles_group])
 
                     overlap_sum += overlap
 
@@ -2181,9 +2181,9 @@ class ResultsWidget(QtGui.QWidget):
                     for t in singles_group:
                         unique_tracklets.add(t)
 
-                    frame = min([t.end_frame(self.p.gm) for t in singles_group]) + 1
+                    frame = min([t.end_frame() for t in singles_group]) + 1
                 else:
-                    frame = min([t.end_frame(self.p.gm) for t in group]) + 1
+                    frame = min([t.end_frame() for t in group]) + 1
 
                 i += 1
 
@@ -2256,7 +2256,7 @@ class ResultsWidget(QtGui.QWidget):
 
                 # was added to Track
                 if t1.id() not in self.project.chm.chunks_:
-                    for t in self.project.chm.tracklets_in_frame(t1.end_frame(self.project.gm)):
+                    for t in self.project.chm.tracklets_in_frame(t1.end_frame()):
                         if t.is_track():
                             if t.is_inside(t1):
                                 t1 = t
@@ -2265,7 +2265,7 @@ class ResultsWidget(QtGui.QWidget):
                 # was added to Track, shouldn'd happen
                 if t2.id() not in self.project.chm.chunks_:
                     print "T2 happened....."
-                    for t in self.project.chm.tracklets_in_frame(t2.start_frame(self.project.gm)):
+                    for t in self.project.chm.tracklets_in_frame(t2.start_frame()):
                         if t.is_track():
                             if t.is_inside(t1):
                                 t2 = t

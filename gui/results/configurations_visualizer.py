@@ -824,7 +824,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
 
         ch_len = chunk.length()
         for i in range(1, ch_len+1):
-            replace = chunk.pop_first(self.project.gm)
+            replace = chunk.pop_first()
             new_regions = []
             for m in matching:
                 new_r = deepcopy(m[0])
@@ -853,7 +853,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         from core.graph.region_chunk import RegionChunk
 
         region_chunk = RegionChunk(chunk, self.project.gm, self.project.rm)
-        frames = list(range(chunk.start_frame(self.project.gm), chunk.end_frame(self.project.gm)))
+        frames = list(range(chunk.start_frame(), chunk.end_frame()))
         freq, confirmed = QtGui.QInputDialog.getInt(self, 'Input Dialog', 'Chunk length is: '+str(chunk.length())+'.Enter frequency:', value=1, min=1)
 
         if not confirmed:

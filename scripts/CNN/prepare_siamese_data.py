@@ -68,9 +68,9 @@ def generate_reidentification_training_data(project_path, out_dir):
             tracklets = filter(lambda x: x.is_single(), p.chm.tracklets_in_frame(frame))
             if len(tracklets) > 1:
                 trackletA, trackletB = random.sample(tracklets)
-                regionA1 = trackletA.get_random_region(p.gm)
-                regionA2 = trackletA.get_random_region(p.gm)
-                regionB = trackletB.get_random_region(p.gm)
+                regionA1 = trackletA.get_random_region()
+                regionA2 = trackletA.get_random_region()
+                regionB = trackletB.get_random_region()
 
                 cropA1 = get_region_image(regionA1, vm, offset=OFFSET, add_ellipse_mask=APPLY_ELLIPSE,
                                           mask_sigma=MASK_SIGMA, ellipse_dilation=ELLIPSE_DILATION, align=ALIGN)

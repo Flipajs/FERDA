@@ -30,7 +30,7 @@ def ferda_trajectories_dict(project, frame_limits_start=0, frame_limits_end=-1, 
         # if len(t.P) == 1 and len(t.P.union(t.N)) == num_animals:
 
         rch = RegionChunk(t, project.gm, project.rm)
-        for frame in range(t.start_frame(project.gm), t.end_frame(project.gm), step):
+        for frame in range(t.start_frame(), t.end_frame(), step):
             if frame_limits_start > frame:
                 continue
 

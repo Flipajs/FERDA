@@ -170,7 +170,7 @@ for id, val in tqdm(dists.iteritems()):
 
         t_id = None
         for t in p.chm.tracklets_in_frame(frame):
-            if id in t.rid_gen(p.gm):
+            if id in t.rid_gen():
                 t_id = t.id()
             break
 

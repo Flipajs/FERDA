@@ -178,7 +178,7 @@ if __name__ == '__main__':
 
     for ch in chunks:
         r_ch = RegionChunk(ch, p.gm, p.rm)
-        for f in range(ch.start_frame(p.gm), ch.end_frame(p.gm)):
+        for f in range(ch.start_frame(), ch.end_frame()):
             r = r_ch.region_in_t(f)
 
             cm = cm_model.find_colormarks(p, r)

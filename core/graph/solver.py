@@ -95,7 +95,7 @@ class Solver:
 
         if len(confirm_later):
             self.project.gm.update_nodes_in_t_refs()
-            self.project.chm.reset_itree(self.project.gm)
+            self.project.chm.reset_itree()
 
     def adaptive_threshold(self, vertex):
         if self.project.gm.ch_start_longer(vertex):
@@ -491,11 +491,11 @@ class Solver:
             v1_ch = self.project.gm.chunk_end(v1)
             v2_ch = self.project.gm.chunk_start(v2)
             if v1_ch and v2_ch:
-                v1_ch.merge(v2_ch, self.project.gm)
+                v1_ch.merge(v2_ch)
             elif v1_ch and not v2_ch:
-                v1_ch.append_right(v2, self.project.gm)
+                v1_ch.append_right(v2)
             elif v2_ch and not v1_ch:
-                v2_ch.append_left(v1, self.project.gm)
+                v2_ch.append_left(v1)
             else:
                 self.project.chm.new_chunk(map(int, [v1, v2]), self.project.gm)
 

@@ -189,7 +189,7 @@ class FittingThreadingManager:
 
         i = 0
         while chunk.length() > 0 and (i < 20 or chunk.length() < 3):
-            chunk_vertices.append(chunk.pop_first(project.gm))
+            chunk_vertices.append(chunk.pop_first())
             i += 1
 
         s_id = self.session_id
