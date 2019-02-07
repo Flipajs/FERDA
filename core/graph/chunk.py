@@ -96,7 +96,9 @@ class Chunk():  # object
     def __getstate__(self):
         if isinstance(self.color, np.ndarray):
             self.color = self.color.tolist()
-        return self.__dict__
+        state = self.__dict__.copy()
+        del state['gm']
+        return state
 
     def set_random_color(self, low=0, high=255):
         self.color = np.random.randint(low, high, 3)
