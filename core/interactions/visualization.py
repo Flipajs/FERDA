@@ -21,6 +21,35 @@ from core.interactions.io import read_gt
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 
 
+def save_img_with_objects(out_filename, img, objects, title=None, scale=1.5):
+    if isinstance(img, str):
+        img = imread(img)
+    dpi = 80
+    height, width = img.shape[:2]
+    figsize = scale * width / float(dpi), scale * height / float(dpi)
+    fig = plt.figure(figsize=figsize)
+    ax = fig.add_axes([0, 0, 1, 1])
+    ax.axis('off')
+    ax.imshow(img, interpolation='nearest')
+
+    colors = itertools.cycle(['red', 'blue', 'green', 'yellow', 'white'])
+    for o, color in zip(objects, colors):
+        o.draw(ax, color=color)
+    if title is not None:
+        plt.title(title)
+    ax.set(xlim=[0, width], ylim=[height, 0], aspect=1)
+    if out_filename is not None:
+        fig.savefig(out_filename, transparent=True, bbox_inches='tight', pad_inches=0, dpi=dpi)
+        plt.close(fig)
+    else:
+        canvas = FigureCanvas(fig)
+        canvas.draw()
+        width, height = fig.get_size_inches() * fig.get_dpi()
+        img = np.frombuffer(canvas.tostring_rgb(), dtype='uint8').reshape(int(height), int(width), 3)
+        plt.close(fig)
+        return img
+
+
 def save_prediction_img(out_filename, num_objects, img, pred=None, gt=None, title=None, scale=1.5):
     """
     Save visualization of detected objects and/or ground truth on an image.

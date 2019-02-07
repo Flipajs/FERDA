@@ -1,5 +1,4 @@
 from __future__ import print_function
-
 """
 use: $ python -m core.interactions.generate_data
 """
@@ -14,7 +13,6 @@ import os.path
 import cv2
 import fire
 import tqdm
-import csv
 import h5py
 import pandas as pd
 import errno
@@ -31,9 +29,12 @@ from core.graph.region_chunk import RegionChunk
 from utils.video_manager import get_auto_video_manager
 from core.region.transformableregion import TransformableRegion
 from core.region.ellipse import Ellipse
-from core.interactions.visualization import save_prediction_img
+from core.region.bbox import BBox
+from core.interactions.visualization import save_prediction_img, save_img_with_objects
 from core.interactions.io import read_gt
 from utils.img import safe_crop
+from utils.dataset_io import ImageIOFile, MultiImageIOFile, MultiImageIOHdf5, DataIOCSV, DataIOVot, Dataset, \
+    DummyDataset
 
 memory = Memory('out/cache', verbose=1)
 
@@ -42,184 +43,6 @@ IMAGE_SIZE_PX = 200
 
 
 # TODO: check for possible bug
-
-class ImageIOFile(object):
-    def __init__(self, filename_template):
-        self.filename_template = filename_template
-        self.next_idx = 0
-
-    def add_item(self, image):
-        cv2.imwrite(self.filename_template.format(self.next_idx), image)
-        self.next_idx += 1
-
-    def read_item(self):
-        return cv2.imread(self.filename_template.format(self.next_idx))
-        self.next_idx += 1
-
-    def close(self):
-        pass
-
-
-class MultiImageIOFile(object):
-    def __init__(self, filename_template, names):
-        self.filename_template = filename_template
-        self.names = names
-        self.next_idx = 0
-
-    def add_item(self, images):
-        for name, image in zip(self.names, images):
-            cv2.imwrite(
-                self.filename_template.format(idx=self.next_idxm, name=name),
-                image)
-        self.next_idx += 1
-
-    def read_item(self):
-        images = []
-        for name in self.names:
-            images.append(cv2.imread(self.filename_template.format(
-                idx=self.next_idx, name=name)))
-        self.next_idx += 1
-        return images
-
-    def close(self):
-        pass
-
-
-class ImageIOHdf5(object):
-    def __init__(self, dataset):
-        self.dataset = dataset
-        self.next_idx = 0
-
-    def add_item(self, image):
-        self.dataset[self.next_idx] = image
-        self.next_idx += 1
-
-    def read_item(self):
-        image = self.dataset[self.next_idx]
-        self.next_idx += 1
-        return image
-
-
-class MultiImageIOHdf5(object):
-    def __init__(self, h5group, dataset_names, shapes):
-        self.datasets = []
-        if len(shapes) != len(dataset_names) or not isinstance(shapes, list):
-            shapes = [shapes] * len(dataset_names)
-        for name, shape in zip(dataset_names, shapes):
-            self.datasets.append(h5group.create_dataset(name, shape, np.uint8))
-        self.next_idx = 0
-
-    def add_item(self, images):
-        for dataset, image in zip(self.datasets, images):
-            dataset[self.next_idx] = image
-        self.next_idx += 1
-
-    def read_item(self):
-        images = [dataset[self.next_idx] for dataset in self.datasets]
-        self.next_idx += 1
-        return images
-
-    def close(self):
-        pass
-
-
-class DataIOCSV(object):
-    def __init__(self, filename, columns=None):
-        if columns is not None:
-            self.csv_file = open(filename, 'w')
-            self.writer = csv.DictWriter(self.csv_file, fieldnames=columns)
-            self.writer.writeheader()
-            self.reader = None
-        else:
-            assert False
-            # df = pd.read_csv(filename)
-            self.reader = None
-            self.writer = None
-
-    def add_item(self, data):
-        self.writer.writerow(data)
-
-    def read_item(self):
-        assert False
-
-    def close(self):
-        self.csv_file.close()
-
-
-class DataIOVot(object):
-    def __init__(self, filename_template, image_filename_template=None, image_shape=None):
-        self.template = '<annotation><folder>GeneratedData_Train</folder>' \
-                 '<filename>{filename}</filename>' \
-                 '<path>{path}</path>' \
-                 '<source>' \
-                 '<database>Unknown</database>' \
-                 '</source>' \
-                 '<size>' \
-                 '<width>{width}</width>' \
-                 '<height>{height}</height>' \
-                 '<depth>{depth}</depth>' \
-                 '</size>' \
-                 '<segmented>0</segmented>' \
-                 '{annotation}</annotation>'
-        self.bbox_template = '<object><name>{name}</name><bndbox>' \
-                             '<xmin>{xmin}</xmin><xmax>{xmax}</xmax>' \
-                             '<ymin>{ymin}</ymin><ymax>{ymax}</ymax></bndbox></object>'
-        self.next_idx = 0
-        self.filename_template = filename_template
-        if image_filename_template is not None and image_shape is not None:
-            # writing
-            self.image_filename_template = image_filename_template
-            self.template_data = {'height': image_shape[0], 'width': image_shape[1],
-                                  'depth': image_shape[2], 'path': ''}
-        else:
-            assert False
-
-    def add_item(self, data):
-        if isinstance(data, dict):
-            data = [data]
-        assert isinstance(data, list)
-        bboxes_str = ''
-        for i, bbox in enumerate(data):
-            bbox['name'] = i
-            bboxes_str += self.bbox_template.format(**bbox)
-        annotation = self.template.format(annotation=bboxes_str,
-                                          filename=self.image_filename_template.format(self.next_idx),
-                                          **self.template_data)
-        open(self.filename_template.format(self.next_idx), 'w').write(annotation)
-        self.next_idx += 1
-
-    def read_item(self):
-        annotation = open(self.filename_template.format(self.next_idx), 'w').read()
-        # parse xml
-        assert False
-
-    def close(self):
-        pass
-
-
-class Dataset(object):
-    def __init__(self, image_io, data_io):
-        self.image_io = image_io
-        self.data_io = data_io
-
-    def add_item(self, image, data):
-        self.image_io.add_item(image)
-        self.data_io.add_item(data)
-
-    def read_item(self):
-        return self.image_io.read_item(), self.data_io.read_item()
-
-    def close(self):
-        self.image_io.close()
-        self.data_io.close()
-
-
-class DummyDataset(object):
-    def add_item(self, image, data):
-        pass
-
-    def close(self):
-        pass
 
 
 class DataGenerator(object):
@@ -232,6 +55,7 @@ class DataGenerator(object):
         self.params = {'single_min_frames': 0,
                        'single_min_average_speed_px': 0,
                        'regression_tracking_image_size_px': 224,
+                       'detection_image_size_px': 224,
                        'single_tracklet_min_speed': 0,
                        'single_tracklet_remove_fraction': 0,
 #                       'augmentation_elliptic_mask_multipliers': (1, 1), # fishes, sowbugs
@@ -493,6 +317,169 @@ class DataGenerator(object):
                     cv2.imwrite(join(sample_dir, 'validation_%02d.png' % i), h5_group_valid['img'][i])
             h5_file.close()
 
+    def write_detection_data(self, project_dir, count, out_dir=None, augmentation=True, overwrite=False,
+                             foreground_layer=False, data_format='csv', image_format='hdf5'):
+        """
+        Write detection training data with optional augmentation.
+
+        Example script usage arguments:
+        write-detection-data ../projects/2_temp/180810_2359_Cam1_ILP_cardinality_dense/ 20 out/dataset --data_format=vot --image_format=file
+
+        :param project_dir: project to use for training data extraction
+        :param count: number of generated training samples
+        :param out_dir: output directory for images.h5, train.csv, test.csv or None to display the generated data
+        :param augmentation: augment training samples with a disruptor object
+        :param overwrite: enable to silently overwrite existing data
+        :param foreground_layer: add foreground alpha mask as a fourth layer
+        """
+        self._load_project(project_dir)
+        if out_dir is not None:
+            img_shape = (self.params['detection_image_size_px'],
+                         self.params['detection_image_size_px'],
+                         3 if not foreground_layer else 4)
+            padding = ':0{}d'.format(len(str(count)))
+            self._makedirs(out_dir)
+            self._write_params(out_dir)
+            if image_format == 'hdf5':
+                h5_filename = join(out_dir, 'images.h5')
+                if not overwrite:
+                    if os.path.exists(h5_filename):
+                        raise OSError(errno.EEXIST, 'HDF5 file %s already exists.' % h5_filename)
+                h5_file = h5py.File(h5_filename, mode='w')
+                image_io = MultiImageIOHdf5(h5_file.create_group('train'), ['img0', 'img1'],
+                                            (count, ) + img_shape)
+            elif image_format == 'file':
+                out_dir_imgs = join(out_dir, 'imgs')
+                self._makedirs(out_dir_imgs)
+                image_io = ImageIOFile(join(out_dir_imgs, '{idx' + padding + '}.jpg'))
+            else:
+                assert False, 'unknown image_format'
+            if data_format == 'csv':
+                csv_filename = join(out_dir, 'train.csv')
+                if not overwrite:
+                    if os.path.exists(csv_filename):
+                        raise OSError(errno.EEXIST, 'file %s already exists.' % csv_filename)
+                columns = ['x', 'y', 'major', 'minor', 'angle_deg_cw']
+                data_io = DataIOCSV(csv_filename, columns)
+            elif data_format == 'vot':
+                out_dir_annotations = join(out_dir, 'annotations')
+                self._makedirs(out_dir_annotations)
+                data_io = DataIOVot(join(out_dir_annotations, '{idx' + padding + '}.xml'),
+                                    image_filename_template='{idx' + padding + '}.jpg',
+                                    image_shape=img_shape)
+            else:
+                assert False, 'uknown data_format'
+            dataset = Dataset(image_io, data_io)
+        else:
+            dataset = DummyDataset()
+
+        all_regions_idx, tracklets = self._get_single_region_tracklets()  # limit=40)  # for debugging
+
+        print('Total regions in single tracklets: {}'.format(len(all_regions_idx)))
+
+        # with open('single_regions.pkl', 'wb') as fw:
+        #     pickle.dump(single_region_tracklets, fw)
+        #     pickle.dump(all_regions_idx, fw)
+
+        idxs = random.sample(all_regions_idx, count)
+        if augmentation:
+            idxs_augmentation = random.sample(all_regions_idx, count)
+
+        for i, (tracklet_idx, region_idx) in enumerate(tqdm.tqdm(idxs)):
+            region = tracklets[tracklet_idx][region_idx]
+
+            if augmentation:
+                aug_tracklet_idx, aug_region_idx = idxs_augmentation[i]
+                aug_region = tracklets[aug_tracklet_idx][aug_region_idx]
+                # generate parameters for augmentation
+                # border point angle with respect to object centroid, 0 rad is from the centroid rightwards, positive ccw
+                theta_deg = np.random.uniform(-180, 180)
+                # approach angle, 0 rad is direction from the object centroid
+                # phi_deg = np.clip(np.random.normal(scale=90 / 2, size=n), -80, 80)
+                phi_deg = np.random.uniform(-90, 90)
+                # shift along synthetic object's major axis,
+                # negative means further from augmented object, positive increase overlap with the augmented object
+                # 0 is located at "head" tip of the synthetic object
+                aug_shift_px = int(round(np.random.normal(scale=10, loc=5)))
+                # # img1 rotation around object center
+                # rot_deg = np.random.normal(scale=30)
+
+            timg = TransformableRegion()
+            img = self._project.img_manager.get_whole_img(region.frame())
+            if not foreground_layer:
+                timg.set_img(img)
+            else:
+                timg.set_img(np.dstack((img, self._project.img_manager.get_foreground(region.frame()))))
+            timg.set_model(Ellipse.from_region(region))
+
+            if augmentation:
+                aug_img = self._project.img_manager.get_whole_img(aug_region.frame())
+                if foreground_layer:
+                    aug_img = np.dstack((aug_img, self._project.img_manager.get_foreground(aug_region.frame())))
+                img, timg_aug = self._augment(timg.get_img(), timg.get_model_copy(),
+                                    aug_img, Ellipse.from_region(aug_region),
+                                    theta_deg, phi_deg, aug_shift_px)
+            else:
+                img = timg.get_img()
+
+            # random shift and image crop
+            shift_max_px = self.params['detection_image_size_px'] / 2 - timg.model.major / 2 * 2.5
+            shift_xy_px = np.random.uniform(-shift_max_px, shift_max_px, 2)
+            img_crop, delta_xy, crop_range = safe_crop(img, (region.centroid() + shift_xy_px)[::-1],
+                                                       self.params['detection_image_size_px'],
+                                                       return_src_range=True)
+
+            # bboxes for first object and synthetic object
+            model = timg.get_model_copy().move(-delta_xy)
+            # model_dict = model.to_dict()
+            bbox_models = [BBox.from_planar_object(model)]
+            if augmentation:
+                model_aug = timg_aug.get_model_copy().move(-delta_xy)
+                # model_dict.update(model_aug.to_dict(1))
+                bbox_models.append(BBox.from_planar_object(model_aug))
+
+            # bboxes for other present objects
+            size_px = self.params['detection_image_size_px']
+            discard = False
+            for t in self._project.chm.tracklets_in_frame(region.frame()):
+                r = t.get_region_in_frame(region.frame())
+                bbox = BBox.from_planar_object(Ellipse.from_region(r)).move(-delta_xy)
+                if r != region and not bbox.is_outside_bounds(0, 0, size_px, size_px):
+                    if t.get_cardinality() != 1:
+                        discard = True
+                        break
+                    else:
+                        bbox_models.append(bbox)
+            if discard:
+                continue
+
+            if True:  # isinstance(dataset, DummyDataset):
+                self._makedirs(join(out_dir, 'examples'))
+                filename_template = join(out_dir, 'examples', '{idx' + padding + '}.jpg')
+                save_img_with_objects(filename_template.format(idx=dataset.next_idx), img_crop[:, :, ::-1], bbox_models)
+                # plt.imshow(save_img_with_objects(None, img_crop, bbox_models))
+                # plt.show()
+
+            def merge_two_dicts(x, y):
+                z = x.copy()  # start with x's keys and values
+                z.update(y)  # modifies z with y's keys and values & returns None
+                return z
+
+            # [{**bbox.to_dict(), **{'name': 'ant'}} for bbox in bbox_models]  # works in python 3.5
+            dataset.add_item(img_crop, [merge_two_dicts(bbox.to_dict(), {'name': 'ant'}) for bbox in bbox_models])
+            # dataset.add_item(img_crop, {
+            #         'x': model.x,
+            #         'y': model.y,
+            #         'major': model.major,
+            #         'minor': model.minor,
+            #         'angle_deg_cw': model.angle_deg,
+            #     })
+
+        if out_dir is not None:
+            dataset.close()
+            # h5_file.close()
+            # self.show_ground_truth(csv_filename, join(out_dir, 'sample'), h5_filename + ':train/img1', n=20)
+
     def write_regression_tracking_data(self, project_dir, count, out_dir=None, test_fraction=0.1, augmentation=True,
                                        overwrite=False, forward=True, backward=False, foreground_layer=False,
                                        data_format='csv', image_format='hdf5'):
@@ -701,7 +688,7 @@ class DataGenerator(object):
                     aug_img = self._project.img_manager.get_whole_img(aug_region.frame())
                     if foreground_layer:
                         aug_img = np.dstack((aug_img, self._project.img_manager.get_foreground(aug_region.frame())))
-                    img = self._augment(timg.get_img(), timg.get_model_copy(),
+                    img, _ = self._augment(timg.get_img(), timg.get_model_copy(),
                                         aug_img, Ellipse.from_region(aug_region),
                                         theta_deg, phi_deg, aug_shift_px)
                 else:
@@ -769,7 +756,7 @@ class DataGenerator(object):
         img_augmented = (img.astype(float) * (1 - img_aug_alpha) +
                          timg_aug.get_img().astype(float) * img_aug_alpha).astype(np.uint8)
 
-        return img_augmented
+        return img_augmented, timg_aug
 
     @staticmethod
     def show_ground_truth(csv_file, out_dir, image_hdf5='images.h5:train/img1', n=None):

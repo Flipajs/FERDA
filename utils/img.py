@@ -48,7 +48,7 @@ def get_safe_selection(img, y, x, height, width, fill_color=(255, 255, 255), ret
     return crop
 
 
-def safe_crop(img, xy, crop_size_px):
+def safe_crop(img, xy, crop_size_px, return_src_range=False):
     """
     Crop image safely around a position, even if the output lays outside the input image.
 
@@ -86,7 +86,10 @@ def safe_crop(img, xy, crop_size_px):
     img_crop[slice(*y_range_dst), slice(*x_range_dst)] = \
         img[slice(*y_range_src), slice(*x_range_src)]
     delta_xy = np.array((x_range_src[0] - x_range_dst[0], y_range_src[0] - y_range_dst[0]))
-    return img_crop, delta_xy
+    if return_src_range:
+        return img_crop, delta_xy, (x_range_src, y_range_src)
+    else:
+        return img_crop, delta_xy
 
 
 def get_img_around_pts(img, pts, margin=0):
