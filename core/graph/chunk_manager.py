@@ -229,7 +229,7 @@ class ChunkManager(object):
 
         return filter(lambda x: (x.is_single() or x.is_multi()) and not x.is_id_decided(), affected)
 
-    def complete_set_gen(self, project):
+    def get_complete_sets(self, project):
         """
         Complete set generator.
 
@@ -247,7 +247,7 @@ class ChunkManager(object):
             s = filter(lambda x: x.is_single(), s)
 
             if len(s) == num_animals:
-                yield s
+                yield CompleteSet(s)
 
             min_end_frame = maxint
             for tracklet in s:
@@ -273,4 +273,12 @@ class ChunkManager(object):
         for t in self.chunk_gen():
             yx = np.array([r.centroid() for r in t.r_gen(rm)])
             plt.plot(yx[:, 1], yx[:, 0])
+
+
+class CompleteSet(object):
+    def __init__(self, tracklets):
+        self.tracklets = tracklets
+        self.start_frame = max([t.start_frame() for t in tracklets])
+        self.end_frame = min([t.end_frame() for t in tracklets])
+
 
