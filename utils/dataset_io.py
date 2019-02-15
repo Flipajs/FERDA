@@ -1,9 +1,23 @@
 import csv
 import cv2
 import numpy as np
+from abc import ABCMeta, abstractmethod
 
 
-class ImageIOFile(object):
+class IO:
+    __metaclass__ = ABCMeta
+
+    @abstractmethod
+    def add_item(self, image): pass
+
+    @abstractmethod
+    def read_item(self): pass
+
+    def close(self):
+        pass
+
+
+class ImageIOFile(IO):
     def __init__(self, filename_template):
         self.filename_template = filename_template
         self.next_idx = 0
@@ -16,36 +30,8 @@ class ImageIOFile(object):
         return cv2.imread(self.filename_template.format(idx=self.next_idx))
         self.next_idx += 1
 
-    def close(self):
-        pass
 
-
-class MultiImageIOFile(object):
-    def __init__(self, filename_template, names):
-        self.filename_template = filename_template
-        self.names = names
-        self.next_idx = 0
-
-    def add_item(self, images):
-        for name, image in zip(self.names, images):
-            cv2.imwrite(
-                self.filename_template.format(idx=self.next_idx, name=name),
-                image)
-        self.next_idx += 1
-
-    def read_item(self):
-        images = []
-        for name in self.names:
-            images.append(cv2.imread(self.filename_template.format(
-                idx=self.next_idx, name=name)))
-        self.next_idx += 1
-        return images
-
-    def close(self):
-        pass
-
-
-class ImageIOHdf5(object):
+class ImageIOHdf5(IO):
     def __init__(self, dataset):
         self.dataset = dataset
         self.next_idx = 0
@@ -60,30 +46,7 @@ class ImageIOHdf5(object):
         return image
 
 
-class MultiImageIOHdf5(object):
-    def __init__(self, h5group, dataset_names, shapes):
-        self.datasets = []
-        if len(shapes) != len(dataset_names) or not isinstance(shapes, list):
-            shapes = [shapes] * len(dataset_names)
-        for name, shape in zip(dataset_names, shapes):
-            self.datasets.append(h5group.create_dataset(name, shape, np.uint8))
-        self.next_idx = 0
-
-    def add_item(self, images):
-        for dataset, image in zip(self.datasets, images):
-            dataset[self.next_idx] = image
-        self.next_idx += 1
-
-    def read_item(self):
-        images = [dataset[self.next_idx] for dataset in self.datasets]
-        self.next_idx += 1
-        return images
-
-    def close(self):
-        pass
-
-
-class DataIOCSV(object):
+class DataIOCSV(IO):
     def __init__(self, filename, columns=None):
         if columns is not None:
             self.csv_file = open(filename, 'w')
@@ -106,7 +69,7 @@ class DataIOCSV(object):
         self.csv_file.close()
 
 
-class DataIOVot(object):
+class DataIOVot(IO):
     def __init__(self, filename_template, image_filename_template=None, image_shape=None):
         self.template = '<annotation><folder>GeneratedData_Train</folder>' \
                  '<filename>{filename}</filename>' \
@@ -149,35 +112,52 @@ class DataIOVot(object):
         # parse xml
         assert False
 
-    def close(self):
-        pass
-
 
 class Dataset(object):
-    def __init__(self, image_io, data_io):
-        self.image_io = image_io
+    def __init__(self, image_io=None, data_io=None):
+        """
+
+        :param image_io: single or list of multiple ImageIO descendant(s) or None
+        :param data_io: DataIO descendant or None
+        """
+        if image_io is None:
+            self.image_ios = None
+        else:
+            if not isinstance(image_io, list):
+                image_io = [image_io]
+            self.image_ios = image_io
         self.data_io = data_io
 
-    def add_item(self, image, data):
-        self.image_io.add_item(image)
-        self.data_io.add_item(data)
+    def is_dummy(self):
+        return self.image_ios is None and self.data_io is None
+
+    def add_item(self, image=None, data=None):
+        if self.image_ios is not None:
+            if not isinstance(image, list):
+                image = [image]
+            for image_io, single_img in zip(self.image_ios, image):
+                image_io.add_item(single_img)
+        if self.data_io is not None:
+            self.data_io.add_item(data)
 
     def read_item(self):
-        return self.image_io.read_item(), self.data_io.read_item()
+        return self.image_ios.read_item(), self.data_io.read_item()
 
     def close(self):
-        self.image_io.close()
-        self.data_io.close()
+        if self.image_ios is not None:
+            for image_io in self.image_ios:
+                image_io.close()
+        if self.data_io is not None:
+            self.data_io.close()
 
     @property
     def next_idx(self):
-        assert self.image_io.next_idx == self.data_io.next_idx
-        return self.image_io.next_idx
-
-
-class DummyDataset(object):
-    def add_item(self, image, data):
-        pass
-
-    def close(self):
-        pass
+        if self.image_ios is not None and self.data_io is not None:
+            assert self.image_ios[0].next_idx == self.data_io.next_idx
+            return self.image_ios[0].next_idx
+        elif self.image_ios is not None:
+            return self.image_ios[0].next_idx
+        elif self.data_io is not None:
+            return self.data_io.next_idx
+        else:
+            assert False, 'image and data io is None'

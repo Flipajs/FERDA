@@ -868,10 +868,10 @@ def track_single_tracklets(tracker_dir, project_dir, out_dir):
     from generate_data import DataGenerator
     dg = DataGenerator()
     dg._load_project(project_dir)
-    idx, single_tracklets = dg._get_single_region_tracklets()
+    _, tracklet_regions = dg._collect_regions(single=True, multi=False)
 
-    # random_tracklets_idx = random.sample(range(len(single_tracklets)), 60)
-    for i, tracklet_regions in enumerate(tqdm(single_tracklets, desc='single tracklets')):
+    # random_tracklets_idx = random.sample(range(len(tracklet_regions)), 60)
+    for i, tracklet_regions in enumerate(tqdm(tracklet_regions, desc='single tracklets')):
         regions, last_frame, success = detector.track_single_object(
             Ellipse.from_region(tracklet_regions[0]),
             forward=True, max_frames=tracklet_regions[-1].frame() - tracklet_regions[0].frame())

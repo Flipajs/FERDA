@@ -1,4 +1,5 @@
 __author__ = 'flipajs'
+import numpy as np
 
 
 class RegionChunk(object):
@@ -157,3 +158,18 @@ class RegionChunk(object):
                 if r.theta_ >= 2 * np.pi:
                     r.theta_ -= 2 * np.pi
         return n_swaps
+
+    @property
+    def centroids(self):
+        return np.array([r.centroid() for r in self.regions_gen()])
+
+    @property
+    def speed(self):
+        return np.linalg.norm(np.diff(self.centroids, axis=0), axis=1).mean()
+
+    def draw(self):
+        import matplotlib.pylab as plt
+        import numpy as np
+        polyline_xy = np.array([r.centroid()[::-1] for r in self.regions_gen()])
+        plt.plot(polyline_xy[:, 0], polyline_xy[:, 1])
+

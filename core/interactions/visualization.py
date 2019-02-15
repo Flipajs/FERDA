@@ -21,7 +21,7 @@ from core.interactions.io import read_gt
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 
 
-def save_img_with_objects(out_filename, img, objects, title=None, scale=1.5):
+def save_img_with_objects(out_filename, img, objects, labels=None, title=None, scale=1.5):
     if isinstance(img, str):
         img = imread(img)
     dpi = 80
@@ -33,10 +33,14 @@ def save_img_with_objects(out_filename, img, objects, title=None, scale=1.5):
     ax.imshow(img, interpolation='nearest')
 
     colors = itertools.cycle(['red', 'blue', 'green', 'yellow', 'white'])
-    for o, color in zip(objects, colors):
-        o.draw(ax, color=color)
+    if labels is None:
+        labels = [None] * len(objects)
+    for o, color, label in zip(objects, colors, labels):
+        o.draw(ax, label=label, color=color)
     if title is not None:
         plt.title(title)
+    if labels[0] is not None:
+        plt.legend()
     ax.set(xlim=[0, width], ylim=[height, 0], aspect=1)
     if out_filename is not None:
         fig.savefig(out_filename, transparent=True, bbox_inches='tight', pad_inches=0, dpi=dpi)

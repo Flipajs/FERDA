@@ -350,7 +350,6 @@ class Region(object):
     def eccentricity(self):
         return 1- (self.minor_axis_ / self.major_axis_) ** 0.5
 
-
     def get_phi(self, r2):
         """
         angle between movement vector and major axis <0, pi>
@@ -378,29 +377,27 @@ class Region(object):
         phi = min(phi, np.pi - phi)
         return phi
 
-    def is_inside(self, pt, tolerance=0):
+    def is_inside(self, yx, tolerance=0):
         tolerance = int(tolerance)
         from utils.drawing.points import draw_points_crop_binary
 
         try:
-            if self.roi().is_inside(pt, tolerance=tolerance):
-                pt_ = np.asarray(np.round(pt - self.roi().top_left_corner()), dtype=np.uint)
+            if self.roi().is_inside(yx, tolerance=tolerance):
+                yx_ = np.asarray(np.round(yx - self.roi().top_left_corner()), dtype=np.uint)
                 # TODO + tolerance margin, and fix offset
                 im = draw_points_crop_binary(self.pts())
 
-                y1 = int(max(0, pt_[0] - tolerance))
-                y2 = int(min(pt_[0] + tolerance + 1, im.shape[0]))
-                x1 = int(max(0, pt_[1] - tolerance))
-                x2 = int(min(pt_[1] + tolerance + 1, im.shape[1]))
+                y1 = int(max(0, yx_[0] - tolerance))
+                y2 = int(min(yx_[0] + tolerance + 1, im.shape[0]))
+                x1 = int(max(0, yx_[1] - tolerance))
+                x2 = int(min(yx_[1] + tolerance + 1, im.shape[1]))
                 for y in range(y1, y2):
                     for x in range(x1, x2):
                         if im[y, x]:
                             return True
-        except:
+        except Exception as e:
             import warnings
-            warnings.warn("region id: {}".format(self.id_))
-
-            pass
+            warnings.warn("Region.is_inside failed on region id {}.".format(self.id_))
 
         return False
 

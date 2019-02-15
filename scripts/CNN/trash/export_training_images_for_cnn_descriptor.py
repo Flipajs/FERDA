@@ -37,9 +37,7 @@ if __name__ == '__main__':
     path = '/Users/flipajs/Documents/dev/ferda/data/GT/Sowbug3.pkl'
     GT.load(path)
     try:
-        GT.set_offset(y=p.video_crop_model['y1'],
-                           x=p.video_crop_model['x1'],
-                           frames=p.video_start_t)
+        GT.set_project_offsets(p)
     except:
         pass
 
