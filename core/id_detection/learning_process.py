@@ -2161,10 +2161,7 @@ class LearningProcess:
         from utils.gt.gt import GT
         self.GT = GT()
         self.GT.load(path)
-        self.GT.set_offset(y=self.p.video_crop_model['y1'],
-                           x=self.p.video_crop_model['x1'],
-                           frames=self.p.video_start_t)
-
+        self.GT.set_project_offsets(p)
 
         while len(sorted_results):
             price, matching, (tcs1_id, tcs2_id) = sorted_results.pop()
@@ -2489,9 +2486,7 @@ class LearningProcess:
             from utils.gt.gt import GT
             self.GT = GT()
             self.GT.load(path)
-            self.GT.set_offset(y=self.p.video_crop_model['y1'],
-                                x=self.p.video_crop_model['x1'],
-                                frames=self.p.video_start_t)
+            self.GT.set_project_offsets(p)
 
             permutation_data = []
             for id_, t in enumerate(self.p.chm.tracklets_in_frame(max_best_frame)):
@@ -2628,9 +2623,7 @@ class LearningProcess:
             from utils.gt.gt import GT
             self.GT = GT()
             self.GT.load(path)
-            self.GT.set_offset(y=self.p.video_crop_model['y1'],
-                                x=self.p.video_crop_model['x1'],
-                                frames=self.p.video_start_t)
+            self.GT.set_project_offsets(p)
 
             permutation_data = []
             for t in self.p.chm.tracklets_in_frame(max_best_frame):

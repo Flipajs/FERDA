@@ -50,8 +50,5 @@ if __name__ == '__main__':
 
     gt = GT()
     gt.load(gt_path)
-    gt.set_offset(y=p.video_crop_model['y1'],
-                  x=p.video_crop_model['x1'],
-                  frames=p.video_start_t)
-
+    gt.set_project_offsets(p)
     eval_cardinality_classification(p, gt)

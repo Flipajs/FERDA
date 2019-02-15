@@ -1621,9 +1621,7 @@ class ResultsWidget(QtGui.QWidget):
             path = self.project.GT_file
 
         self._gt = GT()
-        self._gt.set_offset(y=self.project.video_crop_model['y1'],
-                            x=self.project.video_crop_model['x1'],
-                            frames=self.project.video_start_t)
+        self._gt.set_project_offsets(project)
 
         self._gt.build_from_PN(self.project)
 
@@ -1656,10 +1654,7 @@ class ResultsWidget(QtGui.QWidget):
         try:
             path = self.project.GT_file
             self._gt.load(path)
-
-            self._gt.set_offset(y=self.project.video_crop_model['y1'],
-                                x=self.project.video_crop_model['x1'],
-                                frames=self.project.video_start_t)
+            self._gt.set_project_offsets(project)
 
         except Exception as e:
             self._gt = None
