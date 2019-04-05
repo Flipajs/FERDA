@@ -2,12 +2,12 @@ import cv2
 import numpy as np
 
 from core.region.region import Region
-from core.region.shape import Shape
+from core.region.point import Point
 from core.region.ep import p2e, e2p, column
 from utils.angles import angle_absolute_error_direction_agnostic, angle_absolute_error
 
 
-class Ellipse(Shape):
+class Ellipse(Point):
     @classmethod
     def from_region(cls, region):
         yx = region.centroid()
@@ -29,9 +29,7 @@ class Ellipse(Shape):
                    region_dict['0_minor'], frame)
 
     def __init__(self, x=None, y=None, angle_deg=None, major=None, minor=None, frame=None):
-        super(Ellipse, self).__init__(frame)
-        self.x = x
-        self.y = y
+        super(Ellipse, self).__init__(x, y, frame)
         self.angle_deg = angle_deg  # positive means clockwise (image axes)
         self.major = major  # == 2 * semi major axis
         self.minor = minor  # == 2 * semi minor axis
@@ -53,15 +51,6 @@ class Ellipse(Shape):
             '{}minor'.format(idx_str): self.minor,
         })
 
-    @property
-    def xy(self):
-        return np.array((self.x, self.y))
-
-    @xy.setter
-    def xy(self, xy):
-        self.x = xy[0]
-        self.y = xy[1]
-
     def to_poly(self):
         return cv2.ellipse2Poly((int(self.x), int(self.y)), (int(self.major / 2.), int(self.minor / 2.)),
                                 int(self.angle_deg), 0, 360, 30)
@@ -77,9 +66,6 @@ class Ellipse(Shape):
         else:
             return angle_absolute_error(self.angle_deg, ellipse.angle_deg) < thresh_deg
 
-    def is_outside_bounds(self, x1, y1, x2, y2):
-        return self.x < x1 or self.y < y1 or self.x > x2 or self.y > y2
-
     def to_array(self):
         return np.array([self.x, self.y, self.angle_deg, self.major, self.minor, self.frame])
 
@@ -89,10 +75,6 @@ class Ellipse(Shape):
         self.angle_deg += angle_deg_cw
         rot = cv2.getRotationMatrix2D(tuple(rotation_center_xy), -angle_deg_cw, 1.)
         self.xy = p2e(np.vstack((rot, (0, 0, 1))).dot(e2p(column(self.xy)))).flatten()
-        return self
-
-    def move(self, delta_xy):
-        self.xy += delta_xy
         return self
 
     def get_point(self, angle_deg):
@@ -134,10 +116,10 @@ class Ellipse(Shape):
             ax = plt.gca()
         if color is None:
             color = 'r'
+        super(Ellipse, self).draw(ax, label, color)
         ax.add_patch(Ellipse(self.xy, self.major, self.minor, self.angle_deg,
                              facecolor='none', edgecolor=color,
                              label=label, linewidth=1))
-        plt.scatter(self.x, self.y, c=color)
 
     def __add__(self, other):
         """

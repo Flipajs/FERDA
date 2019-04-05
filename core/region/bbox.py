@@ -1,10 +1,8 @@
 import cv2
 import numpy as np
 
-from core.region.region import Region
 from core.region.shape import Shape
 from core.region.ep import p2e, e2p, column
-from utils.angles import angle_absolute_error_direction_agnostic, angle_absolute_error
 
 
 class BBox(Shape):
@@ -24,8 +22,17 @@ class BBox(Shape):
 
     @classmethod
     def from_dict(cls, region_dict, frame=None):
-        return cls(region_dict['0_x'], region_dict['0_y'], region_dict['0_angle_deg_cw'], region_dict['0_major'],
-                   region_dict['0_minor'], frame)
+        d = region_dict
+        if 'x' in d and 'y' in d and 'width' in d and 'height' in d:
+            return cls(d['x'], d['y'], d['x'] + d['width'], d['y'] + d['height'], frame)
+
+    @classmethod
+    def from_xyhw(cls, x, y, width, height, frame=None):
+        return cls(x, y, x + width, y + height, frame)
+
+    @classmethod
+    def from_xycenter_hw(cls, x_center, y_center, width, height, frame=None):
+        return cls(x_center - width / 2, y_center - height / 2, x_center + width / 2, y_center + height / 2, frame)
 
     def __init__(self, xmin=None, ymin=None, xmax=None, ymax=None, frame=None):
         super(BBox, self).__init__(frame)
@@ -60,6 +67,39 @@ class BBox(Shape):
     def to_array(self):
         return np.array([self.xmin, self.ymin, self.xmax, self.ymax, self.frame])
 
+    @property
+    def area(self):
+        return self.width * self.height
+
+    def iou(self, bbox):
+        # source: https://www.pyimagesearch.com/2016/11/07/intersection-over-union-iou-for-object-detection/
+
+        # determine the (x, y)-coordinates of the intersection rectangle
+        inter_xmin = max(self.xmin, bbox.xmin)
+        inter_ymin = max(self.ymin, bbox.ymin)
+        inter_xmax = min(self.xmax, bbox.xmax)
+        inter_ymax = min(self.ymax, bbox.ymax)
+
+        # compute the area of intersection rectangle
+        # interArea = max(0, inter_xmax - inter_xmin + 1) * max(0, inter_ymax - inter_ymin + 1)
+        interArea = max(0, inter_xmax - inter_xmin) * max(0, inter_ymax - inter_ymin)
+
+        # compute the area of both the prediction and ground-truth
+        # rectangles
+        # boxAArea = (boxA[2] - boxA[0] + 1) * (boxA[3] - boxA[1] + 1)
+        # boxBArea = (boxB[2] - boxB[0] + 1) * (boxB[3] - boxB[1] + 1)
+
+        # compute the intersection over union by taking the intersection
+        # area and dividing it by the sum of prediction + ground-truth
+        # areas - the interesection area
+        iou = interArea / float(self.area + bbox.area - interArea)
+
+        # return the intersection over union value
+        return iou
+
+    def __sub__(self, other):
+        return np.linalg.norm(self.xy - other.xy)
+
     def rotate(self, angle_deg_cw, rotation_center_xy=None):
         assert False
         if rotation_center_xy is None:
@@ -86,4 +126,19 @@ class BBox(Shape):
         ax.add_patch(Rectangle((self.xmin, self.ymin), self.width, self.height,
                              facecolor='none', edgecolor=color,
                              label=label, linewidth=1))
+        if label is not None:
+            plt.annotate(label, self.xy) # , xytext=(0, -self.height / 2), textcoords='offset pixels')
 
+    def draw_to_image(self, img, label=None, color=None):
+        if color is None:
+            color = (0, 0, 255)
+        round_tuple = lambda x: tuple([int(round(num)) for num in x])
+        cv2.rectangle(img, round_tuple((self.xmin, self.ymin)),
+                      round_tuple((self.xmax, self.ymax)), color)
+        if label is not None:
+            font_size = 1
+            font_thickness = 1
+            font_face = cv2.FONT_HERSHEY_SIMPLEX
+            text_size, _ = cv2.getTextSize(label, font_face, font_size, font_thickness)
+            cv2.putText(img, label, round_tuple((self.xy[0] - (text_size[0] / 2), self.ymin - text_size[1])),
+                        font_face, font_size, (255, 255, 255), font_thickness)
