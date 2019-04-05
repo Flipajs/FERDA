@@ -258,7 +258,7 @@ def merge_parts(new_gm, old_g, old_g_relevant_vertices, project, old_rm, old_chm
     old_vs = sorted(old_vs)
 
     old_regions = old_rm[old_rids]
-    new_rm.add(old_regions)
+    new_rm.extend(old_regions)
 
     for old_v, old_reg in izip(old_vs, old_regions):
         new_v = new_gm.add_vertex(old_reg)

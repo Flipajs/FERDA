@@ -101,9 +101,6 @@ def segmentation(project_dir):
     Parallel(n_jobs=config['general']['n_jobs'], verbose=10)\
         (delayed(do_segmentation_part)(project_dir, i, frame_start)
          for i, frame_start in enumerate(range(0, frame_num, frames_in_row)))
-    # with tqdm.tqdm(total=frame_num, desc='segmenting regions') as pbar:
-    #     for i, frame_start in enumerate(range(0, frame_num, frames_in_row)):
-    #         do_segmentation_part(project_file, i, frame_start, pbar.update)
 
 
 def do_segmentation_part(project_dir, part_id, frame_start, frame_done_func=None):
@@ -171,7 +168,7 @@ def do_segmentation_part(project_dir, part_id, frame_start, frame_done_func=None
         if proj.colormarks_model:
             proj.colormarks_model.assign_colormarks(proj, msers)
 
-        proj.rm.add(msers)
+        proj.rm.extend(msers)
 
         # if use_roi_prediction_optimisation:
         #     rois = get_rois(msers, img, prediction_optimisation_border)

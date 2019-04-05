@@ -13,7 +13,7 @@ class TestChunk(unittest.TestCase):
         self.frames_ = [1, 2, 3, 3, 4, 5, 6, 90, 0, 12]
         self.regions_ = [Region() for i in range(10)]
         for r, f, i in zip(self.regions_, self.frames_, range(len(self.regions_))):
-            self.p.rm.add(r)
+            self.p.rm.append(r)
             r.frame_ = f
             r.id_ = i + 1
 

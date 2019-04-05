@@ -1297,7 +1297,7 @@ class CompleteSetMatching:
                 assert (in_tracklet is not None) or (out_tracklet is not None)
 
                 regions = [el.to_region() for el in path['regions']]
-                self.p.rm.add(regions)
+                self.p.rm.extend(regions)
 
                 # for graph manager, when id < 0 means there is no node in graph but it is a direct link to region id*-1
                 # TODO: test -?
@@ -1390,7 +1390,7 @@ class CompleteSetMatching:
                 conflict = False
 
                 for id_ in range(cardinality):
-                    self.p.rm.add(rs[id_])
+                    self.p.rm.append(rs[id_])
 
                     # for graph manager, when id < 0 means there is no node in graph but it is a direct link to region id*-1
                     rids = [-r.id_ for r in rs[id_]]

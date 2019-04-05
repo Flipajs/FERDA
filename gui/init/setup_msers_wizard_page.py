@@ -168,7 +168,7 @@ class SetupMSERsWizardPage(QtGui.QWizardPage):
         self.project.stats.major_axis_median = self.major_axis_median.value()
         self.project.solver_parameters.max_edge_distance_in_ant_length = self.max_dist_object_length.value()
 
-        self.project.rm = RegionManager(self.project.working_directory)
+        self.project.rm = RegionManager()
         self.project.solver = Solver(self.project)
         self.project.gm = GraphManager(self.project, self.project.solver)
         self.project.chm = ChunkManager()

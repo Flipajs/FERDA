@@ -503,7 +503,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
         for r in result:
             r.pts_ = np.asarray(np.round(r.pts_), dtype=np.uint32)
             r_ = deepcopy(r)
-            self.project.rm.add(r_)
+            self.project.rm.append(r_)
             result_.append(r_)
 
         result = result_
@@ -828,7 +828,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
             new_regions = []
             for m in matching:
                 new_r = deepcopy(m[0])
-                self.project.rm.add(new_r)
+                self.project.rm.append(new_r)
 
                 new_r.frame_ += i
                 new_r.virtual = True
@@ -942,7 +942,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
             v = self.project.gm.g.vertex(v)
             r = deepcopy(self.project.gm.region(v))
 
-            self.project.rm.add(r)
+            self.project.rm.append(r)
             new_merged_vertices.append(self.project.gm.add_vertex(r))
 
         self.project.gm.add_edges_(vertices_t_minus, new_merged_vertices)
@@ -980,7 +980,7 @@ class ConfigurationsVisualizer(QtGui.QWidget):
                     v = self.project.gm.g.vertex(v)
                     r = deepcopy(self.project.gm.region(v))
 
-                    self.project.rm.add(r)
+                    self.project.rm.append(r)
                     new_merged_vertices.append(self.project.gm.add_vertex(r))
 
                 self.project.gm.add_edges_(vertices_t_minus, new_merged_vertices)

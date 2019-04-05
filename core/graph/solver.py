@@ -602,7 +602,7 @@ class Solver:
         return v_t_minus, v_t, v_t_plus
 
     def add_virtual_region(self, region):
-        self.project.rm.add(region)
+        self.project.rm.append(region)
         vertex = self.project.gm.add_vertex(region)
 
         r_t_minus, r_t, r_t_plus = self.get_vertices_around_t(region.frame_)

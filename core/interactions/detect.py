@@ -708,7 +708,7 @@ def detect_and_visualize(model_dir, in_img, x, y, out_img=None):
 
 def _load(tracker_dir, project_dir):
     from core.project.project import Project
-    project = Project.from_dir(project_dir)
+    project = Project(project_dir)
     gt = load_mot('data/GT/Cam1_clip.avi.txt')
     # gt = None
     if project.video_crop_model is not None:

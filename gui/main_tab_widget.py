@@ -55,7 +55,7 @@ class LandingTab(QtGui.QWidget):
         video_file = None
         while True:
             try:
-                project = Project.from_dir(project_dir, video_file=video_file)
+                project = Project(project_dir, video_file=video_file)
                 # project.load(project_dir, video_file=video_file)
                 break
             except ProjectNotFoundError as e:

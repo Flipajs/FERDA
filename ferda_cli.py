@@ -22,7 +22,7 @@ import itertools
 from collections import defaultdict
 import webbrowser
 from utils.experiment import Parameters, Experiment
-from core.region.region_manager import NewRegionManager
+from core.region.region_manager import RegionManager
 from utils.gt.mot import results_to_mot
 
 
@@ -38,35 +38,6 @@ def setup_logging():
 
 setup_logging()
 logger = logging.getLogger()
-
-
-def fix_legacy_project(project_path):
-    import pickle
-    from PyQt4 import QtGui, QtCore
-
-    project_dirname, project_filename = Project.get_project_dir_and_file(project_path)
-
-    chm_path = os.path.join(project_dirname, 'chunk_manager.pkl')
-    if os.path.isfile(chm_path):
-        with open(chm_path, 'rb') as fr:
-            chm = pickle.load(fr)
-        for _, ch in chm.chunks_.iteritems():
-            ch.project = None
-            if isinstance(ch.color, QtGui.QColor):
-                ch.color = ch.color.getRgb()[:3]
-        with open(chm_path, 'wb') as fw:
-            pickle.dump(chm, fw, -1)
-        print('Fixed chunk.color.')
-    else:
-        print('Can\'t find chunk manager {}'.format(chm_path))
-
-    with open(project_filename, 'rb') as fr:
-        project_pickle = pickle.load(fr)
-    if isinstance(project_pickle['name'], QtCore.QString):
-        project_pickle['name'] = str(project_pickle['name'])
-    with open(project_filename, 'wb') as fw:
-        pickle.dump(project_pickle, fw, -1)
-    print('Fixed project.name.')
 
 
 def fix_orientation(project):
@@ -308,7 +279,6 @@ if __name__ == '__main__':
     parser.add_argument('--project-save-dir', type=str, help='save project to directory')
     parser.add_argument('--video-file', type=str, help='project input video file')
     parser.add_argument('--save-results-mot', type=str, help='write found trajectories in MOT challenge format')
-    parser.add_argument('--fix-legacy-project', action='store_true', help='fix legacy project\'s Qt dependencies')
     parser.add_argument('--fix-orientation', action='store_true', help='fix single tracklets regions orientation')
     parser.add_argument('--run-tracking', action='store_true', help='run tracking on initilized project')
     parser.add_argument('--reidentification-weights', type=str, help='tracking: path to reidentification model weights',
@@ -322,16 +292,7 @@ if __name__ == '__main__':
    # parser.add_argument('--run-benchmarks', action='store_true', help='run benchmarks and store results to a html file')
     args = parser.parse_args()
 
-    if os.path.exists(join(args.project, 'regions.csv')) and os.path.exists(join(args.project, 'regions.h5')):
-        # new format
-        project = Project.from_dir(args.project, video_file=args.video_file)
-    else:
-        # old format
-        project = Project()
-        project.load(args.project, video_file=args.video_file)
-        if not isinstance(project.rm, NewRegionManager):
-            project.rm = NewRegionManager.from_region_manager(project.rm)
-            project.rm.regions_to_ext_storage()
+    project = Project(args.project, video_file=args.video_file)
 
     if args.info:
         import core.graph_assembly
@@ -344,9 +305,6 @@ if __name__ == '__main__':
         else:
             print('number of chunks {}'.format(len(project.chm)))
             print('tracklet cardinality stats: {}'.format(np.bincount([tracklet.segmentation_class for tracklet in project.chm.chunk_gen()])))
-
-    if args.fix_legacy_project:
-        fix_legacy_project(args.project)
 
     if args.fix_orientation:
         fix_orientation(project)
@@ -385,7 +343,7 @@ if __name__ == '__main__':
                                        time.strftime("%y%m%d_%H%M", time.localtime()) + '_visualization.mp4'))
 
     if args.project_save_dir:
-        project.save_new(args.project_save_dir)
+        project.save(args.project_save_dir)
 
     # if args.run_benchmarks:
     #     run_benchmarks()

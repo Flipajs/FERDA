@@ -141,7 +141,7 @@ class DataGenerator(object):
     def _load_project(self, project_dir=None, video_file=None):
         # self._project = Project()
         # self._project.load(project_dir, video_file=video_file)
-        self._project = Project.from_dir(project_dir)
+        self._project = Project(project_dir)
         self._video = get_auto_video_manager(self._project)
 
     def _write_params(self, out_dir):
