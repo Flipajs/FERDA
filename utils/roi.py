@@ -1,14 +1,20 @@
 import numpy as np
 
 
-class ROI():
-    def __init__(self, y=0, x=0, height=0, width=0):
+class ROI:
+    def __init__(self, y=None, x=None, height=None, width=None):
         self.y_ = y
         self.x_ = x
-        self.y_max_ = y + height
-        self.x_max_ = x + width
         self.height_ = height
         self.width_ = width
+        if y is not None and height is not None:
+            self.y_max_ = y + height
+        else:
+            self.y_max_ = None
+        if x is not None and width is not None:
+            self.x_max_ = x + width
+        else:
+            self.x_max_ = None
 
     def __str__(self):
         s = ""
@@ -146,7 +152,6 @@ class ROI():
                    self.y_ > roi2.y() + roi2.height() or
                    self.y_max_ < roi2.y()
                    )
-
 
     def is_intersecting_expanded(self, roi2, offset):
         return self.expand(offset).is_intersecting(roi2)

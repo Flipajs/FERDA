@@ -1621,7 +1621,7 @@ class ResultsWidget(QtGui.QWidget):
             path = self.project.GT_file
 
         self._gt = GT()
-        self._gt.set_project_offsets(project)
+        self._gt.set_project_offsets(self.project)
 
         self._gt.build_from_PN(self.project)
 

@@ -109,9 +109,6 @@ class Chunk():  # object
         print(s)
 
     def append_left(self, vertex):
-        if int(vertex) == 4:
-            print vertex
-
         # test: there cannot be any outgoing edge...
         out_edges = [e for e in vertex.out_edges()]
         for e in out_edges:
@@ -510,3 +507,4 @@ class Chunk():  # object
     def get_random_region(self):
         r_frame = randint(self.start_frame(), self.end_frame())
         return self.get_region_in_frame(r_frame)
+

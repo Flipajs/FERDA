@@ -22,7 +22,7 @@ import itertools
 from collections import defaultdict
 import webbrowser
 from utils.experiment import Parameters, Experiment
-
+from core.region.region_manager import NewRegionManager
 from utils.gt.mot import results_to_mot
 
 
@@ -69,31 +69,21 @@ def fix_legacy_project(project_path):
     print('Fixed project.name.')
 
 
-def fix_orientation(project_path):
-    import jsonpickle
-    import utils.load_jsonpickle
-    from shutil import move
-    project = Project.from_dir(project_path)
+def fix_orientation(project):
     n_swaps = project.fix_regions_orientation()
     print('Swapped {} regions orientation.'.format(n_swaps))
-    move(join(project_path, 'regions.json'), join(project_path, 'regions_old_orientation.json'))
-    open(join(project_path, 'regions.json'), 'w').write(jsonpickle.encode(project.rm))
 
 
-def run_tracking(project_dir, video_file=None, force_recompute=False, reid_model_weights_path=None, results_mot=None):
+def run_tracking(project, project_dir, force_recompute=False, reid_model_weights_path=None, results_mot=None):
     import core.segmentation
     from core.region.clustering import is_project_cardinality_classified
     import core.graph_assembly
     import core.graph.solver
     from core.id_detection.complete_set_matching import do_complete_set_matching
     logger.info('run_tracking: segmentation')
-    project = Project()
-    project.load(project_dir, video_file=video_file)
     if force_recompute or not core.graph_assembly.is_assemply_completed(project):
         core.segmentation.segmentation(project_dir)
     logger.info('run_tracking: graph assembly')
-    project = Project()
-    project.load(project_dir, video_file=video_file)
     if force_recompute or not core.graph_assembly.is_assemply_completed(project):
         graph_solver = core.graph.solver.Solver(project)
         core.graph_assembly.graph_assembly(project, graph_solver)
@@ -312,8 +302,10 @@ def load_experiments(experiments_config, evaluation_required=False, trajectories
 if __name__ == '__main__':
     import argparse
 
-    parser = argparse.ArgumentParser(description='Convert and visualize mot ground truth and results.')
-    parser.add_argument('--project', type=str, help='project directory')
+    parser = argparse.ArgumentParser(description='Convert and visualize mot ground truth and results.',
+                                     epilog='use --project and --project-save-dir to convert project format')
+    parser.add_argument('--project', type=str, help='load project from directory (old or new format)')
+    parser.add_argument('--project-save-dir', type=str, help='save project to directory')
     parser.add_argument('--video-file', type=str, help='project input video file')
     parser.add_argument('--save-results-mot', type=str, help='write found trajectories in MOT challenge format')
     parser.add_argument('--fix-legacy-project', action='store_true', help='fix legacy project\'s Qt dependencies')
@@ -330,10 +322,20 @@ if __name__ == '__main__':
    # parser.add_argument('--run-benchmarks', action='store_true', help='run benchmarks and store results to a html file')
     args = parser.parse_args()
 
+    if os.path.exists(join(args.project, 'regions.csv')) and os.path.exists(join(args.project, 'regions.h5')):
+        # new format
+        project = Project.from_dir(args.project, video_file=args.video_file)
+    else:
+        # old format
+        project = Project()
+        project.load(args.project, video_file=args.video_file)
+        if not isinstance(project.rm, NewRegionManager):
+            project.rm = NewRegionManager.from_region_manager(project.rm)
+            project.rm.regions_to_ext_storage()
+
     if args.info:
         import core.graph_assembly
         from core.region.clustering import is_project_cardinality_classified
-        project = Project(args.project)
         print('assembled: {}'.format(core.graph_assembly.is_assemply_completed(project)))
         print('cardinality classified: {}'.format(is_project_cardinality_classified(project)))
         print('descriptors computed: {}'.format(os.path.isfile(join(project.working_directory, 'descriptors.pkl'))))
@@ -347,16 +349,12 @@ if __name__ == '__main__':
         fix_legacy_project(args.project)
 
     if args.fix_orientation:
-        fix_orientation(args.project)
+        fix_orientation(project)
 
     if args.run_tracking:
-        project = Project()
-        project.load(args.project, video_file=args.video_file)
-        run_tracking(args.project, video_file=args.video_file, reid_model_weights_path=args.reidentification_weights)
+        run_tracking(project, args.project, video_file=args.video_file, reid_model_weights_path=args.reidentification_weights)
 
     if args.save_results_mot:
-        project = Project()
-        project.load(args.project, video_file=args.video_file)
         results = project.get_results_trajectories()
         df = results_to_mot(results)
         df.to_csv(args.save_results_mot, header=False, index=False)
@@ -385,6 +383,9 @@ if __name__ == '__main__':
                                   dataset['gt'], dataset['video'],
                                   join(experiments_config['dir'],
                                        time.strftime("%y%m%d_%H%M", time.localtime()) + '_visualization.mp4'))
+
+    if args.project_save_dir:
+        project.save_new(args.project_save_dir)
 
     # if args.run_benchmarks:
     #     run_benchmarks()

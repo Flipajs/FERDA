@@ -12,7 +12,7 @@ import errno
 from core.graph.solver import Solver
 from core.graph.graph_manager import GraphManager
 from core.graph.chunk_manager import ChunkManager
-from core.region.region_manager import RegionManager
+from core.region.region_manager import RegionManager, NewRegionManager
 from core.log import Log
 from core.project.mser_parameters import MSERParameters
 from core.project.other_parameters import OtherParameters
@@ -39,7 +39,7 @@ class Project(object):
         self.description = ''
         self.video_paths = []
         self.video_start_t = 0
-        self.video_end_t = None
+        self.video_end_t = None  # inclusive
         self.date_created = -1
         self.date_last_modification = -1
 
@@ -135,7 +135,8 @@ class Project(object):
 
     def __getstate__(self):
         d = self.__dict__.copy()
-        del d['working_directory']
+        if 'working_directory' in d:
+            del d['working_directory']
         # saved separately
         del d['chm']
         del d['rm']
@@ -182,7 +183,7 @@ class Project(object):
                 self.gm.save(directory)
             pbar.update()
             if self.rm is not None:
-                self.rm.save_new(directory)
+                self.rm.save(directory)
             pbar.update()
             if self.chm is not None:
                 open(join(directory, 'tracklets.json'), 'w').write(jsonpickle.encode(self.chm, keys=True, warn=True))
@@ -197,7 +198,8 @@ class Project(object):
     def from_dir(cls, directory, video_file=None,
                  regions_optional=False, graph_optional=False, tracklets_optional=False):
         with tqdm.tqdm(total=5, desc='loading project') as pbar:
-            project = jsonpickle.decode(open(join(directory, 'project.json'), 'r').read(), keys=True)
+            project = cls()
+            project.__dict__.update(jsonpickle.decode(open(join(directory, 'project.json'), 'r').read(), keys=True).__dict__)
             if project.arena_model is not None:
                 project.arena_model.load_mask(join(directory, 'mask.png'))
             # check for video file
@@ -206,24 +208,32 @@ class Project(object):
             project.img_manager.set_project(project)
             pbar.update()
             pbar.set_description('loading regions')
-            if os.path.exists(join(directory, 'regions.json')) and os.path.exists(join(directory, 'regions.h5')):
-                from core.region.region_manager import load_new_region_manager
-                project.rm = load_new_region_manager(directory)
+            if os.path.exists(join(directory, 'regions.csv')) and os.path.exists(join(directory, 'regions.h5')):
+                from core.region.region_manager import NewRegionManager
+                project.rm = NewRegionManager.from_dir(directory)
             elif not regions_optional:
-                raise ProjectNotFoundError
+                raise ProjectNotFoundError('regions.{csv,h5} not found and regions not optional')
             pbar.update()
             pbar.set_description('loading graph')
             if os.path.exists(join(directory, 'graph.json')):
                 project.gm = GraphManager.from_dir(directory, project)
             elif not graph_optional:
-                raise ProjectNotFoundError
+                raise ProjectNotFoundError('graph.json not found and graph not optional')
             pbar.update()
             pbar.set_description('loading tracklets')
             if project.gm is not None and os.path.exists(join(directory, 'tracklets.json')):
                 project.chm = ChunkManager.from_dir(directory, project.gm)
             elif not tracklets_optional:
-                raise ProjectNotFoundError
+                raise ProjectNotFoundError('tracklets.json not found and tracklets not optional')
             pbar.update()
+
+            cardinality_model_filename = join(directory, 'region_cardinality_clustering.pkl')
+            if os.path.exists(cardinality_model_filename):
+                project.region_cardinality_classifier = pickle.load(open(cardinality_model_filename, 'r'))
+
+            project.solver = Solver(project)
+            project.gm.assignment_score = project.solver.assignment_score
+
         return project
 
     def save(self, path=None):
@@ -496,8 +506,9 @@ class Project(object):
         self.gm.project = self
         self.gm.rm = self.rm
 
-        self.chm.gm = self.gm
-        self.chm.reset_itree()
+        if self.chm is not None:
+            self.chm.gm = self.gm
+            self.chm.reset_itree()
 
         # self.gm.update_nodes_in_t_refs()
 
@@ -592,7 +603,7 @@ class Project(object):
         :return: ndarray, shape=(n_frames, n_animals, 2); coordinates are in yx order, nan when id not present
         """
         assert self.video_start_t != -1
-        n_frames = self.video_end_t
+        n_frames = self.video_end_t + 1
         results = np.ones(shape=(n_frames, len(self.animals), 2)) * np.nan
         for frame in tqdm.tqdm(range(self.video_start_t, n_frames), desc='gathering trajectories'):
             for t in self.chm.tracklets_in_frame(frame - self.video_start_t):
@@ -642,12 +653,13 @@ def dummy_project():
 
 
 if __name__ == "__main__":
-    p = Project('/home/matej/prace/ferda/projects/630e88d5/cowbug-cut/')
-    p.name = 'test'
-    p.a = 20
-    p.working_directory = '/home/flipajs/test'
-    p.save()
+    # experiments...
+    p = Project.from_dir('../projects/2_temp/190404_Sowbug3_cut_open')
+    t = p.chm[4]
+    from core.graph.region_chunk import RegionChunk
+    import matplotlib.pylab as plt
+    rt = RegionChunk(t, p.gm, p.rm)
+    rt.draw()
+    plt.show()
 
-    a = Project()
-    a.load('/home/flipajs/test/test.pkl')
-    print("Project name: ", a.name)
+

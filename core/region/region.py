@@ -2,6 +2,7 @@ import math
 import numbers
 from utils.roi import get_roi, get_roi_rle, ROI
 from utils.img import createLineIterator
+from utils.angles import angle_absolute_error
 import numpy as np
 
 
@@ -41,10 +42,11 @@ class Region(object):
 
         self.parent_label_ = -1
 
-        if isinstance(data, dict):
-            self.from_dict_(data)
-        else:
-            self.from_pts_(data)
+        if data is not None:
+            if isinstance(data, dict):
+                self.from_dict_(data)
+            else:
+                self.from_pts_(data)
 
         self.roi_ = None
         self.frame_ = frame
@@ -85,8 +87,11 @@ class Region(object):
         state['min_intensity_'] = float(state['min_intensity_'])
         state['max_intensity_'] = float(state['max_intensity_'])
         state['intensity_percentile'] = float(state['intensity_percentile'])
-        if flatten and self.roi_ is not None:
-            state.update({'roi_' + k: v for k, v in self.roi().as_dict().items()})
+        if flatten:
+            roi = self.roi()
+            if roi is None:
+                roi = ROI()
+            state.update({'roi_' + k: v for k, v in roi.as_dict().items()})
             del state['roi_']
         return state
 
@@ -217,7 +222,7 @@ class Region(object):
         self.pts_ = np.array(data)
 
     def area(self):
-        if not self.area_:
+        if not self.area_ and self.pts() is not None:
             self.area_ = len(self.pts())
 
         return self.area_
@@ -250,10 +255,8 @@ class Region(object):
 
         :return: yx coordinates; array, shape=(n, 2)
         """
-        if self.pts_ is None:
-            assert self.pts_rle_ is not None
+        if self.pts_ is None and hasattr(self, 'pts_rle_') and self.pts_rle_ is not None:
             self.pts_ = self.pts_from_rle_(self.pts_rle_)
-
         return self.pts_
 
     def draw_mask(self, img):
@@ -279,12 +282,11 @@ class Region(object):
         self.centroid_ = centroid
 
     def roi(self):
-        if not hasattr(self, 'roi_') or not self.roi_:
-            if self.pts_ is None:
-                self.roi_ = get_roi_rle(self.pts_rle_)
-            else:
+        if not hasattr(self, 'roi_') or self.roi_ is None:
+            if self.pts_ is not None:
                 self.roi_ = get_roi(self.pts())
-
+            elif self.pts_rle_ is not None:
+                self.roi_ = get_roi_rle(self.pts_rle_)
         return self.roi_
 
     def contour(self):
@@ -397,7 +399,7 @@ class Region(object):
                             return True
         except Exception as e:
             import warnings
-            warnings.warn("Region.is_inside failed on region id {}.".format(self.id_))
+            warnings.warn("Region.is_inside failed on region id {}, {}.".format(self.id_, e.message))
 
         return False
 
@@ -443,53 +445,136 @@ class Region(object):
     def get_img(self, image_manager, **kwargs):
         return image_manager.get_crop(self.frame(), self.roi(), **kwargs)
 
-import h5py
-
-class RegionH5(Region):
-    region_pts_h5 = None
-    region_pts = None
-    n_items = 0
-
-    @classmethod
-    def init_h5_store(cls, filename, num_items=None):
-        cls.region_pts_h5 = h5py.File(filename, mode='r')  # TODO 'a'
-        if not 'region_pts' in cls.region_pts_h5:
-            assert num_items is not None
-            dt = h5py.special_dtype(vlen=np.dtype('int32'))
-            cls.region_pts_h5.create_dataset('region_pts', (num_items,), dtype=dt, maxshape=(None,))  # , compression='gzip'
-        cls.region_pts = cls.region_pts_h5['region_pts']
-
-    @classmethod
-    def create_h5_store(cls, filename, num_items):
-        cls.region_pts_h5 = h5py.File(filename, mode='w')
-        dt = h5py.special_dtype(vlen=np.dtype('int32'))
-        cls.region_pts_h5.create_dataset('region_pts', (num_items,), dtype=dt, maxshape=(None,))  # , compression='gzip'
-        cls.region_pts = cls.region_pts_h5['region_pts']
-
-    @classmethod
-    def from_region(cls, region):
-        regionH5 = cls()
-        regionH5.__dict__.update(region.__dict__)
-        if regionH5.region_pts is not None:
-            try:
-                regionH5.set_pts(region.pts())
-                regionH5.pts_ = None
-                regionH5.pts_rle_ = None
-            except:
-                pass
-        return regionH5
-
-    def pts(self):
-        if self.region_pts is not None:
-            return self.region_pts[self.id()].reshape((-1, 2))
+    def get_head_tail(self, min_angle_difference_deg=90):
+        dists = np.linalg.norm(self.pts() - self.centroid(), axis=1)
+        sorted_indices = dists.argsort()[::-1]
+        extreme_points = []
+        extreme_angles = []
+        for yx in self.pts()[sorted_indices]:
+            vec_yx = yx - self.centroid()
+            angle = np.rad2deg(np.arctan2(*vec_yx))
+            if not extreme_angles or \
+                    angle_absolute_error(extreme_angles[-1], angle) > min_angle_difference_deg:
+                extreme_points.append(yx)
+                extreme_angles.append(angle)
+                if len(extreme_points) == 2:
+                    break
+        assert len(extreme_points) == 2
+        if angle_absolute_error(extreme_angles[0], -np.rad2deg(self.theta_)) < \
+            angle_absolute_error(extreme_angles[1], -np.rad2deg(self.theta_)):
+            return extreme_points[0], extreme_points[1]
         else:
-            return super(RegionH5, self).pts()
+            return extreme_points[1], extreme_points[0]
 
-    def set_pts(self, value):
-        if self.region_pts is not None:
-            self.region_pts[self.id()] = value.flatten()
-        else:
-            self.pts_ = value
+
+class RegionExtStorage(Region):
+    def __init__(self, i, dataframe, pts_h5_dataset):
+        self.i = i
+        self.dataframe = dataframe
+        self.pts_h5_dataset = pts_h5_dataset
+        self.__centroid__ = None
+        self.__roi__ = None
+
+    @property
+    def id_(self):
+        return self.dataframe.loc[self.i, 'id_']
+
+    @property
+    def pts_(self):
+        return self.pts_h5_dataset[self.i].reshape((-1, 2))
+
+    @property
+    def centroid_(self):
+        if self.__centroid__ is None:
+            self.__centroid__ = self.dataframe.loc[self.i, ['centroid_y', 'centroid_x']].to_numpy(dtype=float)
+        return self.__centroid__
+
+    @property
+    def label_(self):
+        return self.dataframe.loc[self.i, 'label_']
+
+    @property
+    def margin_(self):
+        return self.dataframe.loc[self.i, 'margin_']
+
+    @property
+    def theta_(self):
+        return self.dataframe.loc[self.i, 'theta_']
+
+    @theta_.setter
+    def theta_(self, value):
+        self.dataframe.loc[self.i, 'theta_'] = value
+
+    @property
+    def min_intensity_(self):
+        return self.dataframe.loc[self.i, 'min_intensity_']
+
+    @property
+    def max_intensity_(self):
+        return self.dataframe.loc[self.i, 'max_intensity_']
+
+    @property
+    def intensity_percentile(self):
+        return self.dataframe.loc[self.i, 'intensity_percentile']
+
+    @property
+    def area_(self):
+        return self.dataframe.loc[self.i, 'area_']
+
+    @property
+    def sxx_(self):
+        return self.dataframe.loc[self.i, 'sxx_']
+
+    @property
+    def syy_(self):
+        return self.dataframe.loc[self.i, 'syy_']
+
+    @property
+    def sxy_(self):
+        return self.dataframe.loc[self.i, 'sxy_']
+
+    @property
+    def major_axis_(self):
+        return self.dataframe.loc[self.i, 'major_axis_']
+
+    @property
+    def minor_axis_(self):
+        return self.dataframe.loc[self.i, 'minor_axis_']
+
+    @property
+    def a_(self):
+        return self.dataframe.loc[self.i, 'a_']
+
+    @property
+    def b_(self):
+        return self.dataframe.loc[self.i, 'b_']
+
+    @property
+    def parent_label_(self):
+        return self.dataframe.loc[self.i, 'parent_label_']
+
+    @property
+    def frame_(self):
+        return self.dataframe.loc[self.i, 'frame_']
+
+    @property
+    def contour_(self):
+        return self.dataframe.loc[self.i, 'contour_']
+
+    @property
+    def is_origin_interaction_(self):
+        return self.dataframe.loc[self.i, 'is_origin_interaction_']
+
+    @property
+    def roi_(self):
+        if self.__roi__ is None:
+            yxhw = self.dataframe.loc[self.i, ['roi_y', 'roi_x', 'roi_height', 'roi_width']]
+            self.__roi__ = ROI(*yxhw)
+        return self.__roi__
+
+    @property
+    def pts_rle_(self):
+        assert False, 'deprecated'
 
 
 def encode_RLE(pts, return_area=True):

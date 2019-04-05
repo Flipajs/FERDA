@@ -34,7 +34,7 @@ class ChunkManager(object):
     def __getstate__(self):
         state = self.__dict__.copy()
         del state['itree']
-        del state['gm']
+        del state['_gm']
         return state
 
     def __setstate__(self, state):

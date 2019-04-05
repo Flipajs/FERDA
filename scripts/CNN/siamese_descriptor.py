@@ -87,7 +87,7 @@ def create_model(model_weights_path):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='compute reidentification descriptors for tracklets')
+    parser = argparse.ArgumentParser(description='compute re-identification descriptors for tracklets')
     parser.add_argument('--weights', type=str, help='filename of the CNN model weights')
     parser.add_argument('--project-dir', type=str, help='project directory')
     parser.add_argument('--add-missing', default=False, action='store_true',
