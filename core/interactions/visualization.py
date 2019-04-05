@@ -36,6 +36,10 @@ def save_img_with_objects(out_filename, img, objects, labels=None, title=None, s
     if labels is None:
         labels = [None] * len(objects)
     for o, color, label in zip(objects, colors, labels):
+        if label == 'head':
+            color = 'red'
+        elif label == 'tail':
+            color = 'blue'
         o.draw(ax, label=label, color=color)
     if title is not None:
         plt.title(title)

@@ -1,4 +1,6 @@
 from __future__ import print_function
+# import matplotlib
+# matplotlib.use('qt4agg')
 """
 use: $ python -m core.interactions.generate_data
 """
@@ -25,6 +27,7 @@ import itertools
 import yaml
 import warnings
 from collections import defaultdict
+from itertools import izip_longest
 
 from core.project.project import Project
 from core.graph.region_chunk import RegionChunk
@@ -32,6 +35,7 @@ from utils.video_manager import get_auto_video_manager
 from core.region.transformableregion import TransformableRegion
 from core.region.ellipse import Ellipse
 from core.region.bbox import BBox
+from core.region.point import Point
 from core.interactions.visualization import save_prediction_img, save_img_with_objects
 from core.interactions.io import read_gt
 from utils.img import safe_crop
@@ -50,7 +54,8 @@ def makedirs(dir_name):
 
 class TrainingDataset(Dataset):
     def __init__(self, out_dir=None, count=None, image_format=None, data_format=None,
-                 img_shape=None, overwrite=False, two_images=False, name='train', csv_name='train.csv'):
+                 img_shape=None, overwrite=False, two_images=False, name='train', csv_name='train.csv',
+                 csv_columns=('x', 'y', 'major', 'minor', 'angle_deg_cw'), idx_start=0):
         if out_dir is not None:
             assert count is not None
             padding = ':0{}d'.format(len(str(count)))
@@ -94,8 +99,7 @@ class TrainingDataset(Dataset):
                 if not overwrite:
                     if os.path.exists(csv_filename):
                         raise OSError(errno.EEXIST, 'file %s already exists.' % csv_filename)
-                columns = ['x', 'y', 'major', 'minor', 'angle_deg_cw']
-                data_io = DataIOCSV(csv_filename, columns)
+                data_io = DataIOCSV(csv_filename, csv_columns)
             elif data_format == 'vot':
                 out_dir_annotations = join(out_dir, 'annotations')
                 makedirs(out_dir_annotations)
@@ -109,9 +113,9 @@ class TrainingDataset(Dataset):
         else:
             image_io = None
             data_io = None
+
         super(TrainingDataset, self).__init__(image_io, data_io)
-
-
+        self.next_idx = idx_start
 
 
 class DataGenerator(object):
@@ -135,8 +139,9 @@ class DataGenerator(object):
         #     ignore=['self'])  # uncomment to enable caching, disabled due to extremely slow speed
 
     def _load_project(self, project_dir=None, video_file=None):
-        self._project = Project()
-        self._project.load(project_dir, video_file=video_file)
+        # self._project = Project()
+        # self._project.load(project_dir, video_file=video_file)
+        self._project = Project.from_dir(project_dir)
         self._video = get_auto_video_manager(self._project)
 
     def _write_params(self, out_dir):
@@ -233,16 +238,7 @@ class DataGenerator(object):
         img_shape = (self.params['detection_image_size_px'], self.params['detection_image_size_px'], 3)
         dataset = TrainingDataset(out_dir, count, image_format, data_format=None, img_shape=img_shape, name='test')
         self._write_params(out_dir)
-        if gt_filename is not None:
-            from utils.gt.gt import GT
-            gt = GT()
-            gt.load(gt_filename)
-            gt.set_project_offsets(self._project)
-        else:
-            gt = None
-        # load regions
-        # self._init_regions(gt=gt)
-        regions, _ = self._collect_regions(single, multi, gt)  # , 100)
+        regions, _ = self._collect_regions(single, multi)  # , 100)
         print('Total regions: {}'.format(len(regions)))
         selected_regions = np.random.choice(regions, count, replace=False)
         if sort:
@@ -255,6 +251,56 @@ class DataGenerator(object):
                                     self.params['detection_image_size_px'])
             dataset.add_item(img_crop)
         dataset.close()
+
+    def write_detections(self, project_dir, frame_range=None, out_dir=None, image_format='file', data_format='csv'):
+        """
+        Write n randomly chosen cropped region images and metadata from a FERDA project.
+
+        write-detections ../projects/2_temp/180810_2359_Cam1_ILP_cardinality_dense/ [100,150] /datagrid/ferda/datasets/tracking/detections_Cam1_clip_range_100_200
+
+        :param project_dir: gather regions from the FERDA project file
+        :param frame_range: tuple, inclusive
+        :param out_dir: output directory where images.h5 and parameters.txt will be placed
+        :param count: number of region images to write
+        :param multi: include multi animal regions
+        :param single: include single animal regions
+        """
+        # write-detections ../projects/2_temp/180810_2359_Cam1_ILP_cardinality_dense/ [100,150] /datagrid/ferda/datasets/tracking/detections_Cam1_clip_range_100_200
+        self._load_project(project_dir)
+        # img_shape = (self.params['detection_image_size_px'], self.params['detection_image_size_px'], 3)
+        if frame_range is None:
+            frame_range = (self._project.video_start_t, self._project.video_end_t + 1)
+        dataset = TrainingDataset(out_dir, (frame_range[1] - frame_range[0] + 1),
+                                  image_format, data_format, csv_columns=('frame', 'x', 'y', 'width', 'height'),
+                                  idx_start=1, overwrite=True, name='', csv_name='detections.csv')  # , img_shape=img_shape, name='test')
+        self._write_params(out_dir)
+        regions, _ = self._collect_regions(single=True, multi=False)  # , 100)
+        frame_regions = defaultdict(list)
+        for r in regions:
+            if frame_range[0] <= r.frame() <= frame_range[1]:
+                frame_regions[r.frame()].append(r)
+        for i, (frame, region_in_frame) in tqdm.tqdm(enumerate(frame_regions.iteritems(), start=1), total=len(frame_regions)):
+            img = self._project.img_manager.get_whole_img(frame)
+            data = []
+            for r in region_in_frame:
+                r_dict = r.roi().as_dict()
+                r_dict['frame'] = i
+                data.append(r_dict)
+            dataset.add_item(img, data)
+        dataset.close()
+
+    def show_detections(self, detections_csv, image_dir, out_dir):
+        df = pd.read_csv(detections_csv, index_col='frame')
+        padding = ':0{}d'.format(len(str(df.index.nunique())))
+        for i, (frame, df_bboxes) in enumerate(df.groupby(level=0)):
+            img = plt.imread(join(image_dir, '{' + padding + '}.jpg').format(frame))
+            plt.figure()
+            plt.imshow(img)  # [:, :, ::-1]
+            for a, bbox in df_bboxes.iterrows():
+                BBox.from_dict(bbox.to_dict()).draw()
+            plt.show()
+            if i == 10:
+                break
 
     def _write_argv(self, out_dir):
         with open(join(out_dir, 'parameters.txt'), 'w') as fw:
@@ -397,11 +443,13 @@ class DataGenerator(object):
         :param augmentation: augment training samples with a disruptor object
         :param overwrite: enable to silently overwrite existing data
         :param foreground_layer: add foreground alpha mask as a fourth layer
+        :param data_format: csv, vot
+        :param image_format: hdf5, file
+        :param gt_filename: MOT ground truth file, object labels will be written to the vot annotation file
         """
         self._load_project(project_dir)
         if gt_filename is not None:
-            gt = GT()
-            gt.load(gt_filename)
+            gt = GT.from_mot(gt_filename)
             gt.set_project_offsets(self._project)
             gt.break_on_inconsistency = True
         else:
@@ -414,7 +462,7 @@ class DataGenerator(object):
         self._write_params(out_dir)
         padding = ':0{}d'.format(len(str(count)))
 
-        regions, _ = self._collect_regions(single=True, multi=True, gt=gt)  # , limit=500)
+        regions, _ = self._collect_regions(single=True, multi=True, gt=gt) # , limit=500)
         regions_by_frame = defaultdict(list)
         regions_by_cardinality = defaultdict(list)
         for r in regions:
@@ -422,10 +470,6 @@ class DataGenerator(object):
             regions_by_cardinality[r.cardinality].append(r)
 
         print('Total regions in single tracklets: {}'.format(len(regions_by_cardinality['single'])))
-
-        # with open('single_regions.pkl', 'wb') as fw:
-        #     pickle.dump(single_region_tracklets, fw)
-        #     pickle.dump(all_regions_idx, fw)
 
         random_regions = random.sample(regions_by_cardinality['single'], count)
         if augmentation:
@@ -477,11 +521,15 @@ class DataGenerator(object):
             # model_dict = model.to_dict()
             bbox_models = [BBox.from_planar_object(model)]
             bbox_ids = [region.gt_id]
+            points = [[Point(x, y, region.frame()).move(-delta_xy)] for y, x in region.get_head_tail()]
             if augmentation:
                 model_aug = timg_aug.get_model_copy().move(-delta_xy)
                 # model_dict.update(model_aug.to_dict(1))
                 bbox_models.append(BBox.from_planar_object(model_aug))
                 bbox_ids.append(aug_region.gt_id)
+                for pointlist, yx in zip(points, aug_region.get_head_tail()):
+                    x, y = timg_aug.get_transformed_coords(yx[::-1])
+                    pointlist.append(Point(x, y, aug_region.frame()).move(-delta_xy))
 
             # bboxes for other present objects
             size_px = self.params['detection_image_size_px']
@@ -495,6 +543,8 @@ class DataGenerator(object):
                     else:
                         bbox_models.append(bbox)
                         bbox_ids.append(r.gt_id)
+                        for pointlist, (y, x) in zip(points, r.get_head_tail()):
+                            pointlist.append(Point(x, y, r.frame()).move(-delta_xy))
             if discard:
                 continue
 
@@ -502,9 +552,8 @@ class DataGenerator(object):
                 makedirs(join(out_dir, 'examples'))
                 filename_template = join(out_dir, 'examples', '{idx' + padding + '}.jpg')
                 save_img_with_objects(filename_template.format(idx=dataset.next_idx), img_crop[:, :, ::-1],
-                                      bbox_models, bbox_ids)
-                # plt.imshow(save_img_with_objects(None, img_crop, bbox_models))
-                # plt.show()
+                                      bbox_models + points[0] + points[1],
+                                      bbox_ids + ['head'] * len(points[0]) + ['tail'] * len(points[1]))
 
             def merge_two_dicts(x, y):
                 z = x.copy()  # start with x's keys and values
@@ -512,24 +561,14 @@ class DataGenerator(object):
                 return z
 
             # [{**bbox.to_dict(), **{'name': 'ant'}} for bbox in bbox_models]  # works in python 3.5
-            if gt is not None:
-                dataset.add_item(img_crop, [merge_two_dicts(
-                    bbox.to_dict(),
-                    {'name': str(gt_id)}) for bbox, gt_id in zip(bbox_models, bbox_ids)])
-            else:
-                dataset.add_item(img_crop, [merge_two_dicts(bbox.to_dict(), {'name': 'ant'}) for bbox in bbox_models])
-            # dataset.add_item(img_crop, {
-            #         'x': model.x,
-            #         'y': model.y,
-            #         'major': model.major,
-            #         'minor': model.minor,
-            #         'angle_deg_cw': model.angle_deg,
-            #     })
+            dataset.add_item(img_crop, [merge_two_dicts(bbox.to_dict(),
+                                                       {'name': gt_id if gt_id is not None else 'ant',
+                                                        'p0_x': p0.x, 'p0_y': p0.y,
+                                                        'p1_x': p1.x, 'p1_y': p1.y})
+                                        for bbox, p0, p1, gt_id in izip_longest(bbox_models, points[0], points[1], bbox_ids)] )
 
         if out_dir is not None:
             dataset.close()
-            # h5_file.close()
-            # self.show_ground_truth(csv_filename, join(out_dir, 'sample'), h5_filename + ':train/img1', n=20)
 
     def write_regression_tracking_data(self, project_dir, count, out_dir=None, test_fraction=0.1, augmentation=True,
                                        overwrite=False, forward=True, backward=False, foreground_layer=False,

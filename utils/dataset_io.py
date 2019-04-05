@@ -60,7 +60,10 @@ class DataIOCSV(IO):
             self.writer = None
 
     def add_item(self, data):
-        self.writer.writerow(data)
+        if isinstance(data, dict):
+            data = [data]
+        for d in data:
+            self.writer.writerow(d)
 
     def read_item(self):
         assert False
@@ -86,7 +89,8 @@ class DataIOVot(IO):
                  '{annotation}</annotation>'
         self.bbox_template = '<object><name>{name}</name><bndbox>' \
                              '<xmin>{xmin}</xmin><xmax>{xmax}</xmax>' \
-                             '<ymin>{ymin}</ymin><ymax>{ymax}</ymax></bndbox></object>'
+                             '<ymin>{ymin}</ymin><ymax>{ymax}</ymax></bndbox>{points}</object>'
+        self.point_template = '<point id="{id}"><x>{x}</x><y>{y}</y></point>'
         self.next_idx = 0
         self.filename_template = filename_template
         if image_filename_template is not None and image_shape is not None:
@@ -101,10 +105,16 @@ class DataIOVot(IO):
         if isinstance(data, dict):
             data = [data]
         assert isinstance(data, list)
-        annotation = self.template.format(annotation=''.join([self.bbox_template.format(**bbox) for bbox in data]),
-                                          filename=self.image_filename_template.format(idx=self.next_idx),
-                                          **self.template_data)
-        open(self.filename_template.format(idx=self.next_idx), 'w').write(annotation)
+
+        bboxes_str = []
+        for bbox in data:
+            point_annotations = self.point_template.format(id=0, x=bbox['p0_x'], y=bbox['p0_y']) + \
+                                self.point_template.format(id=1, x=bbox['p1_x'], y=bbox['p1_y'])
+            bboxes_str.append(self.bbox_template.format(points=point_annotations, **bbox))
+        xml_str = self.template.format(annotation=''.join(bboxes_str),
+                                        filename=self.image_filename_template.format(idx=self.next_idx),
+                                        **self.template_data)
+        open(self.filename_template.format(idx=self.next_idx), 'w').write(xml_str)
         self.next_idx += 1
 
     def read_item(self):
@@ -161,3 +171,11 @@ class Dataset(object):
             return self.data_io.next_idx
         else:
             assert False, 'image and data io is None'
+
+    @next_idx.setter
+    def next_idx(self, value):
+        if self.data_io is not None:
+            self.data_io.next_idx = value
+        if self.image_ios is not None:
+            for io in self.image_ios:
+                io.next_idx = value
