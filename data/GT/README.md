@@ -1,39 +1,38 @@
-# Ground Truth
-*Files can be loaded using python pickle module.*
+Ground Truth
+============
 
-```python
-import cPickle as pickle
+txt format defined at https://motchallenge.net/. It is a CSV file with
+`frame, id, x, y, width, height, confidence` columns.
 
-with open('path/to/gt.pkl') as f:
-    gt = pickle.load(f)
-    
-gt[frame][0]  # is tuple (y, x)
-gt[100][2]    # returns (y, x) of id 2 in frame 100
+Files
+-----
 
-## IMPORTANT!
-if gt[frame][ID][0] < 0 or frame not in gt or ID not in gt[frame]:
-    # GT for given frame and ID is undefined.
-```
-| name | video | what | length | note |
-| --- | --- | --- | --- | --- |
-| __Cam1_sparse.pkl__ | ([Cam1_clip.avi](https://www.dropbox.com/s/afrbhqgucl27xy2/Cam1_clip.avi?dl=0)) | 6 ants with colormarks | 5 minutes | |
-| __Cam2_sparse.pkl__ | ([Cam1_clip.avi](https://www.dropbox.com/s/qymo8x3y8af0muv/Cam2_clip.avi?dl=0)) | 6 ants with colormarks | 5 minutes | |
+Some positions in interactions are missing in GT.
 
-## New GT and Results Format
+5Zebrafish_nocover_22min.txt
+  - 5Zebrafish_nocover_22min.avi
+  - 15000 frames gt
 
-Defined at https://motchallenge.net/. CSV file with `frame, id, x, y, width, height, confidence` columns.
+Cam1_clip.avi.txt
+  - Cam1_clip.avi
+  - 4500 frames gt
 
-.pkl files coverted to .txt using:
+Cam2_clip.avi_sparse.txt
+  - every 50th frame up to 4450th frame
 
-    python -m utils.gt.pkltomot data/GT/5Zebrafish_nocover_22min.pkl data/GT/5Zebrafish_nocover_22min.txt
+Camera3-5min.mp4.txt
+  - Camera3-5min.mp4
+  - 4500 frames gt
 
-## Files Renamed
+Sowbug3_cut.txt
+  - Sowbug3_cut.mp4
+  - 4500 frames gt
 
-New filenames match the video filenames.
+Sowbug3.txt
+  - Sowbug3.mp4
+  - same gt as Sowbug3_cut.txt with additional blank 26s at the beginning
 
-```
-Cam1_.pkl -> Cam1_clip.avi.pkl
-Cam1_sparse.pkl ->  Cam1_clip.avi_sparse.pkl
-Cam2_sparse.pkl Cam2_clip.avi_sparse.pkl
-Camera3.pkl -> Camera3-5min.mp4.pkl
-```
+rep1-cam2.txt  
+rep1-cam2_with_type_0.txt
+  - 6 objects
+  - frame 13126 - 56489
