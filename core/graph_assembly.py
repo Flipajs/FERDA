@@ -4,6 +4,7 @@ from core.graph.chunk_manager import ChunkManager
 from core.graph.graph_manager import GraphManager
 from core.segmentation import load_segmentation_info
 from core.config import config
+from scripts.regions_stats import learn_assignments, add_score_to_edges, print_tracklet_stats
 import warnings
 from itertools import izip
 from tqdm import tqdm
@@ -51,18 +52,17 @@ def backup(project):
 
 
 def get_parts_num(parts_path):
-    return len(glob.glob(join(parts_path, 'part*.json')))
+    return len(glob.glob(join(parts_path, '*/')))
 
 
-def graph_assembly(project, graph_solver, do_semi_merge=False):
-    backup(project)
+def graph_assembly(project, do_semi_merge=False):
+    # backup(project)
 
     print("Starting assembly...")
     # TODO: add to settings
 
-    project.chm = ChunkManager()
-    project.gm = GraphManager(project, graph_solver.assignment_score)
-    project.color_manager = None
+    # project.chm = ChunkManager()
+    # project.gm = GraphManager(project.gm.assignment_score)
 
     import time
     merging_t = time.time()
@@ -71,69 +71,85 @@ def graph_assembly(project, graph_solver, do_semi_merge=False):
     parts_path = join(project.working_directory, 'temp')
     n_parts = get_parts_num(parts_path)
     parts_info = []
-    for i in tqdm(range(n_parts), leave=False):
-        parts_info.append(load_segmentation_info(parts_path, i))
-        rm_old = RegionManager(db_wd=parts_path,
-                               db_name='part{}_rm.sqlite3'.format(i), cache_size_limit=1, supress_init_print=True)
-
-        with open(join(parts_path, 'part{}.pkl'.format(i)), 'rb') as f:
-            up = pickle.Unpickler(f)
-            g_ = up.load()
-            relevant_vertices = up.load()
-            chm_ = up.load()
-
-            merge_parts(project.gm, g_, relevant_vertices, project, rm_old, chm_)
-
-    project.gm.rm = project.rm
-
-    print("\nRECONNECTING GRAPHS\n")
-
-    for info1, info2 in zip(parts_info[:-1], parts_info[1:]):
-    # for part_end_t in range(start_, start_ + frames_in_row * n_parts, frames_in_row):
-        vertices1 = project.gm.get_vertices_in_t(info1['frame_end'])
-        vertices2 = project.gm.get_vertices_in_t(info2['frame_start'])
-
-        connect_graphs(project, vertices1, vertices2, project.gm, project.rm)
-        # self.solver.simplify(vertices1, rules=[self.solver.adaptive_threshold])
-
-    print "merge t: {:.2f}".format(time.time() - merging_t)
-    print "#CHUNKS: ", len(project.chm)
-    print "simplifying "
-
+    # rms = [RegionManager.from_dir(join(parts_path, str(i))) for i in range(n_parts)]
+    merged_rm = RegionManager()
+    for rm in [RegionManager.from_dir(join(parts_path, str(i))) for i in range(n_parts)]:
+        merged_rm.extend(rm)
+        # TODO: possibly close / open to unload already written data from memory
+    project.set_rm(merged_rm)
+    for frame, df_frame in tqdm(project.rm.regions_df.set_index('frame_').groupby(level=0), desc='creating graph'):
+        regions = [project.rm[i] for i in df_frame['id_'].values]
+        project.gm.add_regions_in_t(regions, frame)
+    # for frame, rids in project.gm.vertices_in_t.iteritems():
+    #     for rid in rids:
+    #         assert project.gm.region(rid).frame() == frame
+    project.solver.create_tracklets()
+    # for i in tqdm(range(n_parts), leave=False):
+    #     # parts_info.append(load_segmentation_info(parts_path, i))
+    #     part_dir = join(parts_path, str(i))
+    #     from core.project.project import Project, set_managers
+    #     project_part = Project.from_dir(part_dir)
+    #
+    #     # with open(join(parts_path, 'part{}.pkl'.format(i)), 'rb') as f:
+    #     #     up = pickle.Unpickler(f)
+    #     #     g_ = up.load()
+    #     #     relevant_vertices = up.load()
+    #     #     chm_ = up.load()
+    #
+    #     merge_parts(project, project_part)  # relevant_vertices
+    #
+    # project.gm.rm = project.rm
+    #
+    # print("\nRECONNECTING GRAPHS\n")
+    #
+    # for info1, info2 in zip(parts_info[:-1], parts_info[1:]):
+    # # for part_end_t in range(start_, start_ + frames_in_row * n_parts, frames_in_row):
+    #     vertices1 = project.gm.get_vertices_in_t(info1['frame_end'])
+    #     vertices2 = project.gm.get_vertices_in_t(info2['frame_start'])
+    #
+    #     connect_graphs(project, vertices1, vertices2, project.gm, project.rm)
+    #     # self.solver.simplify(vertices1, rules=[self.solver.adaptive_threshold])
+    #
+    # print "merge t: {:.2f}".format(time.time() - merging_t)
+    # print "#CHUNKS: ", len(project.chm)
+    # print "simplifying "
+    #
     p = project
-    one2one_t = time.time()
-    # try:
-    #     graph_solver.simplify(rules=[graph_solver.one2one])
-    # except:
-    graph_solver.one2one()
+    # one2one_t = time.time()
+    # # try:
+    # #     graph_solver.simplify(rules=[graph_solver.one2one])
+    # # except:
+    # graph_solver.create_tracklets()
+    #
+    # print "\n\tfirst one2one t: {:.2f}s".format(time.time() - one2one_t)
 
-    print "\n\tfirst one2one t: {:.2f}s".format(time.time() - one2one_t)
+    # learn and add edge weights
 
     learn_assignment_t = time.time()
 
-    project.save_semistate('first_tracklets')
-
     # project.load_semistate(project.project_file, 'first_tracklets')
-    from scripts.regions_stats import learn_assignments, add_score_to_edges, tracklet_stats
     # learn isolation forests for appearance and movement of consecutive regions in all tracklets
-    learn_assignments(project, max_examples=50000, display=False)
+    movement, appearance = learn_assignments(project, max_examples=50000, display=False)
 
     print("\n\tlearn assignment t: {:.2f}s".format(time.time() - learn_assignment_t))
     learn_assignment_t = time.time()
 
     p.gm.g.ep['movement_score'] = p.gm.g.new_edge_property("float")
-    add_score_to_edges(p)
+    add_score_to_edges(p.gm, movement, appearance)
 
     print("\tscore edges t: {:.2f}s".format(time.time() - learn_assignment_t))
 
-    p.save_semistate('edge_cost_updated')
+    # p.save_semistate('edge_cost_updated')
 
     update_t = time.time()
+    # TODO: is this needed?
     p.gm.update_nodes_in_t_refs()
     p.chm.reset_itree()
     print("\tupdate t: {:.2f}s".format(time.time() - update_t))
 
-    tracklet_stats(p)
+    print_tracklet_stats(p)
+
+
 
     # TODO: max num of iterations...
     for i in range(10):
@@ -161,16 +177,16 @@ def graph_assembly(project, graph_solver, do_semi_merge=False):
         p.gm.update_nodes_in_t_refs()
         p.chm.reset_itree()
 
-    p.save_semistate('eps_edge_filter')
+    # p.save_semistate('eps_edge_filter')
     p.solver = graph_solver
 
     p.gm.project = project
-    p.chm.add_single_vertices_chunks(p)
+    p.chm.add_single_vertices_chunks(p.gm)
 
     p.gm.update_nodes_in_t_refs()
 
-    if not do_semi_merge:
-        p.save()
+    # if not do_semi_merge:
+    #     p.save()
 
     print("SANITY CHECK...")
     sanity_check = True
@@ -192,10 +208,10 @@ def graph_assembly(project, graph_solver, do_semi_merge=False):
 
     print
     print "ONE 2 ONE optimization"
-    project.solver.one2one(check_tclass=True)
+    project.solver.create_tracklets(check_tclass=True)
     print "DONE"
     print
-    tracklet_stats(project)
+    print_tracklet_stats(project)
     # shutil.rmtree(parts_path)  # remove segmentation parts
 
 
@@ -217,7 +233,7 @@ def connect_graphs(project, vertices1, vertices2, gm, rm):
     #             gm.add_edge_fast(v1, v2, 0)
 
 
-def merge_parts(new_gm, old_g, old_g_relevant_vertices, project, old_rm, old_chm):
+def merge_parts(project, project_part):
     """
     merges all parts (from parallelisation)
     we want to merge all these structures (graph, region and chunk managers) into one
@@ -239,6 +255,10 @@ def merge_parts(new_gm, old_g, old_g_relevant_vertices, project, old_rm, old_chm
 
     new_chm = project.chm
     new_rm = project.rm
+    new_gm = project.gm
+    old_g = project_part.gm.g
+    old_rm = project_part.rm
+    old_chm = project_part.chm
 
     vertex_map = {}
     used_chunks_ids = set()
@@ -246,18 +266,18 @@ def merge_parts(new_gm, old_g, old_g_relevant_vertices, project, old_rm, old_chm
     old_vs = []
     old_rids = []
     # reindex vertices
-    for v_id in old_g_relevant_vertices:
-        if not old_g.vp['active'][v_id]:
+    for v_id in project_part.gm.get_all_relevant_vertices():
+        if not project_part.gm.g.vp['active'][v_id]:
             continue
 
         old_v = old_g.vertex(v_id)
         old_vs.append(old_v)
         old_rids.append(old_g.vp['region_id'][old_v])
 
-    # becaused old_regions will be sorted by region_id and v_id increments in the same time as region_id...
+    # because old_regions will be sorted by region_id and v_id increments in the same time as region_id...
     old_vs = sorted(old_vs)
 
-    old_regions = old_rm[old_rids]
+    old_regions = [old_rm[rid] for rid in old_rids]
     new_rm.extend(old_regions)
 
     for old_v, old_reg in izip(old_vs, old_regions):
@@ -310,7 +330,7 @@ def merge_parts(new_gm, old_g, old_g_relevant_vertices, project, old_rm, old_chm
             else:
                 # old_id__ = old_rm[old_g.vp['region_id'][old_g.vertex(old_v)]].id()
 
-                id_ = new_rm.add(old_rm[old_g.vp['region_id'][old_g.vertex(old_v)]])
+                new_rm.append(old_rm[old_g.vp['region_id'][old_g.vertex(old_v)]])
                 # list of ids is returned [id] ...
                 id_ = id_[0]
 

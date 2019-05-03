@@ -22,9 +22,9 @@ from joblib import Parallel, delayed
 
 from utils.video_manager import get_auto_video_manager
 import cPickle as pickle
-from core.region.mser import get_filtered_msers
+from core.region.mser import get_filtered_regions
 from core.graph.solver import Solver
-from core.project.project import Project
+from core.project.project import Project, set_managers
 from config import config
 from utils.img import prepare_for_segmentation
 from core.region.region_manager import RegionManager
@@ -46,7 +46,7 @@ def segment(proj, img):
     return result
 
 
-def prepare_img(proj, img):
+def preprocess_img(proj, img):
     grayscale = True
     if hasattr(proj, 'segmentation_model') and proj.segmentation_model is not None:
         grayscale = False
@@ -94,52 +94,34 @@ def segmentation(project_dir):
     :param project_dir: project directory
     :return: int, number of parts
     """
-    project = Project(project_dir)
+    project = Project()
+    project.load(project_dir, regions_optional=True, graph_optional=True, tracklets_optional=True)
     vid = get_auto_video_manager(project)
     frame_num = int(vid.total_frame_count())
     frames_in_row = config['segmentation']['frames_in_row']
-    Parallel(n_jobs=config['general']['n_jobs'], verbose=10)\
+    # config['general']['n_jobs']
+    Parallel(n_jobs=1, verbose=10)\
         (delayed(do_segmentation_part)(project_dir, i, frame_start)
-         for i, frame_start in enumerate(range(0, frame_num, frames_in_row)))
+         for i, frame_start in enumerate(range(0, 150, frames_in_row)))  # frame_num
 
 
 def do_segmentation_part(project_dir, part_id, frame_start, frame_done_func=None):
     # check if part was computed before
-    temp_path = os.path.join(project_dir, 'temp')
-    sqlite_filename = join(temp_path, 'part{}_rm.sqlite3'.format(part_id))
-    pkl_filename = join(temp_path, 'part{}.pkl'.format(part_id))
-    if os.path.isfile(sqlite_filename) and os.path.getsize(sqlite_filename) != 0 \
-            and os.path.isfile(pkl_filename) and os.path.getsize(pkl_filename) != 0:
-        print('Part {} already processed.'.format(part_id))
-        return
-    proj = Project()
-    proj.load(project_dir)
-    try:
-        use_roi_prediction_optimisation = proj.other_parameters.segmentation_use_roi_prediction_optimisation
-
-        # TODO: express based on major axis in body length
-        prediction_optimisation_border = proj.other_parameters.segmentation_prediction_optimisation_border
-        full_segmentation_refresh = proj.other_parameters.segmentation_full_segmentation_refresh_in
-    except:
-        use_roi_prediction_optimisation = True  # obsolete, per-pixel classification
-        prediction_optimisation_border = 25
-        full_segmentation_refresh = 25
-
+    temp_path = os.path.join(project_dir, 'temp/{}'.format(part_id))
     try:
         os.makedirs(temp_path)
     except OSError:
         pass
 
-    # init managers
-    solver = Solver(proj)
-    from core.graph.graph_manager import GraphManager
-    proj.gm = GraphManager(proj, proj.solver.assignment_score)
-    # TODO: add global params
-    proj.rm = RegionManager(db_wd=temp_path, db_name='part{}_rm.sqlite3'.format(part_id), cache_size_limit=10000)
-    proj.chm = ChunkManager()
-    proj.color_manager = None
+    if os.path.isfile(join(temp_path, 'regions.csv')) and os.path.isfile(join(temp_path, 'regions.h5')):
+        print('Part {} already processed.'.format(part_id))
+        return
+    p = Project.from_dir(project_dir, tracklets_optional=True)
+    p.rm = RegionManager()  # reset RegionManager to force temporary hdf5
+    set_managers(p, p.rm, p.chm, p.gm)
+
     config['general']['log_graph_edits'] = False
-    vid = get_auto_video_manager(proj)
+    vid = get_auto_video_manager(p)
     frames_num = vid.total_frame_count()
     frames_in_row = config['segmentation']['frames_in_row']
     frame_end = frame_start + frames_in_row - 1
@@ -155,47 +137,33 @@ def do_segmentation_part(project_dir, part_id, frame_start, frame_done_func=None
             if img is None:
                 raise Exception("failed to load frame {}".format(frame))
 
-        # rois = []
-        img = prepare_img(proj, img)
-
-        # # per pixel classification -> fg, bg (not used)
-        # if hasattr(proj, 'segmentation_model'):
-        #     img = frame_segmentation(img, i, proj, rois, full_segmentation_refresh=full_segmentation_refresh)
-
+        img = preprocess_img(p, img)
         # get segmented regions
-        msers = get_filtered_msers(img, proj, frame)
-
-        if proj.colormarks_model:
-            proj.colormarks_model.assign_colormarks(proj, msers)
-
-        proj.rm.extend(msers)
-
-        # if use_roi_prediction_optimisation:
-        #     rois = get_rois(msers, img, prediction_optimisation_border)
-
+        regions = get_filtered_regions(img, p, frame)
+        for r in regions:
+            r.id_ = len(p.rm)
+            p.rm.append(r)
         # add regions to the graph
-        proj.gm.add_regions_in_t(msers, frame, fast=True)
+        # p.gm.add_regions_in_t(regions, frame)
 
         if frame_done_func is not None:
             frame_done_func()
 
-    print("#Edges BEFORE: ", proj.gm.g.num_edges())
-    # try:
-    #     solver.simplify(rules=[solver.one2one])
-    # except:
-    solver.one2one()  # creates tracklets
-    print ("#Edges AFTER: ", proj.gm.g.num_edges())
-    with open(pkl_filename, 'wb') as f:
-        p = pickle.Pickler(f, -1)
-        p.dump(proj.gm.g)
-        p.dump(proj.gm.get_all_relevant_vertices())
-        p.dump(proj.chm)
-    save_segmentation_info(temp_path, part_id, frame_start=frame_start, frame_end=frame_end)
-    print("#Vertices: {}, #Edges: {}".format(proj.gm.g.num_vertices(), proj.gm.g.num_edges()))
+    # print("#Edges BEFORE: ", p.gm.g.num_edges())
+    # p.solver.create_tracklets()
+    # print ("#Edges AFTER: ", p.gm.g.num_edges())
+    p.save(temp_path)
+    # with open(pkl_filename, 'wb') as f:
+    #     p = pickle.Pickler(f, -1)
+    #     p.dump(p.gm.g)
+    #     p.dump(p.gm.get_all_relevant_vertices())
+    #     p.dump(p.chm)
+    # save_segmentation_info(temp_path, frame_start=frame_start, frame_end=frame_end)
+    # print("#Vertices: {}, #Edges: {}".format(p.gm.g.num_vertices(), p.gm.g.num_edges()))
 
 
-def save_segmentation_info(dirname, part_id, **kwargs):
-    with open(join(dirname, 'part{}.json'.format(part_id)), 'w') as fw:
+def save_segmentation_info(dirname, **kwargs):
+    with open(join(dirname, 'segmentation.json'), 'w') as fw:
         json.dump(kwargs, fw)
 
 
@@ -204,71 +172,71 @@ def load_segmentation_info(dirname, part_id):
         info = json.load(fr)
     return info
 
-
-def frame_segmentation(img, i, project, rois, border_px=3, full_segmentation_refresh=25):
-    if rois and i % full_segmentation_refresh != 0:
-        try:
-            t = time.time()
-
-            t2 = 0
-            new_im = np.ones((img.shape[0], img.shape[1]), dtype=np.uint8) * 255
-
-            area = 0
-            for roi in rois:
-                area += roi.width() * roi.height()
-
-            for roi in rois:
-                tl = roi.top_left_corner()
-                br = roi.bottom_right_corner()
-
-                h1 = tl[0]
-                h2 = min(img.shape[0] - 1, br[0])
-
-                w1 = tl[1]
-                w2 = br[1]
-
-                crop = img[h1:h2, w1:w2, :].copy()
-
-                # add border_px (to prevent segmentation artefacts
-                crop = cv2.copyMakeBorder(crop, border_px, border_px, border_px, border_px, cv2.BORDER_REPLICATE)
-
-                t2_ = time.time()
-                project.segmentation_model.set_image(crop)
-                # t2_ = time.time() - t2_
-                # t2 += t2_
-                # print t2_
-                # t2_ = time.time()
-                seg = project.segmentation_model.predict()
-                t2_ = time.time() - t2_
-                t2 += t2_
-
-                # print t2_, crop.shape
-
-                # remove border_px
-                seg = seg[border_px:-border_px, border_px:-border_px].copy()
-
-                # make hard threshold
-                if True:
-                    seg_img = seg < 0.5
-                    seg_img = np.asarray(seg_img, dtype=np.uint8) * 255
-                else:
-                    seg_img = np.asarray((-seg * 255) + 255, dtype=np.uint8)
-
-                new_im[h1:h2, w1:w2] = seg_img.copy()
-
-            print("segmentation time: {:.3f}, #roi: {} roi area: {} roi coverage: {:.3f}".format(
-                time.time() - t, len(rois), area, area / float(img.shape[0] * img.shape[1])))
-            # t = time.time()
-            # segment(proj, img)
-            # print "without ", time.time() - t
-
-            img = new_im
-        except:
-            img = segment(project, img)
-    else:
-        img = segment(project, img)
-
-    return img
+#
+# def frame_segmentation(img, i, project, rois, border_px=3, full_segmentation_refresh=25):
+#     if rois and i % full_segmentation_refresh != 0:
+#         try:
+#             t = time.time()
+#
+#             t2 = 0
+#             new_im = np.ones((img.shape[0], img.shape[1]), dtype=np.uint8) * 255
+#
+#             area = 0
+#             for roi in rois:
+#                 area += roi.width() * roi.height()
+#
+#             for roi in rois:
+#                 tl = roi.top_left_corner()
+#                 br = roi.bottom_right_corner()
+#
+#                 h1 = tl[0]
+#                 h2 = min(img.shape[0] - 1, br[0])
+#
+#                 w1 = tl[1]
+#                 w2 = br[1]
+#
+#                 crop = img[h1:h2, w1:w2, :].copy()
+#
+#                 # add border_px (to prevent segmentation artefacts
+#                 crop = cv2.copyMakeBorder(crop, border_px, border_px, border_px, border_px, cv2.BORDER_REPLICATE)
+#
+#                 t2_ = time.time()
+#                 project.segmentation_model.set_image(crop)
+#                 # t2_ = time.time() - t2_
+#                 # t2 += t2_
+#                 # print t2_
+#                 # t2_ = time.time()
+#                 seg = project.segmentation_model.predict()
+#                 t2_ = time.time() - t2_
+#                 t2 += t2_
+#
+#                 # print t2_, crop.shape
+#
+#                 # remove border_px
+#                 seg = seg[border_px:-border_px, border_px:-border_px].copy()
+#
+#                 # make hard threshold
+#                 if True:
+#                     seg_img = seg < 0.5
+#                     seg_img = np.asarray(seg_img, dtype=np.uint8) * 255
+#                 else:
+#                     seg_img = np.asarray((-seg * 255) + 255, dtype=np.uint8)
+#
+#                 new_im[h1:h2, w1:w2] = seg_img.copy()
+#
+#             print("segmentation time: {:.3f}, #roi: {} roi area: {} roi coverage: {:.3f}".format(
+#                 time.time() - t, len(rois), area, area / float(img.shape[0] * img.shape[1])))
+#             # t = time.time()
+#             # segment(proj, img)
+#             # print "without ", time.time() - t
+#
+#             img = new_im
+#         except:
+#             img = segment(project, img)
+#     else:
+#         img = segment(project, img)
+#
+#     return img
 
 
 if __name__ == '__main__':

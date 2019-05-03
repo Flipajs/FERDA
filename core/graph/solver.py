@@ -21,10 +21,11 @@ class Solver:
         """
 
         self.project = project
+        if project.stats is not None:
+            self.major_axis_median = project.stats.major_axis_median
+        else:
+            self.major_axis_median = None
 
-        self.major_axis_median = project.stats.major_axis_median
-
-        # TODO: add to config
         # TODO: add to config
         self.antlike_filter = True
         self.rules = [self.adaptive_threshold, self.symmetric_cc_solver, self.update_costs]
@@ -70,35 +71,36 @@ class Solver:
 
         return num_changed
 
-    def one2one(self, check_tclass=False):
+    def create_tracklets(self, check_tclass=False):
         """
         Create tracklets out of unambiguous paths in graph.
         """
-        confirm_later = []
+        edges = []
 
         for v in tqdm(self.project.gm.g.vertices(), desc='solver.one2one', total=self.project.gm.g.num_vertices(), leave=False):
-            if self.project.gm.one2one_check(v):
+            if self.project.gm.is_vertex_in_path_subgraph(v):
                 e = self.project.gm.out_e(v)
 
                 if check_tclass:
-                    t1 = self.project.gm.get_chunk(v)
-                    t2 = self.project.gm.get_chunk(self.project.gm.g.vertex(e.target()))
+                    t1 = self.project.gm.get_tracklet(v)
+                    t2 = self.project.gm.get_tracklet(self.project.gm.g.vertex(e.target()))
 
                     if t1.segmentation_class != t2.segmentation_class:
                         print("1on1", t1.id(), t2.id())
                         # continue
 
-                confirm_later.append((e.source(), e.target()))
+                edges.append(e)
 
-        print("one2one, ", len(confirm_later))
-        self.confirm_edges(confirm_later)  # TODO: this is probably not needed, there are no spurious edges between vertices; we only need to create tracklets
+        print("one2one, ", len(edges))
+        # self.confirm_edges([(e.source(), e.target()) for e in edges])  # TODO: this is probably not needed, there are no spurious edges between vertices; we only need to create tracklets
+        self.add_edges_to_tracklets(edges)
 
-        if len(confirm_later):
+        if len(edges):
             self.project.gm.update_nodes_in_t_refs()
             self.project.chm.reset_itree()
 
     def adaptive_threshold(self, vertex):
-        if self.project.gm.ch_start_longer(vertex):
+        if self.project.gm.is_start_of_longer_chunk(vertex):
             return []
 
         best_out_scores, best_out_vertices = self.project.gm.get_2_best_out_vertices(vertex)
@@ -447,21 +449,13 @@ class Solver:
 
         return new_ccs, node_representative
 
-    def confirm_edges(self, edge_pairs):
+    def confirm_edges(self, vertex_pairs):
         """
-        for each pair of edges (v1, v2), removes all the edges going from v1.t -> v2.t except for edge v1 -> v2
+        for each pair of vertices (v1, v2), removes all the edges going from v1.t -> v2.t except for edge v1 -> v2
         if there is a chunk, append (right/left) else create new one
         """
-
         affected = set()
-
-        # quick chcek to prevent console spamming
-        if len(edge_pairs) > 1:
-            x = tqdm(edge_pairs, desc='solver.confirm_edges')
-        else:
-            x = edge_pairs
-
-        for v1, v2 in x:
+        for v1, v2 in tqdm(vertex_pairs, desc='solver.confirm_edges', disable=len(vertex_pairs) == 1):
             affected.add(v1)
             affected.add(v2)
 
@@ -487,6 +481,15 @@ class Solver:
             if not self.project.gm.g.edge(v1, v2):
                 self.project.gm.add_edge(v1, v2, 1)
 
+        affected = list(affected)
+        # all_affected = list(self.simplify(affected[:], return_affected=True))
+        # all_affected = list(set(all_affected + affected))
+        return affected
+
+    def add_edges_to_tracklets(self, edges):
+        for e in tqdm(edges, desc='adding edges to tracklets', disable=len(edges) == 1):
+            v1 = e.source()
+            v2 = e.target()
             # test chunk existence, if there is none, create new one.
             v1_ch = self.project.gm.chunk_end(v1)
             v2_ch = self.project.gm.chunk_start(v2)
@@ -498,11 +501,6 @@ class Solver:
                 v2_ch.append_left(v1)
             else:
                 self.project.chm.new_chunk(map(int, [v1, v2]), self.project.gm)
-
-        affected = list(affected)
-        # all_affected = list(self.simplify(affected[:], return_affected=True))
-        # all_affected = list(set(all_affected + affected))
-        return affected
 
     def merged(self, new_regions, replace, t_reversed=False):
         """
