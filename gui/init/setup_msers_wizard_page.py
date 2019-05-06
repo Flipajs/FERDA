@@ -16,13 +16,13 @@ from gui.segmentation.painter import array2qimage
 from utils.drawing.points import draw_points_crop, get_contour, draw_points_binary
 from utils.img import prepare_for_segmentation
 from utils.video_manager import get_auto_video_manager
-from core.region.mser import get_filtered_msers
+from core.region.mser import get_filtered_regions
 from core.region.region_manager import RegionManager
 from core.graph.graph_manager import GraphManager
 from core.graph.solver import Solver
 from core.graph.chunk_manager import ChunkManager
 from core.animal import Animal
-from core.classes_stats import dummy_classes_stats
+# from core.classes_stats import dummy_classes_stats
 
 __author__ = 'filip@naiser.cz', 'dita'
 
@@ -164,21 +164,19 @@ class SetupMSERsWizardPage(QtGui.QWizardPage):
             self.full_segmentation_refresh_in_spin.value()
 
         self.project.stats = dummy_classes_stats()
-
         self.project.stats.major_axis_median = self.major_axis_median.value()
+        self.project.solver.major_axis_median = self.project.stats.major_axis_median
         self.project.solver_parameters.max_edge_distance_in_ant_length = self.max_dist_object_length.value()
+        self.project.gm.max_distance = self.project.solver_parameters.max_edge_distance_in_ant_length * \
+                                       2 * self.project.solver.major_axis_median
 
-        self.project.rm = RegionManager()
-        self.project.solver = Solver(self.project)
-        self.project.gm = GraphManager(self.project, self.project.solver)
-        self.project.chm = ChunkManager()
+        # TODO: remove?
         self.project.animals = []
         for i in range(self.num_animals_sb.value()):
             self.project.animals.append(Animal(i))
 
         self.project.solver_parameters.certainty_threshold = .01
 
-        self.project.save()
         return True
 
     def set_video(self, video_manager):
@@ -259,10 +257,10 @@ class SetupMSERsWizardPage(QtGui.QWizardPage):
 
         # get msers
         s = time.time()
-        from core.region.mser import get_msers_img
+        from core.region.mser import get_regions_in_img
         # msers = get_msers_(img_, self.project, 0, prefiltered=False)
 
-        msers = get_filtered_msers(img_, self.project, 0)
+        msers = get_filtered_regions(img_, self.project, 0)
 
         # print "mser takes: ", time.time() - s
 

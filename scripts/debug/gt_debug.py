@@ -20,7 +20,7 @@ if __name__ == '__main__':
     p.rm = RegionManager(p.working_directory+'/temp', db_name='part0_rm.sqlite3')
     p.gm.rm = p.rm
 
-    p.chm.add_single_vertices_chunks(p, frames=range(4500))
+    p.chm.add_single_vertices_tracklets(p.gm, frames=range(4500))
     p.gm.update_nodes_in_t_refs()
 
 

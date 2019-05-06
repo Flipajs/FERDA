@@ -1166,7 +1166,7 @@ def decide_one2one(p):
     p.chm.reset_itree()
 
 
-def tracklet_stats(p):
+def print_tracklet_stats(p):
     lengths = np.array([t.length() for t in p.chm.chunk_gen()])
 
     print("#chunks: {}".format(len(p.chm)))
@@ -1244,6 +1244,13 @@ def get_pair_fetures_movement(r1, r2):
 
 
 def learn_assignments(p, max_examples=np.inf, display=False):
+    """
+
+    :param p: project
+    :param max_examples:
+    :param display:
+    :return: movement, appearance - isolation forests
+    """
     X_appearance = []
     X_movement = []
 
@@ -1412,7 +1419,7 @@ def process_project(p):
     #
     solver = Solver(p)
 
-    tracklet_stats(p)
+    print_tracklet_stats(p)
 
     if False:
         score_type = 'appearance_motion_mix'
@@ -1423,21 +1430,21 @@ def process_project(p):
         for e in strongly_better_e:
             solver.confirm_edges([(e.source(), e.target())])
 
-        tracklet_stats(p)
+        print_tracklet_stats(p)
 
         strongly_better_e = p.gm.strongly_better_eps(eps=eps, score_type=score_type)
         print "strongly better: {}".format(len(strongly_better_e))
         for e in strongly_better_e:
             solver.confirm_edges([(e.source(), e.target())])
 
-        tracklet_stats(p)
+        print_tracklet_stats(p)
         decide_one2one(p)
 
         p.gm.update_nodes_in_t_refs()
         p.chm.reset_itree()
 
         save_p_checkpoint(p, 'eps_edge_filter')
-        tracklet_stats(p)
+        print_tracklet_stats(p)
     # else:
         # from utils.geometry import get_region_group_overlaps
         #

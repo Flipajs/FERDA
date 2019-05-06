@@ -146,7 +146,7 @@ class CompleteSetMatching:
                 prohibited_ids[t_] = []
 
                 for tracklet in self.tracks[t_]:
-                    for test_t in self.p.chm.tracklets_intersecting_t_gen(tracklet, self.p.gm):
+                    for test_t in self.p.chm.tracklets_intersecting_t_gen(tracklet):
                         if test_t.is_single() and self.tracklets_2_tracks[test_t] == t_:
                             continue
 
@@ -301,7 +301,7 @@ class CompleteSetMatching:
                     t.P = set([new_id])
 
     def find_biggest_undecided_tracklet_set(self, t):
-        all_intersecting_t = list(self.p.chm.singleid_tracklets_intersecting_t_gen(t, self.p.gm))
+        all_intersecting_t = list(self.p.chm.singleid_tracklets_intersecting_t_gen(t))
         # skip already decided...
         all_intersecting_t = filter(lambda x: len(x.P) == 0, all_intersecting_t)
         t_start = t.start_frame()
@@ -572,7 +572,7 @@ class CompleteSetMatching:
         return track1
 
     def add_to_N_set(self, track_id, tracklet):
-        for t in self.p.chm.chunks_in_interval(tracklet.start_frame(), tracklet.end_frame()):
+        for t in self.p.chm.get_tracklets_in_interval(tracklet.start_frame(), tracklet.end_frame()):
             if t.is_single() and t != tracklet:
                 t.N.add(track_id)
 
@@ -590,7 +590,6 @@ class CompleteSetMatching:
         """
         logger.info("beginning of global matching")
         updated = True
-        j = 0
         with tqdm(total=len(track_CSs), desc='global matching') as pbar:
             while len(track_CSs) > 1 and updated:
                 updated = False
@@ -628,7 +627,6 @@ class CompleteSetMatching:
                             track_CSs.append(best_CS)  # add the best_CS back
                             logger.debug("Best track CS match is in conflict. {}, {}".format(best_perm, best_quality))
                         pbar.update()
-                        j += 1
                         break
                     else:
                         logger.debug("Best track CS match rejected. {}, {}".format(perm, quality))
@@ -1600,12 +1598,13 @@ def get_csm(project):
 
     return csm
 
+
 def do_complete_set_matching(project):
     logger.info('do_complete_set_matching start')
     csm = get_csm(project)
 
     # csm.solve_interactions()
-    csm.solve_interactions_regression()
+    # csm.solve_interactions_regression()
     csm.start_matching_process()
     logger.info('do_complete_set_matching finished')
 

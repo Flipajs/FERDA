@@ -21,8 +21,7 @@ def get_part_names(p):
     return part_names
 
 def assembly(project_path, part_names):
-    p = Project()
-    p.load(project_path)
+    p = Project.from_dir(project_path)
 
     if not part_names:
         part_names = get_part_names(p)

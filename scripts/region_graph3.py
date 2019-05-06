@@ -132,7 +132,7 @@ class NodeGraphVisualizer(QtGui.QWidget):
 
         self.remove_action = QtGui.QAction('remove', self)
         self.remove_action.triggered.connect(self.remove_chunk)
-        self.remove_action.setShortcut(S_.controls.remove_chunk)
+        self.remove_action.setShortcut(S_.controls.remove_tracklet)
         self.addAction(self.remove_action)
 
         self.stop_following_action = QtGui.QAction('stop following', self)

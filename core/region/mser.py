@@ -108,7 +108,7 @@ def get_all_msers(frame_number, project):
             return msers
         except IOError:
             vid = get_auto_video_manager(project)
-            msers = get_msers_img(vid.seek_frame(frame_number), frame_number)
+            msers = get_regions_in_img(vid.seek_frame(frame_number), frame_number)
 
             try:
                 with open(project.working_directory+'/mser/'+str(frame_number)+'.pkl', 'wb') as f:
@@ -120,10 +120,10 @@ def get_all_msers(frame_number, project):
 
     else:
         vid = get_auto_video_manager(project)
-        return get_msers_img(vid.seek_frame(frame_number))
+        return get_regions_in_img(vid.seek_frame(frame_number))
 
 
-def get_msers_img(img, project, frame=-1, prefiltered=False):
+def get_regions_in_img(img, project, frame=-1, prefiltered=False):
     """
     Returns msers as list of Region objects using MSER algorithm with default settings.
 
@@ -164,7 +164,7 @@ def get_msers_img(img, project, frame=-1, prefiltered=False):
                               )
 
 
-def get_filtered_msers(img, project, frame=-1):
+def get_filtered_regions(img, project, frame=-1):
     """
     Extracts maximally stable extremal regions from an image and return filtered results.
 
@@ -195,16 +195,11 @@ def get_filtered_msers(img, project, frame=-1):
         # return [m[id] for id in ids]
     # else:
 
-    msers = get_msers_img(img, project, frame, prefiltered=True)
+    regions = get_regions_in_img(img, project, frame, prefiltered=True)
 
     ratio_th = project.mser_parameters.area_roi_ratio_threshold
     if project.mser_parameters.area_roi_ratio_threshold > ratio_th:
-        new_msers = []
-        for m in msers:
-            if m.area() / float(m.roi().width() * m.roi().height()) > ratio_th:
-                new_msers.append(m)
-
-        msers = new_msers
-
-    return msers
+        regions = filter(lambda r: r.area() / float(r.roi().width() * r.roi().height()) > ratio_th,
+                         regions)
+    return regions
 

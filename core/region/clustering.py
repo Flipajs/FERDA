@@ -165,7 +165,7 @@ def is_project_cardinality_classified(project):
 def get_random_segmented_regions(n, project, progress_update_fun=None,
                                  get_diverse_samples=False, complete_frames=False):
     from utils.img import prepare_for_segmentation
-    from core.region.mser import get_filtered_msers
+    from core.region.mser import get_filtered_regions
 
     if get_diverse_samples:
         assert project.animals is not None
@@ -183,7 +183,7 @@ def get_random_segmented_regions(n, project, progress_update_fun=None,
             continue
         used_frames.append(frame)
         img = prepare_for_segmentation(img_rgb, project)
-        regions = get_filtered_msers(img, project, frame)
+        regions = get_filtered_regions(img, project, frame)
         if get_diverse_samples and len(regions) == len(project.animals):
             # TODO: guard against infinite loop when not enough diverse samples
             continue

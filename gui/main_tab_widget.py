@@ -56,7 +56,6 @@ class LandingTab(QtGui.QWidget):
         while True:
             try:
                 project = Project(project_dir, video_file=video_file)
-                # project.load(project_dir, video_file=video_file)
                 break
             except ProjectNotFoundError as e:
                 QtGui.QMessageBox.critical(self, 'No project found!', e.strerror, QtGui.QMessageBox.Ok)

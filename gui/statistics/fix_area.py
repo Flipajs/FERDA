@@ -8,12 +8,12 @@ import numpy as np
 from PyQt4 import QtGui
 from PyQt4 import QtCore
 from skimage.transform import resize
-from core.region.mser import get_msers_img
+from core.region.mser import get_regions_in_img
 from core.project.project import Project
 from gui.img_controls.gui_utils import cvimg2qtpixmap
 from scripts.region_graph3 import visualize_nodes
 from utils.video_manager import get_auto_video_manager
-from core.region.mser import get_msers_img
+from core.region.mser import get_regions_in_img
 from core.graph.reduced import Reduced
 import scipy.io as sio
 from scipy.spatial import ConvexHull
@@ -37,7 +37,7 @@ class AreaUpdatingThread(QtCore.QThread):
         for f in range(self.step, vid.total_frame_count(), self.step):
             if f in register:
                 img = vid.get_frame(f)
-                msers = get_msers_img(img, self.project, frame=f, prefiltered=True)
+                msers = get_regions_in_img(img, self.project, frame=f, prefiltered=True)
 
                 for ch in register[f]:
                     c = ch.get_centroid_in_time(f)

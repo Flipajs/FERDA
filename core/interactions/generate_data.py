@@ -458,7 +458,7 @@ class DataGenerator(object):
         img_shape = (self.params['detection_image_size_px'],
                      self.params['detection_image_size_px'],
                      3 if not foreground_layer else 4)
-        dataset = TrainingDataset(out_dir, count, image_format, data_format, img_shape, overwrite, name='train')
+        dataset = TrainingDataset(out_dir, count, image_format, data_format, img_shape, overwrite, name='')
         self._write_params(out_dir)
         padding = ':0{}d'.format(len(str(count)))
 

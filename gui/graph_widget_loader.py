@@ -143,7 +143,7 @@ class GraphWidgetLoader(QtGui.QWidget):
         return c
 
     def prepare_tracklets(self, frames):
-        tracklets = self.project.chm.chunks_in_interval(frames[0], frames[-1])
+        tracklets = self.project.chm.get_tracklets_in_interval(frames[0], frames[-1])
         for tracklet in tracklets:
             region_chunk = RegionChunk(tracklet, self.graph_manager, self.region_manager)
             # replace tracklet ends with their ends in range

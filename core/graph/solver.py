@@ -84,14 +84,13 @@ class Solver:
                 if check_tclass:
                     t1 = self.project.gm.get_tracklet(v)
                     t2 = self.project.gm.get_tracklet(self.project.gm.g.vertex(e.target()))
-
                     if t1.segmentation_class != t2.segmentation_class:
                         print("1on1", t1.id(), t2.id())
                         # continue
 
                 edges.append(e)
 
-        print("one2one, ", len(edges))
+        # print("one2one, ", len(edges))
         # self.confirm_edges([(e.source(), e.target()) for e in edges])  # TODO: this is probably not needed, there are no spurious edges between vertices; we only need to create tracklets
         self.add_edges_to_tracklets(edges)
 

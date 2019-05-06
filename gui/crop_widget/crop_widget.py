@@ -80,7 +80,7 @@ class CropWidget(QtGui.QWidget):
         self.change_roi_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_D))
         self.addAction(self.change_roi_action)
 
-        self.chunk_generator = self.graph_manager.chunks_in_frame_generator(self.start_frame, self.end_frame)
+        self.chunk_generator = iter(self.project.chm.get_tracklets_in_interval(self.start_frame, self.end_frame))
         self.chunk = None
         self.chunk_id = None
         self.chunk_length = 0

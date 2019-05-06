@@ -1759,7 +1759,7 @@ class ResultsWidget(QtGui.QWidget):
 
             left_nodes, right_nodes = tracklet.split_at(frame)
             if len(left_nodes) and len(right_nodes):
-                self.project.chm.remove_chunk(tracklet, self.project.gm)
+                self.project.chm.remove_tracklet(tracklet)
 
                 ch1, _ = self.project.chm.new_chunk(left_nodes, self.project.gm)
                 r = random.randint(0, 255)
@@ -2268,7 +2268,7 @@ class ResultsWidget(QtGui.QWidget):
 
                 from core.graph.track import Track
                 tt = Track([t1, t2], self.project.gm)
-                self.project.chm.new_track(tt, self.project.gm)
+                self.project.chm.new_track(tt)
                 print "T", tt.id()
 
             g1 = g2

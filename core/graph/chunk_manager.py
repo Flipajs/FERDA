@@ -16,11 +16,10 @@ class ChunkManager(object):
         # default value in graph properties will be 0, so we can easily test...
         self.id_ = 1
         self.chunks_ = {}
-        self.itree = IntervalTree()
+        self.itree = IntervalTree()  # stores chunks with start and end frame as a key
         self.eps1 = 0.01
         self.eps2 = 0.1
         self.track_refs = {}
-        self._gm = None
 
     def __getitem__(self, index):
         # if index in self.track_refs:
@@ -34,41 +33,37 @@ class ChunkManager(object):
     def __getstate__(self):
         state = self.__dict__.copy()
         del state['itree']
-        del state['_gm']
         return state
 
     def __setstate__(self, state):
         self.__dict__.update(state)
         self.itree = IntervalTree()
-        self._gm = None
-
-    @property
-    def gm(self):
-        return self._gm
-
-    @gm.setter
-    def gm(self, gm):
-        self._gm = gm
-        for t in self.tracklet_gen():
-            t.gm = gm
 
     @classmethod
-    def from_dir(cls, directory, gm):
+    def from_dir(cls, directory, gm=None):
         chm = jsonpickle.decode(open(join(directory, 'tracklets.json'), 'r').read(), keys=True)
-        chm.gm = gm
-        chm.reset_itree()
+        if gm is not None:
+            chm.set_graph_manager(gm)
         return chm
 
-    def new_track(self, track, gm):
+    def set_graph_manager(self, gm):
+        for t in self.tracklet_gen():
+            t.gm = gm
+        self.reset_itree()
+
+    def save(self, directory):
+        open(join(directory, 'tracklets.json'), 'w').write(jsonpickle.encode(self, keys=True, warn=True))
+
+    def new_track(self, track):
         track.id_ = self.id_
         self.chunks_[self.id_] = track
-        self._add_ch_itree(track, gm)
+        self._add_ch_itree(track)
 
         for t in track._data:
             # self._try_ch_itree_delete()
             if not t.is_ghost():
                 if t.id() in self.chunks_:
-                    self.remove_chunk(t, gm)
+                    self.remove_tracklet(t)
 
                 self.track_refs[t.id()] = track.id_
 
@@ -82,7 +77,7 @@ class ChunkManager(object):
         ch = Chunk(vertices_ids, self.id_, gm, origin_interaction=origin_interaction)
         self.chunks_[self.id_] = ch
 
-        self._add_ch_itree(ch, gm)
+        self._add_ch_itree(ch)
 
         # assign chunk color
         # r1 = gm.region(vertices_ids[0])
@@ -101,10 +96,10 @@ class ChunkManager(object):
 
         return l
 
-    def _add_ch_itree(self, ch, gm):
+    def _add_ch_itree(self, ch):
         self.itree.addi(ch.start_frame() - self.eps1, ch.end_frame() + self.eps1, ch)
 
-    def _try_ch_itree_delete(self, ch, gm):
+    def _try_ch_itree_delete(self, ch):
         try:
             self.itree.removei(ch.start_frame() - self.eps1, ch.end_frame() + self.eps1, ch)
         except ValueError:
@@ -115,48 +110,44 @@ class ChunkManager(object):
             # print "delete failed"
             pass
 
-    def remove_tracklet_from_itree(self, ch, gm):
-        self._try_ch_itree_delete(ch, gm)
+    def remove_tracklet_from_itree(self, ch):
+        self._try_ch_itree_delete(ch)
 
-    def remove_chunk(self, ch, gm):
-        if isinstance(ch, int):
-            ch = self.chunks_[ch]
+    def remove_tracklet(self, t):
+        if isinstance(t, int):
+            t = self.chunks_[t]
 
-        self._try_ch_itree_delete(ch, gm)
-        del self.chunks_[ch.id_]
+        self._try_ch_itree_delete(t)
+        del self.chunks_[t.id_]
 
-    def update_chunk(self, ch, gm):
-        if isinstance(ch, int):
-            ch = self.chunks_[ch]
+    def update_chunk(self, t):
+        if isinstance(t, int):
+            t = self.chunks_[t]
 
-        self._try_ch_itree_delete(ch, gm)
-        self._add_ch_itree(ch, gm)
+        self._try_ch_itree_delete(t)
+        self._add_ch_itree(t)
 
-    def get_chunks_from_intervals_(self, intervals):
-        chunks = [i.data for i in intervals]
-
-        return chunks
+    def get_tracklets_from_intervals_(self, intervals):
+        return [i.data for i in intervals]
 
     def tracklets_in_frame(self, frame):
         intervals = self.itree[frame - self.eps2:frame + self.eps2]
 
-        return self.get_chunks_from_intervals_(intervals)
+        return self.get_tracklets_from_intervals_(intervals)
 
     def undecided_singleid_tracklets_in_frame(self, frame):
         return filter(lambda x: len(x.P) == 0 and x.is_single(), self.tracklets_in_frame(frame))
 
-    def chunks_in_interval(self, start_frame, end_frame):
-        intervals = self.itree[start_frame-self.eps2:end_frame+self.eps2]
+    def get_tracklets_in_interval(self, start_frame, end_frame):
+        return self.get_tracklets_from_intervals_(self.itree[start_frame-self.eps2:end_frame+self.eps2])
 
-        return self.get_chunks_from_intervals_(intervals)
-
-    def tracklets_intersecting_t_gen(self, t, gm):
-        for t_ in self.chunks_in_interval(t.start_frame(), t.end_frame()):
+    def tracklets_intersecting_t_gen(self, t):
+        for t_ in self.get_tracklets_in_interval(t.start_frame(), t.end_frame()):
             if t_ != t:
                 yield t_
 
-    def singleid_tracklets_intersecting_t_gen(self, t, gm):
-        for t_ in self.tracklets_intersecting_t_gen(t, gm):
+    def singleid_tracklets_intersecting_t_gen(self, t):
+        for t_ in self.tracklets_intersecting_t_gen(t):
             if t_.is_single():
                 yield t_
 
@@ -172,26 +163,24 @@ class ChunkManager(object):
 
         chn = len(self)
         for i, ch in tqdm(enumerate(self.chunk_gen()), total=chn, desc='ChunkManager rebuilding interval tree', leave=False):
-            self._add_ch_itree(ch, self.gm)
+            self._add_ch_itree(ch)
 
-    def add_single_vertices_chunks(self, p, frames=None):
+    def add_single_vertices_tracklets(self, gm, frames=None):
         self.reset_itree()
 
-        nn = p.gm.g.num_vertices()
-
-        for n in tqdm(p.gm.g.vertices(), total=p.gm.g.num_vertices()):
+        for n in tqdm(gm.g.vertices(), total=gm.g.num_vertices()):
             if frames is None:
-                if p.gm.get_chunk(n) is not None:
+                if gm.get_tracklet(n) is not None:
                     continue
             else:
-                r = p.gm.region(n)
-                if r.frame() not in frames or p.gm.get_chunk(n) is not None:
+                r = gm.region(n)
+                if r.frame() not in frames or gm.get_tracklet(n) is not None:
                     continue
 
-            if not p.gm.g.vp['active'][n]:
+            if not gm.g.vp['active'][n]:
                 continue
 
-            self.new_chunk([int(n)], p.gm)
+            self.new_chunk([int(n)], gm)
 
         self.reset_itree()
 
@@ -224,8 +213,8 @@ class ChunkManager(object):
                         update_N_callback(id_set, t)
 
     def get_affected_undecided_tracklets(self, tracklet, project):
-        affected = set(self.chunks_in_interval(tracklet.start_frame(),
-                                               tracklet.end_frame()))
+        affected = set(self.get_tracklets_in_interval(tracklet.start_frame(),
+                                                      tracklet.end_frame()))
 
         return filter(lambda x: (x.is_single() or x.is_multi()) and not x.is_id_decided(), affected)
 
@@ -268,7 +257,7 @@ class ChunkManager(object):
             vertices.append(int(vertex))
         return regions, vertices
 
-    def show_tracklets(self, gm, rm):
+    def show_tracklets(self, rm):
         import matplotlib.pylab as plt
         for t in self.chunk_gen():
             yx = np.array([r.centroid() for r in t.r_gen(rm)])

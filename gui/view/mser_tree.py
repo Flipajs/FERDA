@@ -9,7 +9,7 @@ import numpy as np
 from skimage.transform import resize
 
 from core.project.project import Project
-from core.region.mser import get_msers_img
+from core.region.mser import get_regions_in_img
 from gui.img_controls.gui_utils import cvimg2qtpixmap
 from scripts.region_graph3 import visualize_nodes
 
@@ -100,7 +100,7 @@ class MSERTree(QtGui.QWidget):
         self.layout().addWidget(self.b)
 
     def get_regions(self):
-        regions = get_msers_img(self.img, self.project)
+        regions = get_regions_in_img(self.img, self.project)
 
         for r in regions:
             print r.area(), r.label()

@@ -54,6 +54,10 @@ class Chunk():  # object
 
             self.chunk_reconnect_()
 
+    def is_consistent(self):
+        # first and last node should be positive, the rest negative
+        return self.nodes_[0] > 0 and self.nodes_[-1] > 0  #  and all([n < 0 for n in self.nodes_[1:-1]])
+
     def __str__(self):
         s = "Tracklet --- id: "+str(self.id_)+" length: "+str(len(self.nodes_))+" "+str(self.P)+"\n"
         return s
@@ -146,16 +150,14 @@ class Chunk():  # object
             raise Exception("DISCONTINUITY in chunk.py/append_right, frame: {}, r_id: {}".format(region.frame(), region.id()))
 
         last = self.end_node()
-
         ch2, _ = self.gm.is_chunk(vertex)
         if ch2:
             self.merge(ch2)
             return
         else:
             self.nodes_.append(vertex_id)
-
-        self.gm.remove_vertex(last, False)
-        self.chunk_reconnect_()
+            self.gm.remove_vertex(last, False)
+            self.chunk_reconnect_()
 
     def pop_first(self):
         first = self.nodes_.pop(0)
@@ -218,8 +220,9 @@ class Chunk():  # object
         ch1end = self.end_node()
         ch2start = ch2.start_node()
 
-        self.gm.project.chm.remove_chunk(ch2, self.gm)
-        self.gm.project.chm._try_ch_itree_delete(self, self.gm)
+        # TODO: refactor to not expect self.gm.project
+        self.gm.project.chm.remove_tracklet(ch2)  # if this fails, see core/graph_assembly.py:215
+        self.gm.project.chm._try_ch_itree_delete(self)
 
         if self.length() > 1:
             self.gm.remove_vertex(ch1end, disassembly=False)
@@ -230,7 +233,7 @@ class Chunk():  # object
 
         self.chunk_reconnect_()
 
-        self.gm.project.chm._add_ch_itree(self, self.gm)
+        self.gm.project.chm._add_ch_itree(self)
 
     def merge_and_interpolate(self, ch2):
         if self.end_frame() > ch2.start_frame():

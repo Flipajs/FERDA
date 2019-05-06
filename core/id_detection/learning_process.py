@@ -466,8 +466,8 @@ class LearningProcess:
         best_value = -1
         for t_id in self.undecided_tracklets:
             tracklet = self.p.chm[t_id]
-            in_time = set(self.p.chm.chunks_in_interval(tracklet.start_frame(),
-                                                        tracklet.end_frame()))
+            in_time = set(self.p.chm.get_tracklets_in_interval(tracklet.start_frame(),
+                                                               tracklet.end_frame()))
             # find tracklet which overlaps with max number of other tracklets
             if strategy == 'max_tracklets':
                 val = len(in_time)
@@ -1134,7 +1134,7 @@ class LearningProcess:
 
             # TODO: if track... ? more advanced chunks in interval
             # set of all other relevant regions (single regions in tracklet timespan overlap)
-            C = self.p.chm.chunks_in_interval(tracklet.start_frame(), tracklet.end_frame())
+            C = self.p.chm.get_tracklets_in_interval(tracklet.start_frame(), tracklet.end_frame())
 
             term1 = 1
             term2 = 0
@@ -1223,7 +1223,7 @@ class LearningProcess:
             p1 = self.get_p1(x_, k)
 
             # set of all other relevant regions (single regions in tracklet timespan overlap)
-            C = self.p.chm.chunks_in_interval(tracklet.start_frame(), tracklet.end_frame())
+            C = self.p.chm.get_tracklets_in_interval(tracklet.start_frame(), tracklet.end_frame())
 
             term1 = 1
             term2 = 0
@@ -1339,8 +1339,8 @@ class LearningProcess:
         if id_ is None:
             id_ = self.__DEBUG_get_answer_from_GT(tracklet)
 
-        in_time = set(self.p.chm.chunks_in_interval(tracklet.start_frame(),
-                                                    tracklet.end_frame()))
+        in_time = set(self.p.chm.get_tracklets_in_interval(tracklet.start_frame(),
+                                                           tracklet.end_frame()))
 
         conflicts = []
         for t in in_time:
@@ -2054,7 +2054,7 @@ class LearningProcess:
             t.P = P
             t.N = full_set.difference(P)
 
-            for tt in self.p.chm.chunks_in_interval(t.start_frame(), t.end_frame()):
+            for tt in self.p.chm.get_tracklets_in_interval(t.start_frame(), t.end_frame()):
                 if not len(tt.P):
                     tt.N = tt.N.union(P)
 

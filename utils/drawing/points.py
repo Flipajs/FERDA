@@ -205,7 +205,7 @@ if __name__ == '__main__':
     img = cv2.imread('/Users/fnaiser/Documents/colormarktests/imgs/0.png')
     from core.region import mser, mser_operations
 
-    regions = mser.get_msers_img(img)
+    regions = mser.get_regions_in_img(img)
     groups = mser_operations.get_region_groups(regions)
     idx = mser_operations.margin_filter(regions, groups)
 

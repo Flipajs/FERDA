@@ -8,12 +8,12 @@ import numpy as np
 from PyQt4 import QtGui
 from PyQt4 import QtCore
 from skimage.transform import resize
-from core.region.mser import get_msers_img
+from core.region.mser import get_regions_in_img
 from core.project.project import Project
 from gui.img_controls.gui_utils import cvimg2qtpixmap
 from scripts.region_graph3 import visualize_nodes
 from utils.video_manager import get_auto_video_manager
-from core.region.mser import get_msers_img
+from core.region.mser import get_regions_in_img
 from core.graph.reduced import Reduced
 import scipy.io as sio
 from scipy.spatial import ConvexHull
@@ -85,7 +85,7 @@ class RegionReconstruction(QtGui.QWidget):
         for f in frames:
             ch_in_frame = self.project.solver.tracklets_in_frame(f)
             im = vid.get_frame(f)
-            regions = get_msers_img(im, self.project, frame=f)
+            regions = get_regions_in_img(im, self.project, frame=f)
 
             for ch in ch_in_frame:
                 c = ch.get_centroid_in_time(f)
@@ -141,7 +141,7 @@ class RegionReconstruction(QtGui.QWidget):
             reconstructed[f] = []
             ch_in_frame = self.project.solver.tracklets_in_frame(f)
             im = vid.get_frame(f)
-            regions = get_msers_img(im, self.project, frame=f)
+            regions = get_regions_in_img(im, self.project, frame=f)
 
             for ch in ch_in_frame:
                 c = ch.get_centroid_in_time(f)

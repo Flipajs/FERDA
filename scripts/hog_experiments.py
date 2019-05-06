@@ -6,7 +6,7 @@ from skimage.feature import hog
 from skimage import data, color, exposure
 from utils.video_manager import get_auto_video_manager
 from core.project.project import Project
-from core.region.mser import get_filtered_msers
+from core.region.mser import get_filtered_regions
 import scipy
 
 from PIL import Image
@@ -22,7 +22,7 @@ from utils.roi import get_roi
 
 def get_mser(im, p):
     p.mser_parameters.max_area = 1000000
-    msers = get_filtered_msers(np.asarray(im * 255, dtype=np.uint8), p, 0)
+    msers = get_filtered_regions(np.asarray(im * 255, dtype=np.uint8), p, 0)
 
     m = msers[0]
     ab = m.area() / np.pi

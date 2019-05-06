@@ -4,7 +4,7 @@ from utils.video_manager import get_auto_video_manager, VideoManager
 from matplotlib import pyplot as plt
 import cv2
 import numpy as np
-from core.region.mser import get_filtered_msers
+from core.region.mser import get_filtered_regions
 import scipy.ndimage as ndimage
 from utils.geometry import rotate
 from scipy.spatial.distance import cdist
