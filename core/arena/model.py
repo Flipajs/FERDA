@@ -17,10 +17,11 @@ class Model(object):
 
     def save_mask(self, mask_filename):
         if self.mask_ is not None:
+            assert self.mask_.ndim == 2
             cv2.imwrite(mask_filename, self.mask_)
 
     def load_mask(self, mask_filename):
-        self.mask_ = cv2.imread(mask_filename)
+        self.mask_ = cv2.imread(mask_filename, cv2.IMREAD_GRAYSCALE)
         self.mask_idx_ = (self.mask_ == 0)
 
     def __getstate__(self):
@@ -33,9 +34,7 @@ class Model(object):
         self.__dict__.update(state)
 
     def mask_image(self, img, fill=(255, 255, 255)):
-        if len(img.shape) == 2:
-            fill = fill[0]
-        elif img.shape[2] == 1:
+        if img.ndim == 2 or img.shape[2] == 1:
             fill = fill[0]
 
         processed = np.copy(img)
