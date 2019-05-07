@@ -158,14 +158,8 @@ class RegionManager(UserList):
             self.open_h5_store(join(directory, 'regions.h5'))
 
     def close(self):
-        self.regions_h5.close()
-
-    def __del__(self):
         filename = self.regions_h5.filename
-        try:
-            self.regions_h5.close()
-        except:
-            pass
+        self.regions_h5.close()
         if self.is_region_pts_temp:
             os.remove(filename)
 
