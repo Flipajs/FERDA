@@ -24,6 +24,7 @@ import webbrowser
 from utils.experiment import Parameters, Experiment
 from core.region.region_manager import RegionManager
 from utils.gt.mot import results_to_mot
+import sys
 
 
 def setup_logging():
@@ -45,37 +46,40 @@ def fix_orientation(project):
     print('Swapped {} regions orientation.'.format(n_swaps))
 
 
-def run_tracking(project, project_dir, force_recompute=False, reid_model_weights_path=None, results_mot=None):
+def run_tracking(project, force_recompute=False, reid_model_weights_path=None):
     import core.segmentation
-    from core.region.clustering import is_project_cardinality_classified
     import core.graph_assembly
     import core.graph.solver
+    from scripts.CNN.siamese_descriptor import compute_descriptors
     from core.id_detection.complete_set_matching import do_complete_set_matching
-    logger.info('run_tracking: segmentation')
-    if force_recompute or not core.graph_assembly.is_assemply_completed(project):
-        core.segmentation.segmentation(project_dir)
-    logger.info('run_tracking: graph assembly')
-    if force_recompute or not core.graph_assembly.is_assemply_completed(project):
-        graph_solver = core.graph.solver.Solver(project)
-        core.graph_assembly.graph_assembly(project, graph_solver)
+    if force_recompute:
+        project.next_processing_stage = 'segmentation'
+    if project.next_processing_stage == 'segmentation':
+        logger.info('run_tracking: segmentation')
+        core.segmentation.segmentation(project.working_directory)
+        project.next_processing_stage = 'assembly'
+    if project.next_processing_stage == 'assembly':
+        logger.info('run_tracking: graph assembly')
+        core.graph_assembly.graph_assembly(project)
         project.save()
-    logger.info('run_tracking: cardinality classification')
-    if force_recompute or not is_project_cardinality_classified(project):
+        project.next_processing_stage = 'cardinality_classification'
+    if project.next_processing_stage == 'cardinality_classification':
+        logger.info('run_tracking: cardinality classification')
         project.region_cardinality_classifier.classify_project(project)
         project.save()
-    logger.info('run_tracking: re-identification descriptors computation')
-    if force_recompute or not os.path.isfile(join(project_dir, 'descriptors.pkl')):
+        project.next_processing_stage = 're-identification'
+    if project.next_processing_stage == 're-identification':
+        # not os.path.isfile(join(project.working_directory, 'descriptors.pkl')):
+        logger.info('run_tracking: re-identification descriptors computation')
         assert reid_model_weights_path is not None, \
             'missing reidentification model weights, to train a model see prepare_siamese_data.py, train_siamese_contrastive_lost.py'
-        from scripts.CNN.siamese_descriptor import compute_descriptors
-        compute_descriptors(project_dir, reid_model_weights_path)
-    logger.info('run_tracking: complete set matching')
-    do_complete_set_matching(project)
-    project.save()
-    if results_mot is not None:
-        results = project.get_results_trajectories()
-        df = results_to_mot(results)
-        df.to_csv(results_mot, header=False, index=False)
+        compute_descriptors(project.working_directory, reid_model_weights_path)
+        project.next_processing_stage = 'complete_sets_matching'
+    if project.next_processing_stage == 'complete_sets_matching':
+        logger.info('run_tracking: complete set matching')
+        do_complete_set_matching(project)
+        project.save()
+        project.next_processing_stage = 'export_results'
 
 
 def run_evaluation(mot_file, gt_file, out_evaluation_file, load_python3_env_cmd=None):
@@ -127,14 +131,19 @@ def run_experiment(config, force_prefix=None):
         experiment.save_params()
         mot_results_file = join(experiment.dir, 'results.txt')
         if config['run'] == 'ferda_tracking':
-            # create FERDA project template
-            project_dir = join(experiment.params['projects_dir'],
-                               experiment.params['dataset_name'],
-                               experiment.basename)
-            shutil.copytree(experiment.params['dataset']['initial_project'], project_dir)
+            if os.path.exists(mot_results_file):
+                print('{} already exists, skipping.'.format(mot_results_file))
+            else:
+                # create FERDA project template
+                project_dir = join(experiment.params['projects_dir'],
+                                   experiment.params['dataset_name'],
+                                   experiment.basename)
+                if not os.path.isdir(project_dir):
+                    shutil.copytree(experiment.params['dataset']['initial_project'], project_dir)
 
-            run_tracking(project_dir, results_mot=mot_results_file,
-                         reid_model_weights_path=experiment.params['dataset']['reidentification_weights'])
+                project = Project.from_dir(project_dir, regions_optional=True, graph_optional=True, tracklets_optional=True)
+                run_tracking(project, reid_model_weights_path=experiment.params['dataset']['reidentification_weights'])
+                save_results_mot(project, mot_results_file)
         elif config['run'] == 'single_object_tracking':
             from core.interactions.detect import track_video
             track_video(experiment.params['tracker_model'], experiment.params['dataset']['initial_project'],
@@ -143,7 +152,11 @@ def run_experiment(config, force_prefix=None):
             assert False, 'unknown run: {} value in the experiments configuration'.format(config['run'])
 
         if 'gt' in experiment.params['dataset']:
-            run_evaluation(mot_results_file, experiment.params['dataset']['gt'], join(experiment.dir, 'evaluation.csv'))
+            evaluation_file = join(experiment.dir, 'evaluation.csv')
+            if os.path.exists(evaluation_file):
+                print('{} already exists, skipping.'.format(evaluation_file))
+            else:
+                run_evaluation(mot_results_file, experiment.params['dataset']['gt'], evaluation_file)
 
 
 def run_benchmarks(notebook_path='experiments/tracking/benchmarking.ipynb',
@@ -228,46 +241,83 @@ def run_visualization(experiment_names, all_experiments, gt_file, in_video_file,
     visualize_mot(in_video_file, out_video_file, df_mots, names)
 
 
-def load_experiments(experiments_config, evaluation_required=False, trajectories_required=False):
-    experiments = defaultdict(list)
+def load_experiments(experiments_dir, evaluation_required=False, trajectories_required=False):
+    """
+    Recursively search for directories with experiments.
+
+    - metadata is loaded from experiment.yaml or parameters.yaml
+    - evaluation from evaluation.csv
+    - trajectories from results.txt
+    - if experiment_name is not present in metadata directory basename is used
+
+    :param experiments_dir: top level directory
+    :param evaluation_required:
+    :param trajectories_required:
+    :return: list of experiments
+    """
+    import os
+    import yaml
+    from os.path import join
+    import warnings
+
+    experiments = []
     for directory, dirnames, filenames in \
-            sorted(os.walk(experiments_config['dir']), key=lambda x: os.path.basename(x[0])):
-        if directory == experiments_config['dir']:
+            sorted(os.walk(experiments_dir), key=lambda x: os.path.basename(x[0])):
+        if directory == experiments_dir:  # skip top level
             continue
 
-        if 'parameters.yaml' in filenames:
+        if 'experiment.yaml' in filenames:
+            with open(join(directory, 'experiment.yaml'), 'r') as fr:
+                metadata = yaml.load(fr)
+        elif 'parameters.yaml' in filenames:
             with open(join(directory, 'parameters.yaml'), 'r') as fr:
-                parameters = yaml.load(fr)
-            if parameters.get('dataset_name') not in experiments_config['datasets']:
-                # print('skipping experiment {}, unknown dataset {}'.format(directory, parameters.get('dataset_name')))
-                continue
-            if 'evaluation.csv' in filenames:
-                parameters['evaluation'] = join(directory, 'evaluation.csv')
-            elif evaluation_required:
-                continue
-            if 'results.txt' in filenames:
-                parameters['mot_trajectories'] = join(directory, 'results.txt')
-            elif trajectories_required:
-                continue
-            parameters['dirname'] = os.path.basename(directory)
-            if 'datetime' not in parameters:
-                from datetime import datetime
+                metadata = yaml.load(fr)
+        else:
+                metadata = {}
+
+        if 'evaluation.csv' in filenames:
+            metadata['evaluation_filename'] = join(directory, 'evaluation.csv')
+        elif evaluation_required:
+            continue
+
+        if 'trajectories.txt' in filenames:
+            metadata['mot_trajectories_filename'] = join(directory, 'trajectories.txt')
+        elif trajectories_required:
+            continue
+
+        if not metadata:
+            warnings.warn('no experiment found in {}'.format(directory))
+            continue
+
+        if 'experiment_name' not in metadata:
+            metadata['experiment_name'] = os.path.basename(directory)
+
+        if 'datetime' not in metadata:
+            from datetime import datetime
+            try:
+                metadata['datetime'] = datetime.strptime(metadata['experiment_name'][:6], "%y%m%d")
+                metadata['datetime'] = datetime.strptime(metadata['experiment_name'][:11], "%y%m%d_%H%M")
+            except ValueError:
                 try:
-                    parameters['datetime'] = datetime.strptime(parameters['dirname'][:11], "%y%m%d_%H%M")
+                    metadata['datetime'] = datetime.strptime(os.path.basename(directory)[:6], "%y%m%d")
+                    metadata['datetime'] = datetime.strptime(os.path.basename(directory)[:11], "%y%m%d_%H%M")
                 except ValueError:
-                    try:
-                        parameters['datetime'] = datetime.strptime(parameters['exp_name'][:11], "%y%m%d_%H%M")
-                    except ValueError:
-                        pass
-            if 'name' in parameters and 'exp_name' not in parameters:
-                parameters['exp_name'] = parameters['name']
-            experiments[parameters['dataset_name']].append(parameters)
-            # print(parameters['exp_name'])
-        # else:
-        #     print('no parameters.yaml in {}'.format(directory))
-    for dataset, dataset_experiments in experiments.items():
-        experiments[dataset] = sorted(dataset_experiments, key=lambda x: x['datetime'])
+                    if 'datetime' not in metadata or not metadata['datetime']:
+                        warnings.warn('Can\'t parse datetime in {}.'.format(directory))
+
+        experiments.append(metadata)
+
+    try:
+        experiments = sorted(experiments, key=lambda x: x['datetime'])
+    except KeyError:
+        warnings.warn('Can\'t sort experiments, some datetime was not parsed.')
     return experiments
+
+
+def save_results_mot(project, out_filename):
+    results = project.get_results_trajectories()
+    df = results_to_mot(results)
+    df.to_csv(out_filename, header=False, index=False)
 
 
 if __name__ == '__main__':
@@ -292,31 +342,6 @@ if __name__ == '__main__':
    # parser.add_argument('--run-benchmarks', action='store_true', help='run benchmarks and store results to a html file')
     args = parser.parse_args()
 
-    project = Project(args.project, video_file=args.video_file)
-
-    if args.info:
-        import core.graph_assembly
-        from core.region.clustering import is_project_cardinality_classified
-        print('assembled: {}'.format(core.graph_assembly.is_assemply_completed(project)))
-        print('cardinality classified: {}'.format(is_project_cardinality_classified(project)))
-        print('descriptors computed: {}'.format(os.path.isfile(join(project.working_directory, 'descriptors.pkl'))))
-        if not project.chm:
-            print('chunk manager not initialized')
-        else:
-            print('number of chunks {}'.format(len(project.chm)))
-            print('tracklet cardinality stats: {}'.format(np.bincount([tracklet.segmentation_class for tracklet in project.chm.chunk_gen()])))
-
-    if args.fix_orientation:
-        fix_orientation(project)
-
-    if args.run_tracking:
-        run_tracking(project, args.project, video_file=args.video_file, reid_model_weights_path=args.reidentification_weights)
-
-    if args.save_results_mot:
-        results = project.get_results_trajectories()
-        df = results_to_mot(results)
-        df.to_csv(args.save_results_mot, header=False, index=False)
-
     if args.run_experiments_yaml:
         with open(args.run_experiments_yaml, 'r') as fr:
             experiments_config = yaml.load(fr)
@@ -328,7 +353,9 @@ if __name__ == '__main__':
         for dataset_name, dataset in datasets.iteritems():
             experiment_config['dataset'] = dataset
             experiment_config['dataset_name'] = dataset_name
+            print('Processing {} dataset.'.format(dataset_name))
             run_experiment(experiment_config, args.force_experiment_prefix)
+        sys.exit(0)
 
     if args.run_visualizations_yaml:
         with open(args.run_visualizations_yaml, 'r') as fr:
@@ -341,6 +368,27 @@ if __name__ == '__main__':
                                   dataset['gt'], dataset['video'],
                                   join(experiments_config['dir'],
                                        time.strftime("%y%m%d_%H%M", time.localtime()) + '_visualization.mp4'))
+        sys.exit(0)
+
+    project = Project.from_dir(args.project, video_file=args.video_file,
+                               regions_optional=True, graph_optional=True, tracklets_optional=True)
+
+    if args.info:
+        print('next processing stage: ' + project.next_processing_stage)
+        if not project.chm:
+            print('chunk manager not initialized')
+        else:
+            print('number of chunks {}'.format(len(project.chm)))
+            print('tracklet cardinality stats: {}'.format(np.bincount([tracklet.segmentation_class for tracklet in project.chm.chunk_gen()])))
+
+    if args.fix_orientation:
+        fix_orientation(project)
+
+    if args.run_tracking:
+        run_tracking(project, reid_model_weights_path=args.reidentification_weights)
+
+    if args.save_results_mot:
+        save_results_mot(project, args.save_results_mot)
 
     if args.project_save_dir:
         project.save(args.project_save_dir)
