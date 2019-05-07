@@ -872,28 +872,14 @@ class CompleteSetMatching:
         return min([t.start_frame() for t in self.tracks[track]])
 
     def track_end_node(self, track):
-        end_node = None
-        end_frame = 0
-
-        for t in self.tracks[track]:
-            t_end_f = t.end_frame()
-            if t_end_f > end_frame:
-                end_frame = t_end_f
-                end_node = t.end_node()
-
-        return end_node
+        assert self.tracks[track]
+        end_track = max(self.tracks[track], key=lambda x: x.end_frame())
+        return end_track.end_node()
 
     def track_start_node(self, track):
-        start_node = None
-        start_frame = np.inf
-
-        for t in self.tracks[track]:
-            t_start_f = t.start_frame()
-            if t_start_f < start_frame:
-                start_frame = t_start_f
-                start_node = t.start_node()
-
-        return start_node
+        assert self.tracks[track]
+        start_track = min(self.tracks[track], key=lambda x: x.start_frame())
+        return start_track.start_node()
 
     def spatial_probabilities(self, cs1, cs2, lower_bound=0.5):
         # should be neutral if temporal distance is too big
