@@ -64,10 +64,12 @@ class Experiment(object):
         """
         experiment = cls()
         if prefix is True:
-            experiment.basename = time.strftime("%y%m%d_%H%M", time.localtime()) + '_'
+            experiment.basename = time.strftime("%y%m%d_%H%M", time.localtime())
         elif isinstance(prefix, str):
-            experiment.basename = prefix + '_'
+            experiment.basename = prefix
         if name is not None:
+            if len(experiment.basename) != 0:
+                experiment.basename += '_'
             experiment.basename += name
         assert len(experiment.basename)
         if config is not None:
