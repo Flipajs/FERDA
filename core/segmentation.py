@@ -103,7 +103,6 @@ def segmentation(project_dir):
     Parallel(n_jobs=config['general']['n_jobs'], verbose=10)\
         (delayed(do_segmentation_part)(project_dir, i, frame_start)
          for i, frame_start in enumerate(range(0, frame_num, frames_in_row)))  # frame_num
-    project.next_processing_stage = 'assembly'
 
 
 def is_segmentation_completed(project):

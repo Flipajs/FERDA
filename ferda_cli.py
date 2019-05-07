@@ -58,16 +58,17 @@ def run_tracking(project, force_recompute=False, reid_model_weights_path=None):
         logger.info('run_tracking: segmentation')
         core.segmentation.segmentation(project.working_directory)
         project.next_processing_stage = 'assembly'
+        project.save()
     if project.next_processing_stage == 'assembly':
         logger.info('run_tracking: graph assembly')
         core.graph_assembly.graph_assembly(project)
-        project.save()
         project.next_processing_stage = 'cardinality_classification'
+        project.save()
     if project.next_processing_stage == 'cardinality_classification':
         logger.info('run_tracking: cardinality classification')
         project.region_cardinality_classifier.classify_project(project)
-        project.save()
         project.next_processing_stage = 're-identification'
+        project.save()
     if project.next_processing_stage == 're-identification':
         # not os.path.isfile(join(project.working_directory, 'descriptors.pkl')):
         logger.info('run_tracking: re-identification descriptors computation')
@@ -75,11 +76,12 @@ def run_tracking(project, force_recompute=False, reid_model_weights_path=None):
             'missing reidentification model weights, to train a model see prepare_siamese_data.py, train_siamese_contrastive_lost.py'
         compute_descriptors(project.working_directory, reid_model_weights_path)
         project.next_processing_stage = 'complete_sets_matching'
+        project.save()
     if project.next_processing_stage == 'complete_sets_matching':
         logger.info('run_tracking: complete set matching')
         do_complete_set_matching(project)
-        project.save()
         project.next_processing_stage = 'export_results'
+        project.save()
 
 
 def run_evaluation(mot_file, gt_file, out_evaluation_file, load_python3_env_cmd=None):
