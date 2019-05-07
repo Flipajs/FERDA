@@ -78,6 +78,8 @@ class Region(object):
             del state['pts_rle_']
         if 'pts_' in state:
             del state['pts_']
+        if 'contour_' in state:
+            del state['contour_']
         if flatten:
             state['centroid_x'] = self.centroid_[1]
             state['centroid_y'] = self.centroid_[0]
@@ -468,12 +470,16 @@ class Region(object):
 
 
 class RegionExtStorage(Region):
-    def __init__(self, i, dataframe, pts_h5_dataset):
+    def __init__(self, i, dataframe, pts_h5_dataset, contour_h5_dataset):
         self.i = i
         self.dataframe = dataframe
         self.pts_h5_dataset = pts_h5_dataset
+        self.contour_h5_dataset = contour_h5_dataset
         self.__centroid__ = None
         self.__roi__ = None
+
+    def __getstate__(self, flatten=False):
+        return self.dataframe.loc[self.i]
 
     @property
     def id_(self):
@@ -482,6 +488,10 @@ class RegionExtStorage(Region):
     @property
     def pts_(self):
         return self.pts_h5_dataset[self.i].reshape((-1, 2))
+
+    @property
+    def contour_(self):
+        return self.contour_h5_dataset[self.i].reshape((-1, 2))
 
     @property
     def centroid_(self):
@@ -556,10 +566,6 @@ class RegionExtStorage(Region):
     @property
     def frame_(self):
         return self.dataframe.loc[self.i, 'frame_']
-
-    @property
-    def contour_(self):
-        return self.dataframe.loc[self.i, 'contour_']
 
     @property
     def is_origin_interaction_(self):

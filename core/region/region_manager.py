@@ -9,65 +9,131 @@ from os.path import join
 import h5py
 import numpy as np
 import tempfile
-from shutil import copyfile
+from shutil import move, copyfile
 import os
+import warnings
 
 
 class RegionManager(UserList):
-    def __init__(self):
+    def __init__(self, regions=None):
         self.regions_df = None
-        self.region_pts_h5 = None
+        self.regions_h5 = None
         self.region_pts_h5_dataset = None
+        self.region_contour_h5_dataset = None
         self.is_region_pts_temp = True
 
         self.init_dataframe()
         self.init_h5_store()
-        self.data = []
+        if regions is None:
+            self.data = []
+        else:
+            self.data = regions[:]
 
     @classmethod
     def from_dir(cls, directory):
         rm = cls()
         rm.regions_df = pd.read_csv(join(directory, 'regions.csv')).set_index('id_', drop=False)
-        rm.open_h5_store(join(directory, 'regions.h5'))
+        try:
+            rm.open_h5_store(join(directory, 'regions.h5'))
+        except Exception as e:
+            warnings.warn(e.message)
+            warnings.warn('Initializing a new region manager h5 store in temporary location.')
+            rm.init_h5_store()
         if not rm.regions_df.empty:
             n = rm.regions_df.index.max() + 1
             rm.data = [None] * n
             for i in rm.regions_df.index:
-                rm.data[i] = RegionExtStorage(i, rm.regions_df, rm.region_pts_h5_dataset)
+                rm.data[i] = RegionExtStorage(i, rm.regions_df, rm.region_pts_h5_dataset, rm.region_contour_h5_dataset)
         return rm
 
+    def __add__(self, other):
+        added = super(RegionManager, self).__add__(other)
+        added.regions_df = pd.concat([self.regions_df, other.regions_df], ignore_index=True, sort=False)
+        added.regions_df.id_ = added.regions_df.index
+        added.init_h5_store(filename=None, num_items=len(added.regions_df))
+        added.region_pts_h5_dataset[:len(self.regions_df)] = self.region_pts_h5_dataset[:len(self.regions_df)]
+        added.region_pts_h5_dataset[len(self.regions_df):] = other.region_pts_h5_dataset[:len(other.regions_df)]
+        added.region_contour_h5_dataset[:len(self.regions_df)] = self.region_contour_h5_dataset[:len(self.regions_df)]
+        added.region_contour_h5_dataset[len(self.regions_df):] = other.region_contour_h5_dataset[:len(other.regions_df)]
+        return added
+
+    def extend(self, other):
+        n_self = len(self.regions_df)
+        n_other = len(other.regions_df)
+        df = pd.concat([self.regions_df, other.regions_df], ignore_index=True, sort=False)
+        df.id_ = df.index
+        self.regions_df = df
+
+        if not (self.regions_h5.mode in ['r+', 'w', 'a']):
+            filename = self.regions_h5.filename
+            self.regions_h5.close()
+            self.open_h5_store(filename, 'r+')
+        self.region_pts_h5_dataset.resize(len(self.regions_df), axis=0)
+        self.region_pts_h5_dataset[n_self:] = other.region_pts_h5_dataset[:n_other]
+        self.region_contour_h5_dataset.resize(len(self.regions_df), axis=0)
+        self.region_contour_h5_dataset[n_self:] = other.region_contour_h5_dataset[:n_other]
+        # self.regions_h5.close()
+        # self.open_h5_store(filename)
+
+        other_fixed_external = []
+        for i, r in enumerate(other):
+            if isinstance(r, RegionExtStorage):
+                other_fixed_external.append(RegionExtStorage(i + n_self, self.regions_df,
+                                                             self.region_pts_h5_dataset, self.region_contour_h5_dataset))
+            elif isinstance(r, Region):
+                other_fixed_external.append(r)
+            else:
+                assert False
+        super(RegionManager, self).extend(other_fixed_external)
+
     def regions_to_ext_storage(self):
+        self.regions_df = self.get_regions_df()
         for i, r in enumerate(tqdm.tqdm(self.data, desc='converting Regions to RegionExtStorage')):
             if r is not None and not isinstance(r, RegionExtStorage):
                 assert isinstance(r, Region)
                 assert r.id() == i
-                self.regions_df.loc[i] = pd.Series(r.__getstate__(flatten=True))
                 pts = r.pts()
                 if pts is None:
                     pts = np.array([])
                 else:
                     pts = pts.flatten()
                 self.region_pts_h5_dataset[i] = pts
-                self.data[r.id()] = RegionExtStorage(self.regions_df.loc[i], self.region_pts_h5_dataset)
+                self.region_contour_h5_dataset[i] = r.contour().flatten()
+                self.data[i] = RegionExtStorage(i, self.regions_df,
+                                                self.region_pts_h5_dataset, self.region_contour_h5_dataset)
 
     def init_dataframe(self):
         self.regions_df = pd.DataFrame(columns=Region().__getstate__(flatten=True).keys()).set_index('id_', drop=False)
 
     def init_h5_store(self, filename=None, num_items=1000):
         if filename is None:
-            f = tempfile.NamedTemporaryFile(delete=False)
+            f = tempfile.NamedTemporaryFile()
             f.close()
             filename = f.name
             self.is_region_pts_temp = True
-        self.region_pts_h5 = h5py.File(filename, mode='w')
+        self.regions_h5 = h5py.File(filename, mode='w')
         dt = h5py.special_dtype(vlen=np.dtype('int32'))
-        self.region_pts_h5.create_dataset('region_pts', (num_items,), dtype=dt, maxshape=(None,))  # , compression='gzip'
-        self.region_pts_h5_dataset = self.region_pts_h5['region_pts']
+        self.regions_h5.create_dataset('region_pts', (num_items,), dtype=dt, maxshape=(None,))  # , compression='gzip'
+        self.region_pts_h5_dataset = self.regions_h5['region_pts']
+        self.regions_h5.create_dataset('contour_pts', (num_items,), dtype=dt, maxshape=(None,))  # , compression='gzip'
+        self.region_contour_h5_dataset = self.regions_h5['contour_pts']
 
-    def open_h5_store(self, filename):
-        self.region_pts_h5 = h5py.File(filename, mode='r')  # TODO 'a'
-        self.region_pts_h5_dataset = self.region_pts_h5['region_pts']
+    def open_h5_store(self, filename, mode='r'):
+        self.regions_h5 = h5py.File(filename, mode=mode)  # TODO
+        self.region_pts_h5_dataset = self.regions_h5['region_pts']
+        self.region_contour_h5_dataset = self.regions_h5['contour_pts']
         self.is_region_pts_temp = False
+        for r in self.data:
+            if isinstance(r, RegionExtStorage):
+                r.pts_h5_dataset = self.region_pts_h5_dataset
+                r.contour_h5_dataset = self.region_contour_h5_dataset
+
+    def get_regions_df(self):
+        if all([isinstance(r, RegionExtStorage) for r in self.data]) or \
+                (len(self.data) == 0 and len(self.regions_df) == 0):
+            return self.regions_df
+        else:
+            return self.regions2dataframe(self.data)
 
     @staticmethod
     def regions2dataframe(regions):
@@ -79,16 +145,47 @@ class RegionManager(UserList):
         self.regions_to_ext_storage()
         self.regions_df.to_csv(join(directory, 'regions.csv'), index=False)
         regions_filename = join(directory, 'regions.h5')
-        if regions_filename == self.region_pts_h5.filename:
-            self.region_pts_h5.flush()
+        if regions_filename == self.regions_h5.filename:
+            self.regions_h5.flush()
         else:
-            filename = self.region_pts_h5.filename
-            self.region_pts_h5.close()
-            copyfile(filename, regions_filename)
-            if self.is_region_pts_temp:
-                os.remove(filename)
+            filename = self.regions_h5.filename
+            self.regions_h5.close()
+            if not self.is_region_pts_temp:
+                copyfile(filename, regions_filename)
+            else:
+                move(filename, regions_filename)
                 self.is_region_pts_temp = False
             self.open_h5_store(join(directory, 'regions.h5'))
+
+    def close(self):
+        self.regions_h5.close()
+
+    def __del__(self):
+        filename = self.regions_h5.filename
+        try:
+            self.regions_h5.close()
+        except:
+            pass
+        if self.is_region_pts_temp:
+            os.remove(filename)
+
+
+# def concatenate(regionmanagers):
+#     super(RegionManager, self).extend(other)
+#     df = pd.concat([self.regions_df, other.regions_df], ignore_index=True, sort=False)
+#     df.id_ = df.index
+#     filename = self.regions_h5.filename
+#     if self.regions_h5.mode != 'a' or self.regions_h5.mode != 'r+':
+#         self.regions_h5.close()
+#     self.open_h5_store(filename, 'r+')
+#     self.region_pts_h5_dataset.resize(len(df), axis=0)
+#     self.region_pts_h5_dataset[len(self.regions_df):] = other.region_pts_h5_dataset[:len(other.regions_df)]
+#     # self.regions_h5.close()
+#     # self.open_h5_store(filename)
+#     self.regions_df = df
+#
+#     out_rm = RegionManager()
+#     for rm in regionmanagers:
 
 
 if __name__ == "__main__":
