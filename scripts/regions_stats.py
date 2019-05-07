@@ -1295,9 +1295,6 @@ def learn_assignments(p, max_examples=np.inf, display=False):
     IF_movement = IsolationForest(contamination=0.005, random_state=seed)
     IF_movement.fit(X_movement)
 
-    with open(p.working_directory + '/temp/isolation_forests.pkl', 'wb') as f:
-        pickle.dump({'movement': IF_movement, 'appearance': IF_appearance}, f)
-
     if display:
         y = IF_appearance.predict(X_appearance)
         print len(y), np.sum(y == -1)
@@ -1311,14 +1308,11 @@ def learn_assignments(p, max_examples=np.inf, display=False):
 
         display_pairs(p, pairs[y == -1], 'anomaly_parts_movement', cols=3, item_height=250, item_width=500, border=70)
 
+    return IF_movement, IF_appearance
 
-def add_score_to_edges(p):
-    with open(p.working_directory + '/temp/isolation_forests.pkl', 'rb') as f:
-        d = pickle.load(f)
-        IF_appearance = d['appearance']
-        IF_movement = d['movement']
 
-    print "#edges: {}".format(p.gm.g.num_edges())
+def add_score_to_edges(gm, IF_movement, IF_appearance):
+    print "#edges: {}".format(gm.g.num_edges())
     i = 0
 
     use_for_learning = 0.1
@@ -1327,15 +1321,15 @@ def add_score_to_edges(p):
     features_movement = []
     edges = []
 
-    for e in tqdm(p.gm.g.edges(), total=p.gm.g.num_edges(), desc='adding score to edges'):
+    for e in tqdm(gm.g.edges(), total=gm.g.num_edges(), desc='adding score to edges'):
         i += 1
-        if p.gm.edge_is_chunk(e):
+        if gm.edge_is_chunk(e):
             continue
 
-        f = get_pair_fetures_appearance(p.gm.region(e.source()), p.gm.region(e.target()))
+        f = get_pair_fetures_appearance(gm.region(e.source()), gm.region(e.target()))
         features_appearance.append(f)
 
-        f = get_pair_fetures_movement(p.gm.region(e.source()), p.gm.region(e.target()))
+        f = get_pair_fetures_movement(gm.region(e.source()), gm.region(e.target()))
         features_movement.append(f)
         
         edges.append(e)
@@ -1369,13 +1363,13 @@ def add_score_to_edges(p):
         print "assigning score to edges.."
         for val, e in izip(probs[:, 0], edges):
             if type == 'appearance':
-                p.gm.g.ep['score'][e] = val
+                gm.g.ep['score'][e] = val
             else:
-                p.gm.g.ep['movement_score'][e] = val
+                gm.g.ep['movement_score'][e] = val
 
         print "saving..."
 
-    save_p_checkpoint(p, 'isolation_score')
+    # save_p_checkpoint(p, 'isolation_score')
 
 
 def process_project(p):
