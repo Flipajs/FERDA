@@ -13,6 +13,7 @@ import fire
 import subprocess
 import tqdm
 import json
+import math
 from joblib import Parallel, delayed
 
 # pool = multiprocessing.Pool(processes=4)
@@ -99,19 +100,25 @@ def segmentation(project_dir):
     vid = get_auto_video_manager(project)
     frame_num = int(vid.total_frame_count())
     frames_in_row = config['segmentation']['frames_in_row']
-    # config['general']['n_jobs']
-    Parallel(n_jobs=1, verbose=10)\
+    Parallel(n_jobs=config['general']['n_jobs'], verbose=10)\
         (delayed(do_segmentation_part)(project_dir, i, frame_start)
-         for i, frame_start in enumerate(range(0, 150, frames_in_row)))  # frame_num
+         for i, frame_start in enumerate(range(0, frame_num, frames_in_row)))  # frame_num
+    project.next_processing_stage = 'assembly'
+
+
+def is_segmentation_completed(project):
+    n_frames = project.video_end_t - project.video_start_t + 1
+    n_parts = int(math.ceil(n_frames / config['segmentation']['frames_in_row']))
+    for i in range(n_parts + 1):
+        temp_path = os.path.join(project.working_directory, 'temp/{}'.format(i))
+        if not (os.path.isfile(join(temp_path, 'regions.csv')) and os.path.isfile(join(temp_path, 'regions.h5'))):
+            return False
+    return True
 
 
 def do_segmentation_part(project_dir, part_id, frame_start, frame_done_func=None):
     # check if part was computed before
     temp_path = os.path.join(project_dir, 'temp/{}'.format(part_id))
-    try:
-        os.makedirs(temp_path)
-    except OSError:
-        pass
 
     if os.path.isfile(join(temp_path, 'regions.csv')) and os.path.isfile(join(temp_path, 'regions.h5')):
         print('Part {} already processed.'.format(part_id))

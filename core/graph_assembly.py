@@ -15,16 +15,16 @@ import glob
 import shutil
 
 
-def is_assemply_completed(project):
-    rm_path = join(project.working_directory, 'rm.sqlite3')
-    chm_path = join(project.working_directory, 'chunk_manager.pkl')
-    gm_path = join(project.working_directory, 'graph_manager.pkl')
-    if os.path.isfile(rm_path) and len(project.rm) > 0 and \
-            os.path.isfile(chm_path) and \
-            os.path.isfile(gm_path):
-        return True
-    else:
-        return False
+def is_assembly_completed(project):
+    """
+    Check whether the assembly step is completed.
+
+    Fails on project with zero regions or zero tracklets.
+
+    :param project: core.Project
+    :return: bool
+    """
+    return len(project.rm) > 0 and project.gm.g.num_vertices() > 0 and len(project.chm) > 0
 
 
 def backup(project):
@@ -75,6 +75,7 @@ def graph_assembly(project, do_semi_merge=False):
     merged_rm = RegionManager()
     for rm in [RegionManager.from_dir(join(parts_path, str(i))) for i in range(n_parts)]:
         merged_rm.extend(rm)
+        rm.close()  # otherwise the shutil.rmtree(parts_path) fails on NFS while the regions.h5 maybe still open
         # TODO: possibly close / open to unload already written data from memory
     project.set_rm(merged_rm)
     for frame, df_frame in tqdm(project.rm.regions_df.set_index('frame_').groupby(level=0), desc='creating graph'):
@@ -83,7 +84,10 @@ def graph_assembly(project, do_semi_merge=False):
     # for frame, rids in project.gm.vertices_in_t.iteritems():
     #     for rid in rids:
     #         assert project.gm.region(rid).frame() == frame
+    project.gm.project = project  # workaround, to be refactored
     project.solver.create_tracklets()
+    del project.gm.project
+
     # for i in tqdm(range(n_parts), leave=False):
     #     # parts_info.append(load_segmentation_info(parts_path, i))
     #     part_dir = join(parts_path, str(i))
@@ -168,7 +172,7 @@ def graph_assembly(project, do_semi_merge=False):
         confirm_t = time.time()
         for _, e in tqdm(strongly_better_e, leave=False):
             if p.gm.g.edge(e.source(), e.target()) is not None:
-                graph_solver.confirm_edges([(e.source(), e.target())])
+                p.solver.confirm_edges([(e.source(), e.target())])
 
         print "\tconfirm_t: {:.2f}".format(time.time() - confirm_t)
 
@@ -178,10 +182,10 @@ def graph_assembly(project, do_semi_merge=False):
         p.chm.reset_itree()
 
     # p.save_semistate('eps_edge_filter')
-    p.solver = graph_solver
+    # p.solver = graph_solver
 
-    p.gm.project = project
-    p.chm.add_single_vertices_chunks(p.gm)
+    # p.gm.project = project
+    p.chm.add_single_vertices_tracklets(p.gm)
 
     p.gm.update_nodes_in_t_refs()
 
@@ -208,11 +212,13 @@ def graph_assembly(project, do_semi_merge=False):
 
     print
     print "ONE 2 ONE optimization"
-    project.solver.create_tracklets(check_tclass=True)
+    project.gm.project = project  # workaround, to be refactored
+    project.solver.create_tracklets()
+    del project.gm.project
     print "DONE"
     print
     print_tracklet_stats(project)
-    # shutil.rmtree(parts_path)  # remove segmentation parts
+    shutil.rmtree(parts_path)  # remove segmentation parts
 
 
 def connect_graphs(project, vertices1, vertices2, gm, rm):
