@@ -3,7 +3,7 @@ general:
     log_in_bg_computation: false  # Could be switched off before user interactions to save space.
     print_log: true
     fix_random_seed: false  # fix randomization seed for reproducibility (not yet supported everywhere)
-    n_jobs: 15  # number of jobs to run in parallel, if -1 all CPUs are used,
+    n_jobs: -1  # number of jobs to run in parallel, if -1 all CPUs are used,
                 # see https://pythonhosted.org/joblib/parallel.html#parallel-reference-documentation
 
 cache:

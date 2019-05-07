@@ -27,8 +27,8 @@ datasets:
         reidentification_weights: /datagrid/ferda/models/180421_reidentification/Ants3/best_model_980_weights.h5
         initial_project: /datagrid/ferda/projects/1_initial_projects_180921_ILP/180811_0205_Camera3-5min_ILP_cardinality
         visualize_experiments: [-1, gt, idtracker_nogaps] # toxtrac
-    camera_1_ss45:
-        video: /datagrid/ferda/data/ants_ist/camera_1/camera_1_ss00:45:00_t00:05:00.mp4
-        reidentification_weights: /datagrid/ferda/models/180421_reidentification/Cam1_clip/best_model_996_weights.h5
-        initial_project: /datagrid/ferda/projects/1_initial_projects_1901/190116_camera_1_ss45
+#    camera_1_ss45:
+#        video: /datagrid/ferda/data/ants_ist/camera_1/camera_1_ss00:45:00_t00:05:00.mp4
+#        reidentification_weights: /datagrid/ferda/models/180421_reidentification/Cam1_clip/best_model_996_weights.h5
+#        initial_project: /datagrid/ferda/projects/1_initial_projects_1901/190116_camera_1_ss45
 
