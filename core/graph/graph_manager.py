@@ -751,8 +751,3 @@ class GraphManager(object):
         np.unique(pd.DataFrame(p.gm.g.vp['chunk_end_id'].fa), return_counts=True)
         np.count_nonzero(p.gm.g.vp['chunk_start_id'].fa)
         np.count_nonzero(p.gm.g.vp['chunk_end_id'].fa)
-
-
-
-
-

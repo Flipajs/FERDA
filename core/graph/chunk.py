@@ -24,7 +24,7 @@ class Chunk():  # object
         self.animal_id_ = -1
         self.P = set()
         self.N = set()
-        self.segmentation_class = -1
+        self.segmentation_class = -1  # -1 undefined, 0 single, 1 multi, 2 noise, 3 part of object
         self.gm = gm
 
         self.origin_interaction = origin_interaction
@@ -414,13 +414,13 @@ class Chunk():  # object
 
     def segmentation_class_str(self):
         if self.is_single():
-            return "single-ID"
+            return "single"
         elif self.is_multi():
-            return "multi-ID"
+            return "multi"
         elif self.is_noise():
-            return "no-ID"
+            return "noise"
         elif self.is_part():
-            return "part-of-ID"
+            return "part"
         else:
             return "undefined"
 

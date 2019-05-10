@@ -7,7 +7,6 @@ from tqdm import tqdm
 import pickle
 from utils.video_manager import get_auto_video_manager
 import logging
-from core.region.ellipse import Ellipse
 
 logger = logging.getLogger(__name__)
 
