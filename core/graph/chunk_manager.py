@@ -39,6 +39,11 @@ class ChunkManager(object):
         self.__dict__.update(state)
         self.itree = IntervalTree()
 
+    def __str__(self):
+        cardinalities, counts = np.unique([t.segmentation_class_str() for t in self.chunk_gen()], return_counts=True)
+        cardinality_report = ' | '.join(['{}x {}'.format(count, cardinality) for cardinality, count in zip(cardinalities, counts)])
+        return '{} tracklets, cardinality stats: {}'.format(len(self.chunks_), cardinality_report)
+
     @classmethod
     def from_dir(cls, directory, gm=None):
         chm = jsonpickle.decode(open(join(directory, 'tracklets.json'), 'r').read(), keys=True)

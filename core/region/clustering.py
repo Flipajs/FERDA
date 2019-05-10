@@ -7,6 +7,9 @@ from sklearn.preprocessing import StandardScaler, LabelEncoder
 from utils.drawing.points import draw_points
 from collections import OrderedDict
 import tqdm
+import logging
+
+logger = logging.getLogger(__name__)
 
 region_features = OrderedDict([
     ('area', lambda r: r.area()),
@@ -151,6 +154,7 @@ class RegionCardinality:
                                                desc='Classifying tracklets (single/multi/part/no-ID)')):
             region_chunk = RegionChunk(tracklet, project.gm, project.rm)
             tracklet.segmentation_class = self.classify_tracklet(region_chunk)
+        logger.debug(project.chm)
 
 
 def is_project_cardinality_classified(project):

@@ -1,6 +1,8 @@
 version: 1
 formatters:
   simple:
+    format: '%(name)s - %(levelname)s - %(message)s'
+  time_name_level:
     format: '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 handlers:
   console:
@@ -8,9 +10,16 @@ handlers:
     level: DEBUG
     formatter: simple
     stream: ext://sys.stdout
-loggers:
-  core.id_detection.complete_set_matching:
-    level: INFO
+#loggers:
+#  core.id_detection.complete_set_matching:
+#    level: DEBUG
+#  core.segmentation:
+#    level: DEBUG
+#  scripts.regions_stats:
+#    level: DEBUG
+#  core.graph_assembly:
+#    level: DEBUG
+
 #    handlers: [console]
 
 #  simpleExample:
@@ -18,5 +27,5 @@ loggers:
 #    handlers: [console]
 #    propagate: no
 root:
-  level: INFO
+  level: DEBUG
   handlers: [console]

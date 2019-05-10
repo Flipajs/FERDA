@@ -455,6 +455,7 @@ class CompleteSetMatching:
 
             # perm, quality = self.cs2cs_matching_descriptors_and_spatial(CSs[i], CSs[i+1])
             perm, quality = self.cs2cs_matching_prototypes_and_spatial(CSs[i], CSs[i + 1])
+            logger.debug('quality {}'.format(quality))
 
             # cs1_max_frame = 0
             # cs2_min_frame = np.inf

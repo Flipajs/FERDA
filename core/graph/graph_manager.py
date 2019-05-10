@@ -66,6 +66,11 @@ class GraphManager(object):
     def __setstate__(self, state):
         self.__dict__.update(state)
 
+    def __str__(self):
+        import graph_tool.stats
+        vaverage = graph_tool.stats.vertex_average(self.g, 'total')
+        return '{}\nvertex average total degree: {} +- {}'.format(self.g, vaverage[0], vaverage[1])
+
     def graph_add_properties(self):
         # In these cases the id 0 means unassigned
         # thus it is important to start indexing from 1 in region and chunk manager

@@ -3,7 +3,7 @@ import operator
 import sys
 import time
 import warnings
-
+from core.config import config
 from itertools import izip
 from tqdm import tqdm, trange
 import numpy as np

@@ -174,10 +174,11 @@ class Project(object):
             else:
                 self.chm = ChunkManager()
             pbar.update()
-
+            pbar.set_description('loading cardinality classifier')
             cardinality_model_filename = join(directory, 'region_cardinality_clustering.pkl')
             if os.path.exists(cardinality_model_filename):
                 self.region_cardinality_classifier = pickle.load(open(cardinality_model_filename, 'r'))
+            pbar.update()
 
             self.solver = Solver(self)
             set_managers(self, self.rm, self.chm, self.gm)

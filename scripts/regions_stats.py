@@ -20,6 +20,9 @@ from utils.drawing.collage import create_collage_rows
 from utils.drawing.points import draw_points
 from tqdm import tqdm
 from utils.video_manager import get_auto_video_manager
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 EXP = 'exp1'
@@ -1169,8 +1172,8 @@ def decide_one2one(p):
 def print_tracklet_stats(p):
     lengths = np.array([t.length() for t in p.chm.chunk_gen()])
 
-    print("#chunks: {}".format(len(p.chm)))
-    print (
+    logger.debug("#chunks: {}".format(len(p.chm)))
+    logger.debug(
     "LENGTHS mean: {:.1f} median: {}, max: {}, sum: {} coverage: {:.2%}".format(np.mean(lengths), np.median(lengths),
                                                                                 lengths.max(), np.sum(lengths),
                                                                                 np.sum(lengths) / float(

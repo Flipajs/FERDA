@@ -25,13 +25,13 @@ from utils.experiment import Parameters, Experiment
 from core.region.region_manager import RegionManager
 from utils.gt.mot import results_to_mot
 import sys
+from core.config import config
 
 
 def setup_logging():
     logger_config_file = 'logging_conf.yaml'
     if os.path.isfile(logger_config_file):
-        with open(logger_config_file, 'r') as fr:
-            log_conf = yaml.load(fr)
+        log_conf = yaml.load(open(logger_config_file, 'r'))
         logging.config.dictConfig(log_conf)
     else:
         print('logger configuration file {} not found, using default settings'.format(logger_config_file))
@@ -56,7 +56,7 @@ def run_tracking(project, force_recompute=False, reid_model_weights_path=None):
         project.next_processing_stage = 'segmentation'
     if project.next_processing_stage == 'segmentation':
         logger.info('run_tracking: segmentation')
-        core.segmentation.segmentation(project.working_directory)
+        core.segmentation.segmentation(project)
         project.next_processing_stage = 'assembly'
         project.save()
     if project.next_processing_stage == 'assembly':

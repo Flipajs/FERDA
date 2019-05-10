@@ -8,11 +8,14 @@ from keras.layers import Input, Flatten, Dense, Dropout, Lambda
 from keras.layers import Conv2D, MaxPooling2D, Input, Dense, Flatten, BatchNormalization, Activation
 from tqdm import tqdm
 import argparse
+import logging
 
 from scripts.CNN.prepare_siamese_data import get_region_crop
 from scripts.CNN.prepare_siamese_data import ELLIPSE_DILATION, APPLY_ELLIPSE, OFFSET, MASK_SIGMA
 from scripts.CNN.train_siamese_contrastive_lost import create_base_network10, euclidean_distance, eucl_dist_output_shape
 from core.project.project import Project
+
+logger = logging.getLogger(__name__)
 
 
 def normalize_and_prepare_imgs(imgs):
@@ -23,6 +26,7 @@ def normalize_and_prepare_imgs(imgs):
 
 
 def compute_descriptors(project_dir, model_weights_path, add_missing=False):
+    logger.info('computing re-id descriptors')
     model = create_model(model_weights_path)
 
     p = Project(project_dir)
@@ -68,7 +72,9 @@ def compute_descriptors(project_dir, model_weights_path, add_missing=False):
             descriptors[r_id] = descs[k, :]
     with open(join(project_dir, 'descriptors.pkl'), 'wb') as f:
         pickle.dump(descriptors, f)
-    print("DONE")
+    import pandas as pd
+    logger.debug(pd.DataFrame(descriptors).T)
+    logger.info('done')
 
 
 def create_model(model_weights_path):
