@@ -1288,14 +1288,10 @@ def learn_assignments(p, max_examples=np.inf, display=False):
             break
 
     # TODO: I think contamination doesn't matter...
-    if config['general']['fix_random_seed']:
-        seed = 42
-    else:
-        seed = None
-    IF_appearance = IsolationForest(contamination=0.005, random_state=seed)
+    IF_appearance = IsolationForest(contamination=0.005)
     IF_appearance.fit(X_appearance)
 
-    IF_movement = IsolationForest(contamination=0.005, random_state=seed)
+    IF_movement = IsolationForest(contamination=0.005)
     IF_movement.fit(X_movement)
 
     if display:

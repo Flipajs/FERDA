@@ -47,6 +47,8 @@ def fix_orientation(project):
 
 
 def run_tracking(project, force_recompute=False, reid_model_weights_path=None):
+    if config['general']['fix_random_seed']:
+        fix_randomness()
     import core.segmentation
     import core.graph_assembly
     import core.graph.solver
@@ -320,6 +322,36 @@ def save_results_mot(project, out_filename):
     results = project.get_results_trajectories()
     df = results_to_mot(results)
     df.to_csv(out_filename, header=False, index=False)
+
+
+def fix_randomness():
+    # from https://stackoverflow.com/a/52897216/322468
+
+    # Seed value
+    # Apparently you may use different seed values at each stage
+    seed_value = 0
+
+    # 1. Set `PYTHONHASHSEED` environment variable at a fixed value
+    import os
+    os.environ['PYTHONHASHSEED'] = str(seed_value)
+
+    # 2. Set `python` built-in pseudo-random generator at a fixed value
+    import random
+    random.seed(seed_value)
+
+    # 3. Set `numpy` pseudo-random generator at a fixed value
+    import numpy as np
+    np.random.seed(seed_value)
+
+    # 4. Set `tensorflow` pseudo-random generator at a fixed value
+    import tensorflow as tf
+    tf.set_random_seed(seed_value)
+
+    # # 5. Configure a new global `tensorflow` session
+    # from keras import backend as K
+    # session_conf = tf.ConfigProto(intra_op_parallelism_threads=1, inter_op_parallelism_threads=1)
+    # sess = tf.Session(graph=tf.get_default_graph(), config=session_conf)
+    # K.set_session(sess)
 
 
 if __name__ == '__main__':
