@@ -26,6 +26,7 @@ from utils.objectsarray import ObjectsArray
 from utils.gt.mot import load_mot, results_to_mot, eval_mot, mot_in_roi
 from shapes.ellipse import Ellipse
 from utils.roi import ROI
+from utils.misc import makedirs
 
 memory = Memory('out/cache', verbose=0)
 
@@ -433,10 +434,7 @@ class InteractionDetector:
         return roi_union, (start_frame, end_frame)
 
     def visualize_single_tracklet(self, regions, gt, out_dir):
-        try:
-            os.makedirs(out_dir)
-        except OSError:
-            pass
+        makedirs(out_dir)
         vm = self.project.get_video_manager()
         rois = [ROI(r.y - r.major / 2, r.x - r.major / 2, r.major, r.major) for r in regions]
         roi_union = reduce(lambda x, y: x.union(y), rois)
@@ -452,11 +450,7 @@ class InteractionDetector:
         roi, (start_frame, end_frame) = self.get_bounds(graph)
         incoming, outcoming, _ = self.get_tracklets_from_dense(graph)
 
-        try:
-            os.makedirs(out_dir)
-        except OSError:
-            pass
-
+        makedirs(out_dir)
         imgs = [vm.get_frame(frame) for frame in tqdm(range(start_frame, end_frame + 1), desc='gathering images')]
         regions = []
         for frame in tqdm(range(start_frame, end_frame + 1), desc='gathering regions'):
@@ -801,10 +795,7 @@ def generate_tracking_ranges(complete_sets, video_start_frame, video_end_frame, 
 
 
 def track_video(tracker_dir, project_dir, out_dir, forward=True):
-    try:
-        os.makedirs(out_dir)
-    except OSError:
-        pass
+    makedirs(out_dir)
     detector, gt = _load(tracker_dir, project_dir)
 
     tracking_ranges = generate_tracking_ranges(list(detector.project.chm.get_complete_sets(detector.project)),

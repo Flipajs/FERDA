@@ -3,6 +3,17 @@ import os
 import pickle
 import numpy as np
 import sys
+import errno
+
+
+def makedirs(path):
+    try:
+        os.makedirs(path)
+    except OSError as e:
+        if e.errno == errno.EEXIST:
+            pass
+        else:
+            raise e
 
 
 def get_pickle_data(filepath):

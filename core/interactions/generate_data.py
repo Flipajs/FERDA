@@ -41,15 +41,9 @@ from core.interactions.io import read_gt
 from utils.img import safe_crop
 from utils.dataset_io import ImageIOFile, ImageIOHdf5, DataIOCSV, DataIOVot, Dataset
 from utils.gt.gt import GT
+from utils.misc import makedirs
 
 # memory = Memory('out/cache', verbose=1)
-
-
-def makedirs(dir_name):
-    try:
-        os.makedirs(dir_name)
-    except OSError:
-        pass
 
 
 class TrainingDataset(Dataset):
@@ -216,10 +210,7 @@ class DataGenerator(object):
         return regions, regions_in_tracklets
 
     def _get_out_dir_rel(self, out_dir, out_file):
-        try:
-            os.makedirs(out_dir)
-        except OSError:
-            pass
+        makedirs(out_dir)
         return os.path.relpath(os.path.abspath(out_dir), os.path.abspath(os.path.dirname(out_file)))
 
     def write_regions_for_testing(self, project_dir, count, out_dir=None, multi=True, single=False, image_format='hdf5',
