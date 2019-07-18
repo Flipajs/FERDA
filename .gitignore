@@ -10,5 +10,6 @@ ferda_output.avi
 mat_name.mat
 name.arr
 *.DS_Store
+packages/shapes/shapes.egg-info
 
 interactions_config.yaml

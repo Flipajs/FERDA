@@ -9,7 +9,7 @@ from numpy.testing import assert_array_equal
 from os.path import join
 
 import core.interactions.train as train_interactions
-import core.region.transformableregion as tr
+import shapes.transformableregion as tr
 from core.interactions.train import TrainInteractions
 from core.interactions.io import read_gt
 

@@ -13,19 +13,18 @@ import yaml
 from graph_tool import Graph
 from joblib import Memory
 from joblib import Parallel, delayed
-from keras.applications.mobilenet import mobilenet
 from keras.models import model_from_yaml, model_from_json
 from tqdm import tqdm
 
 from core.interactions.generate_data import DataGenerator
 from core.interactions.train import TrainInteractions
 from core.interactions.visualization import save_prediction_img, show_prediction
-from core.region.transformableregion import TransformableRegion
+from shapes.transformableregion import TransformableRegion
 from core.graph.region_chunk import RegionChunk
 from utils.img import safe_crop
 from utils.objectsarray import ObjectsArray
 from utils.gt.mot import load_mot, results_to_mot, eval_mot, mot_in_roi
-from core.region.ellipse import Ellipse
+from shapes.ellipse import Ellipse
 from utils.roi import ROI
 
 memory = Memory('out/cache', verbose=0)

@@ -1,4 +1,4 @@
-from core.region.shape import Shape
+from shapes.shape import Shape
 import numpy as np
 
 

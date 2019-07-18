@@ -1,10 +1,7 @@
 import unittest
 
-import numpy as np
 import matplotlib.pylab as plt
-from numpy.testing import assert_array_equal
-import os.path
-from core.region.ellipse import Ellipse
+from shapes.ellipse import Ellipse
 
 
 class EllipseTestCase(unittest.TestCase):

@@ -3,7 +3,7 @@ import copy
 import cv2
 import numpy as np
 
-from core.region.ep import p2e, e2p
+from shapes.ep import p2e, e2p
 
 
 class TransformableRegion:
