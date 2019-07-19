@@ -440,7 +440,7 @@ class DataGenerator(object):
         """
         self._load_project(project_dir)
         if gt_filename is not None:
-            gt = GT.from_mot(gt_filename)
+            gt = GT(gt_filename)
             gt.set_project_offsets(self._project)
             gt.break_on_inconsistency = True
         else:
