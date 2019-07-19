@@ -227,18 +227,15 @@ class Project(object):
         :return: ndarray, shape=(n_frames, n_animals, 2); coordinates are in yx order, nan when id not present
         """
         assert self.video_start_t != -1
-        n_frames = self.video_end_t + 1
-        results = np.ones(shape=(n_frames, len(self.animals), 2)) * np.nan
-        for frame in tqdm.tqdm(range(self.video_start_t, n_frames), desc='gathering trajectories'):
-            for t in self.chm.tracklets_in_frame(frame - self.video_start_t):
-                if len(t.P) == 1:
-                    id_ = list(t.P)[0]
-                    if id_ >= len(self.animals):
-                        import warnings
-                        warnings.warn("id_ > num animals t_id: {} id: {}".format(t.id(), id_))
-                        continue
-                    results[frame, id_] = self.rm[t.r_id_in_t(frame - self.video_start_t)].centroid()  # yx
-
+        results = np.ones(shape=(self.video_end_t + 1, len(self.animals), 2)) * np.nan
+        for t in self.chm.tracklet_gen():
+            if t.is_id_decided():
+                assert t.get_track_id() < len(self.animals)
+                assert np.isnan(results[t.start_frame():t.end_frame() + 1, t.get_track_id(), :]).all(), \
+                    'conflict: tracklet id {} includes frame / id combination(s) already present in another tracklet' \
+                        .format(t.id())
+                results[t.start_frame():t.end_frame() + 1, t.get_track_id(), :] = [r.centroid() for r in
+                                                                                    t.r_gen(self.rm)]
         if self.video_crop_model is not None:
             results[:, :, 0] += self.video_crop_model['y1']
             results[:, :, 1] += self.video_crop_model['x1']
