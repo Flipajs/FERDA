@@ -214,14 +214,43 @@ class ChunkManager(object):
 
         if update_N_callback is not None:
             for tracklet, id_set in affecting:
-                for t in self.get_affected_undecided_tracklets(tracklet, project):
+                for t in self.get_affected_undecided_tracklets(tracklet):
                         update_N_callback(id_set, t)
 
-    def get_affected_undecided_tracklets(self, tracklet, project):
+    def get_affected_undecided_tracklets(self, tracklet):
         affected = set(self.get_tracklets_in_interval(tracklet.start_frame(),
                                                       tracklet.end_frame()))
 
         return filter(lambda x: (x.is_single() or x.is_multi()) and not x.is_id_decided(), affected)
+
+    def get_conflicts(self, num_objects, verbose=False):
+        # pn_sets_lengths = np.array([len(t.P) + len(t.N) for t in self.tracklet_gen()])
+        # if np.any(pn_sets_lengths != num_objects) and verbose:
+        #     print('{}/{} tracklets have inconsistent PN sets cardinalities.'.format(
+        #         np.count_nonzero(pn_sets_lengths != num_objects),
+        #         len(self)))
+
+        min_frame = min([t.start_frame() for t in self.tracklet_gen()])
+        max_frame = max([t.end_frame() for t in self.tracklet_gen()])
+        tracklets = []
+        undecided_tracklets = []
+        for t in self.tracklet_gen():
+            if t.is_only_one_id_assigned(num_objects):
+                tracklets.append(t)
+            else:
+                undecided_tracklets.append(t)
+        if verbose:
+            print('{} undecided tracklet(s).'.format(len(undecided_tracklets)))
+
+        conflicts = {}
+        for frame in xrange(min_frame, max_frame + 1):
+            decided = filter(lambda x: x.is_only_one_id_assigned(num_objects), self.tracklets_in_frame(frame))
+            obj_ids = [next(iter(t.P)) for t in decided]
+            if len(obj_ids) != len(np.unique(obj_ids)):
+                if verbose:
+                    print('Duplicated object ids at frame {}'.format(frame))
+                conflicts[frame] = decided
+        return undecided_tracklets, conflicts
 
     def get_complete_sets(self, project):
         """

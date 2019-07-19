@@ -7,6 +7,7 @@ from tqdm import tqdm
 import pickle
 from utils.video_manager import get_auto_video_manager
 import logging
+import itertools
 
 logger = logging.getLogger(__name__)
 
@@ -58,7 +59,9 @@ class CompleteSetMatching:
         # sys.exit()
 
         ##### now do CS of tracks to tracks matching
+        _, conflicts = self.p.chm.get_conflicts(len(self.p.animals), verbose=True)
         self.tracks_CS_matching(track_CSs)
+        _, conflicts = self.p.chm.get_conflicts(len(self.p.animals), verbose=True)
 
         ##### then do the rest... bruteforce approach
         # 1. find best Track CS
@@ -80,7 +83,7 @@ class CompleteSetMatching:
             try:
                 if list(t.P)[0] not in best_CS:
                     t.P = set()
-                    logger.debug('track id {}'.format(t.id()))
+                    logger.debug('track obj_id {}'.format(t.id()))
             except:
                 pass
 
@@ -92,6 +95,8 @@ class CompleteSetMatching:
         # 1) choose tracklet
         #       longest?
         #       for now, process as it is in chunk_generator
+
+        _, conflicts = self.p.chm.get_conflicts(len(self.p.animals), verbose=True)
 
         num_undecided = 0
         for t in self.p.chm.tracklet_gen():
@@ -185,7 +190,7 @@ class CompleteSetMatching:
             if quality[1] > self.QUALITY_THRESHOLD2:
                 for (unassigned_track_id, track_id) in perm:
                     logger.debug('{} -> {}'.format(unassigned_track_id, track_id))
-                    # print "[{} |{}| (te: {})] -> {}".format(tracklet.id(), len(tracklet), tracklet.end_frame(self.p.gm), track_id)
+                    # print "[{} |{}| (te: {})] -> {}".format(tracklet.obj_id(), len(tracklet), tracklet.end_frame(self.p.gm), track_id)
                     # tracklets_track = self.tracklets_2_tracks[tracklet]
                     for tracklet in self.tracks[unassigned_track_id]:
                         tracklet.id_decision_info = 'best_set_matching'
@@ -202,6 +207,8 @@ class CompleteSetMatching:
                 logger.debug('quality below QUALITY_THRESHOLD2')
                 num_undecided += 1
 
+        _, conflicts = self.p.chm.get_conflicts(len(self.p.animals), verbose=True)
+
         logger.debug('#UNDECIDED: {}'.format(num_undecided))
         # self.single_track_assignment(best_CS, prototypes, tracklets_2_tracks)
 
@@ -210,7 +217,7 @@ class CompleteSetMatching:
 
         new_cmap = rand_cmap(self.new_track_id+1, type='bright', first_color_black=True, last_color_black=False)
         logger.debug('#IDs: {}'.format(self.new_track_id+1))
-        support = {}
+        support = {}  # {obj_id: number of frames, ...}
         tracks = {}
         tracks_mean_desc = {}
         for t in self.p.chm.chunk_gen():
@@ -240,7 +247,7 @@ class CompleteSetMatching:
                 # else:
                 #     c = [0, 0, 1, .3]
                 #
-                # y = t.id() % self.new_track_id
+                # y = t.obj_id() % self.new_track_id
                 # plt.scatter(t.start_frame(self.p.gm), y, c=c, marker='s', edgecolor=[0., 0., 0., .1])
                 # plt.plot([t.start_frame(self.p.gm), t.end_frame(self.p.gm) + 0.1], [y, y],
                 #          c=c,
@@ -249,9 +256,11 @@ class CompleteSetMatching:
 
         # plt.grid()
 
+        _, conflicts = self.p.chm.get_conflicts(len(self.p.animals), verbose=True)
+
         logger.debug("SUPPORT")
-        for id in sorted(support.keys()):
-            logger.debug("{}: {}, #{} ({})".format(id, support[id], len(tracks[id]), tracks[id]))
+        for obj_id in sorted(support.keys()):
+            logger.debug("{}: {}, #{} ({})".format(obj_id, support[obj_id], len(tracks[obj_id]), tracks[obj_id]))
 
         self.remap_ids_from_0(support)
 
@@ -268,7 +277,7 @@ class CompleteSetMatching:
 
         # mean_ds = []
         # for id_, mean in tracks_mean_desc.iteritems():
-        #     mean_ds.append(mean/float(support[id]))
+        #     mean_ds.append(mean/float(support[obj_id]))
 
         logger.debug("track ids order: {}, length: {}".format(list(tracks_mean_desc.iterkeys()), len(tracks)))
         # from scipy.spatial.distance import pdist, squareform
@@ -279,25 +288,29 @@ class CompleteSetMatching:
         #     print "CS {}, CS {}".format(0, i)
         #     perm, quality = self.cs2cs_matching_ids_unknown(CSs[0], CSs[i])
         #     for (t1, t2) in perm:
-        #         print t1.id(), " -> ", t2.id()
+        #         print t1.obj_id(), " -> ", t2.obj_id()
         #
         #     print quality
 
     def remap_ids_from_0(self, support):
-        map_ = {}
-        for id in range(len(self.p.animals)):
-            for t in self.p.chm.chunk_gen():
-                if id in t.P:
-                    t.P = set([-id])
-                    map_[id] = -id
+        """
+        Remaps track ids in tracklets form a sequence 0, 1, 2, 3,...
 
-        for new_id, id in enumerate(sorted(support, key=support.get)[-len(self.p.animals):]):
-            for t in self.p.chm.chunk_gen():
-                if id in map_:
-                    id = map_[id]
+        The track ids are remapped such that track id 0 has greatest track support.
 
-                if id in t.P:
-                    t.P = set([new_id])
+        Tracklet P and N sets are updated.
+
+        :param support: dict, {track id: value, ...}
+        """
+        track_ids = set(itertools.chain.from_iterable([t.P.union(t.N) for t in self.p.chm.chunk_gen()]))
+        support_with_all_ids = support.copy()
+        support_with_all_ids.update({track_id: -1 for track_id in track_ids.difference(support.keys())})
+        id_mapping = {old_id: new_id for new_id, old_id in
+                      enumerate(sorted(support_with_all_ids, key=support_with_all_ids.get, reverse=True))}
+        print(id_mapping)
+        for t in self.p.chm.chunk_gen():
+            t.P = set(id_mapping[track_id] for track_id in t.P)
+            t.N = set(id_mapping[track_id] for track_id in t.N)
 
     def find_biggest_undecided_tracklet_set(self, t):
         all_intersecting_t = list(self.p.chm.singleid_tracklets_intersecting_t_gen(t))
@@ -1448,8 +1461,6 @@ class CompleteSetMatching:
                         if t1 != t2:
                             self.merge_tracklets(t1, t2)
 
-        p.save()
-
 
 def _get_ids_from_folder(wd, n):
     # .DS_Store...
@@ -1535,7 +1546,6 @@ def test_descriptors_distance(descriptors, n=2000):
     plt.show()
 
 
-
 def prob_prototype_represantion_being_same_id_set(prot1, prot2):
     p1 = prototypes_distribution_probability(prot1, prot2)
     p2 = prototypes_distribution_probability(prot2, prot1)
@@ -1597,7 +1607,7 @@ def do_complete_set_matching(project):
 
 def load_dense_sections_tracklets_test():
     import pickle
-    # from core.region.ellipse import Ellipse
+    # from shapes.ellipse import Ellipse
 
     # el = Ellipse()
 

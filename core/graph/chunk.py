@@ -6,6 +6,7 @@ from utils.constants import EDGE_CONFIRMED
 from core.log import LogCategories, ActionNames
 from core.region.region import Region
 from random import randint
+import warnings
 
 
 class Chunk():  # object
@@ -353,6 +354,7 @@ class Chunk():  # object
         self.gm.g.vp['chunk_end_id'][self.gm.g.vertex(self.end_node())] = self.id()
 
     def is_only_one_id_assigned(self, num_objects):
+        warnings.warn('is_only_one_id_assigned is possibly bugged, len(P) + len(N) is not always == number of objects')
         # if there is one and only one ID assigned to chunk
         return len(self.P) == 1 and \
                len(self.N) == num_objects - 1
@@ -510,4 +512,8 @@ class Chunk():  # object
     def get_random_region(self):
         r_frame = randint(self.start_frame(), self.end_frame())
         return self.get_region_in_frame(r_frame)
+
+    def get_track_id(self):
+        assert self.is_id_decided()
+        return next(iter(self.P))
 

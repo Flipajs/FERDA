@@ -35,6 +35,7 @@ def graph_assembly(project):
     #         assert project.gm.region(rid).frame() == frame
     project.gm.project = project  # workaround, to be refactored
     project.solver.create_tracklets()
+    _, conflicts = project.chm.get_conflicts(len(project.animals), verbose=True)
     del project.gm.project
 
     p = project
@@ -59,6 +60,7 @@ def graph_assembly(project):
     print("\tupdate t: {:.2f}s".format(time.time() - update_t))
 
     print_tracklet_stats(p)
+    _, conflicts = p.chm.get_conflicts(len(p.animals), verbose=True)
 
     # TODO: max num of iterations...
     for i in range(10):
@@ -110,12 +112,14 @@ def graph_assembly(project):
 
     project.gm.project = project  # workaround, to be refactored
     project.solver.create_tracklets()
+    _, conflicts = project.chm.get_conflicts(len(project.animals), verbose=True)
     del project.gm.project
 
     print_tracklet_stats(project)
     try:
         shutil.rmtree(parts_path)  # remove segmentation parts
     except OSError as e:
-        logger.warning('Failed to remove temporary project(s): {}. The problem could be related with NFS.'.format(e.message))
+        logger.warning('Failed to remove temporary project(s): {}. '
+                       'The problem could be related with NFS.'.format(e))
     logger.debug(project.gm)
     logger.info("DONE")
