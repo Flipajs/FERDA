@@ -120,11 +120,7 @@ class Project(object):
         with tqdm.tqdm(total=5, desc='saving project') as pbar:
             if directory is None:
                 directory = self.working_directory
-            try:
-                os.makedirs(directory)
-            except OSError:
-                pass
-
+            makedirs(directory)
             open(join(directory, 'project.json'), 'w').write(jsonpickle.encode(self, keys=True, warn=True))
             if self.arena_model is not None:
                 self.arena_model.save_mask(join(directory, 'mask.png'))
@@ -148,7 +144,8 @@ class Project(object):
     def load(self, directory, video_file=None,
              regions_optional=False, graph_optional=False, tracklets_optional=False):
         with tqdm.tqdm(total=5, desc='loading project') as pbar:
-            self.__dict__.update(jsonpickle.decode(open(join(directory, 'project.json'), 'r').read(), keys=True).__dict__)
+            self.__dict__.update(
+                jsonpickle.decode(open(join(directory, 'project.json'), 'r').read(), keys=True).__dict__)
             if self.arena_model is not None:
                 self.arena_model.load_mask(join(directory, 'mask.png'))
             # check for video file
@@ -189,10 +186,11 @@ class Project(object):
             self.solver = Solver(self)
             set_managers(self, self.rm, self.chm, self.gm)
             self.working_directory = directory
+            pbar.set_description('loading project')
 
     @classmethod
     def from_dir(cls, directory, video_file=None,
-             regions_optional=False, graph_optional=False, tracklets_optional=False):
+                 regions_optional=False, graph_optional=False, tracklets_optional=False):
         project = cls()
         project.load(directory, video_file, regions_optional, graph_optional, tracklets_optional)
         return project

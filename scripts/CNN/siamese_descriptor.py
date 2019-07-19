@@ -73,7 +73,7 @@ def compute_descriptors(project_dir, model_weights_path, add_missing=False):
     with open(join(project_dir, 'descriptors.pkl'), 'wb') as f:
         pickle.dump(descriptors, f)
     import pandas as pd
-    logger.debug(pd.DataFrame(descriptors).T)
+    # logger.debug(pd.DataFrame(descriptors).T)
     logger.info('done')
 
 

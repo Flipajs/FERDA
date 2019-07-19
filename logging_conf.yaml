@@ -27,5 +27,5 @@ handlers:
 #    handlers: [console]
 #    propagate: no
 root:
-  level: DEBUG
+  level: INFO
   handlers: [console]

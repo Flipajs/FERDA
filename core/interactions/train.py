@@ -29,7 +29,6 @@ try:
 except ImportError as e:
     print('Warning, no keras installed: {}'.format(e))
 import fire
-from core.region.transformableregion import TransformableRegion
 from utils.angles import angle_absolute_error, angle_absolute_error_direction_agnostic
 import warnings
 import yaml
@@ -366,7 +365,6 @@ class TrainInteractions:
         return model
 
     def model_mobilenet_siamese(self):
-        from keras.applications.mobilenet import mobilenet
         base_model = keras.applications.mobilenet.MobileNet(self.input_shape,
                                                             self.parameters['mobilenet_alpha'],
                                                             self.parameters['mobilenet_depth_multiplier'],
