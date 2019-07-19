@@ -26,6 +26,7 @@ from core.region.region_manager import RegionManager
 from utils.gt.mot import results_to_mot
 import sys
 from core.config import config
+from warnings import warn
 
 
 def setup_logging():
@@ -83,7 +84,7 @@ def run_tracking(project, force_recompute=False, reid_model_weights_path=None):
         logger.info('run_tracking: complete set matching')
         do_complete_set_matching(project)
         project.next_processing_stage = 'export_results'
-        project.save()
+        # project.save()
 
 
 def run_evaluation(mot_file, gt_file, out_evaluation_file, load_python3_env_cmd=None):
@@ -254,10 +255,13 @@ def load_experiments(experiments_dir, evaluation_required=False, trajectories_re
     - trajectories from results.txt
     - if experiment_name is not present in metadata directory basename is used
 
+    An experiment is stored in a dictionary. Fixed keys: experiment_name, dir,
+    optional keys: evaluation_filename, mot_trajectories_filename, datetime
+
     :param experiments_dir: top level directory
-    :param evaluation_required:
-    :param trajectories_required:
-    :return: list of experiments
+    :param evaluation_required: bool
+    :param trajectories_required: bool
+    :return: list of experiments stored in dicts
     """
     import os
     import yaml
@@ -294,6 +298,8 @@ def load_experiments(experiments_dir, evaluation_required=False, trajectories_re
         if not metadata:
             warnings.warn('no experiment found in {}'.format(directory))
             continue
+
+        metadata['dir'] = directory
 
         if 'experiment_name' not in metadata:
             metadata['experiment_name'] = os.path.basename(directory)
@@ -382,6 +388,7 @@ if __name__ == '__main__':
     group.add_argument('--project', type=str, help='load project from directory (old or new format)')
     group.add_argument('--run-experiments-yaml', type=str, help='run and evaluate experiments on all datasets described in yaml file')
     group.add_argument('--run-visualizations-yaml', type=str, help='visualize experiments described in yaml file')
+    group.add_argument('--run-evaluation-yaml', type=str, help='re-evaluate all stored experiments')
 
     args = parser.parse_args()
 
@@ -411,6 +418,21 @@ if __name__ == '__main__':
                                   dataset['gt'], dataset['video'],
                                   join(experiments_config['dir'], dataset_name,
                                        time.strftime("%y%m%d_%H%M", time.localtime()) + '_visualization.webm'))
+        sys.exit(0)
+
+    if args.run_evaluation_yaml:
+        with open(args.run_evaluation_yaml, 'r') as fr:
+            experiments_config = yaml.load(fr)
+        for dataset_name, dataset in experiments_config['datasets'].iteritems():
+            print('\n{}\n'.format(dataset_name))
+            experiments = load_experiments(join(experiments_config['dir'], dataset_name))
+            for experiment in experiments:
+                print(experiment['experiment_name'])
+                if 'mot_trajectories_filename' not in experiment:
+                    warn('trajectories not present in {}, experiment can\'t be evaluated'.format(experiment['dir']))
+                else:
+                    run_evaluation(experiment['mot_trajectories_filename'], experiment['dataset']['gt'],
+                                   join(experiment['dir'], 'evaluation.csv'))
         sys.exit(0)
 
     if args.project:
