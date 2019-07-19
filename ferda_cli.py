@@ -204,7 +204,7 @@ def run_visualization(experiment_names, all_experiments, gt_file, in_video_file,
                              list of experiment names (partial matches are supported) or "gt" or
                              indices to all_experiments (e.g. -1 for last experiment) or
                              "*" for all experiments
-    :param all_experiments: list of dicts, {'mot_trajectories', 'dirname' or 'exp_name'}
+    :param all_experiments: list of dicts, {'mot_trajectories_filename', 'dirname' or 'exp_name'}
     :param gt_file: ground truth mot filename
     :param in_video_file: input video filename
     :param out_video_file: output visualization filename
@@ -223,22 +223,22 @@ def run_visualization(experiment_names, all_experiments, gt_file, in_video_file,
         elif name == '*':
             names_all = []
             for experiment in all_experiments:
-                df_mots.append(load_mot(experiment['mot_trajectories']))
+                df_mots.append(load_mot(experiment['mot_trajectories_filename']))
                 names_all.append(experiment['dirname'])
             prefix = os.path.commonprefix(names_all)
             suffix = os.path.commonprefix([n[::-1] for n in names_all])
             names.extend([n[len(prefix):-len(suffix) if suffix != '' else None] for n in names_all])
         elif isinstance(name, int):
             exp = all_experiments[name]
-            df_mots.append(load_mot(exp['mot_trajectories']))
-            names.append(exp['exp_name'])
+            df_mots.append(load_mot(exp['mot_trajectories_filename']))
+            names.append(exp['experiment_name'])
         else:
-            matching_experiments = [e for e in all_experiments if e['exp_name'] == name]
+            matching_experiments = [e for e in all_experiments if e['experiment_name'] == name]
             if len(matching_experiments) != 1:
-                matching_experiments = [e for e in all_experiments if name in e['exp_name']]
+                matching_experiments = [e for e in all_experiments if name in e['experiment_name']]
             assert len(matching_experiments) == 1, \
                 'experiment {} not found or ambiguous match: {}'.format(name, matching_experiments)
-            df_mots.append(load_mot(matching_experiments[0]['mot_trajectories']))
+            df_mots.append(load_mot(matching_experiments[0]['mot_trajectories_filename']))
             names.append(name)
 
     assert out_video_file is not None
@@ -277,7 +277,7 @@ def load_experiments(experiments_dir, evaluation_required=False, trajectories_re
             with open(join(directory, 'parameters.yaml'), 'r') as fr:
                 metadata = yaml.load(fr)
         else:
-                metadata = {}
+            metadata = {}
 
         if 'evaluation.csv' in filenames:
             metadata['evaluation_filename'] = join(directory, 'evaluation.csv')
@@ -286,6 +286,8 @@ def load_experiments(experiments_dir, evaluation_required=False, trajectories_re
 
         if 'trajectories.txt' in filenames:
             metadata['mot_trajectories_filename'] = join(directory, 'trajectories.txt')
+        elif 'results.txt' in filenames:
+            metadata['mot_trajectories_filename'] = join(directory, 'results.txt')
         elif trajectories_required:
             continue
 
@@ -357,28 +359,37 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Convert and visualize mot ground truth and results.',
                                      epilog='use --project and --project-save-dir to convert project format')
-    parser.add_argument('--project', type=str, help='load project from directory (old or new format)')
-    parser.add_argument('--project-save-dir', type=str, help='save project to directory')
-    parser.add_argument('--video-file', type=str, help='project input video file')
-    parser.add_argument('--save-results-mot', type=str, help='write found trajectories in MOT challenge format')
-    parser.add_argument('--fix-orientation', action='store_true', help='fix single tracklets regions orientation')
-    parser.add_argument('--run-tracking', action='store_true', help='run tracking on initilized project')
-    parser.add_argument('--reidentification-weights', type=str, help='tracking: path to reidentification model weights',
+    group = parser.add_argument_group('project io and conversion')
+    group.add_argument('--video-file', type=str, help='project input video file')
+    group.add_argument('--project-save-dir', type=str, help='save project to directory')
+    group.add_argument('--fix-orientation', action='store_true', help='fix single tracklets regions orientation')
+    group.add_argument('--info', action='store_true', help='show project info')
+
+    group = parser.add_argument_group('tracking')
+    group.add_argument('--run-tracking', action='store_true', help='run tracking on initilized project')
+    group.add_argument('--force-recompute', action='store_true', help='force tracking from scratch', default=False)
+    group.add_argument('--reidentification-weights', type=str, help='path to reidentification model weights',
                         default=None)
-    parser.add_argument('--info', action='store_true', help='show project info')
+    group.add_argument('--save-results-mot', type=str, help='write found trajectories in MOT challenge format')
     # parser.add_argument('--evaluate', action='store_true')
-    parser.add_argument('--run-experiments-yaml', type=str, help='run and evaluate experiments on all datasets described in yaml file')
-    parser.add_argument('--experiment-name', nargs='?', type=str, help='experiment name')
-    parser.add_argument('--force-experiment-prefix', type=str, default=None, help='force output directory prefix, use to continue experiments')
-    parser.add_argument('--run-visualizations-yaml', type=str, help='visualize experiments described in yaml file')
+
+    group = parser.add_argument_group(title='run-experiments options')
+    group.add_argument('--experiment-name', nargs='?', type=str, help='experiment name')
+    group.add_argument('--force-experiment-prefix', type=str, default=None, help='force output directory prefix, use to continue experiments')
    # parser.add_argument('--run-benchmarks', action='store_true', help='run benchmarks and store results to a html file')
+
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument('--project', type=str, help='load project from directory (old or new format)')
+    group.add_argument('--run-experiments-yaml', type=str, help='run and evaluate experiments on all datasets described in yaml file')
+    group.add_argument('--run-visualizations-yaml', type=str, help='visualize experiments described in yaml file')
+
     args = parser.parse_args()
 
     if args.run_experiments_yaml:
         with open(args.run_experiments_yaml, 'r') as fr:
             experiments_config = yaml.load(fr)
         if args.experiment_name:
-            experiments_config['exp_name'] = args.experiment_name
+            experiments_config['experiment_name'] = args.experiment_name
         datasets = experiments_config['datasets']
         experiment_config = experiments_config.copy()
         del experiment_config['datasets']
@@ -392,18 +403,19 @@ if __name__ == '__main__':
     if args.run_visualizations_yaml:
         with open(args.run_visualizations_yaml, 'r') as fr:
             experiments_config = yaml.load(fr)
-        experiments = load_experiments(experiments_config, trajectories_required=True)
         for dataset_name, dataset in experiments_config['datasets'].iteritems():
             if 'visualize_experiments' in dataset:
                 print(dataset_name)
-                run_visualization(dataset['visualize_experiments'], experiments[dataset_name],
+                experiments = load_experiments(join(experiments_config['dir'], dataset_name), trajectories_required=True)
+                run_visualization(dataset['visualize_experiments'], experiments,
                                   dataset['gt'], dataset['video'],
-                                  join(experiments_config['dir'],
-                                       time.strftime("%y%m%d_%H%M", time.localtime()) + '_visualization.mp4'))
+                                  join(experiments_config['dir'], dataset_name,
+                                       time.strftime("%y%m%d_%H%M", time.localtime()) + '_visualization.webm'))
         sys.exit(0)
 
-    project = Project.from_dir(args.project, video_file=args.video_file,
-                               regions_optional=True, graph_optional=True, tracklets_optional=True)
+    if args.project:
+        project = Project.from_dir(args.project, video_file=args.video_file,
+                                   regions_optional=True, graph_optional=True, tracklets_optional=True)
 
     if args.info:
         print('next processing stage: ' + project.next_processing_stage)
@@ -417,7 +429,7 @@ if __name__ == '__main__':
         fix_orientation(project)
 
     if args.run_tracking:
-        run_tracking(project, reid_model_weights_path=args.reidentification_weights)
+        run_tracking(project, args.force_recompute, args.reidentification_weights)
 
     if args.save_results_mot:
         save_results_mot(project, args.save_results_mot)
