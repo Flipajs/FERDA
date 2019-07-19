@@ -57,6 +57,7 @@ class ResultsWidget(QtGui.QWidget):
         self.right_vbox.setContentsMargins(0, 0, 0, 0)
         self.solver = None
         self.project = project
+        self._gt = None
 
         self.help_timer = QtCore.QTimer()
         self.scene = QtGui.QGraphicsScene()
@@ -157,27 +158,18 @@ class ResultsWidget(QtGui.QWidget):
 
         self.add_gt_markers_b = QtGui.QPushButton('add GT markers')
         self.add_gt_markers_b.clicked.connect(self.__add_gt_markers)
-
-        self.gt_duplicate_from_prev_frame = QtGui.QAction('duplicat gt from previous frame', self)
-        self.gt_duplicate_from_prev_frame.triggered.connect(self.__duplicate_gt)
-        self.gt_duplicate_from_prev_frame.setShortcut(QtGui.QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.Key_D))
-        self.addAction(self.gt_duplicate_from_prev_frame)
-
-        self.big_gt_duplicate_from_prev_frame = QtGui.QAction('duplicat gt from previous frame', self)
-        self.big_gt_duplicate_from_prev_frame.triggered.connect(partial(self.__duplicate_gt, 60))
-        self.big_gt_duplicate_from_prev_frame.setShortcut(QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.CTRL + QtCore.Qt.Key_D))
-        self.addAction(self.big_gt_duplicate_from_prev_frame)
-
         self.gt_box.layout().addWidget(self.add_gt_markers_b)
+
+        self.gt_interpolate_current_frame = QtGui.QAction('interpolate current frame GT', self)
+        self.gt_interpolate_current_frame.triggered.connect(self.interpolate_gt)
+        self.gt_interpolate_current_frame.setShortcut(QtGui.QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.Key_I))
+        self.addAction(self.gt_interpolate_current_frame)
+
 
         # self.add_gt_markers_action = QtGui.QAction('add gt markers', self)
         # self.add_gt_markers_action.triggered.connect(self.__add_gt_markers)
         # self.add_gt_markers_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.Key_D))
         # self.addAction(self.add_gt_markers_action)
-
-        self.create_gt_from_results_b = QtGui.QPushButton('create gt from results')
-        self.create_gt_from_results_b.clicked.connect(self.__create_gt_from_results)
-        self.gt_box.layout().addWidget(self.create_gt_from_results_b)
 
         # TRACKLET BOX
         self.tracklet_box = QtGui.QGroupBox('Tracklet controls')
@@ -211,7 +203,6 @@ class ResultsWidget(QtGui.QWidget):
         self.edit_tracklet_action.triggered.connect(self.edit_tracklet)
         self.edit_tracklet_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.Key_D))
         self.addAction(self.edit_tracklet_action)
-
 
         self.tracklet_end_button = QtGui.QPushButton('go to tracklet end')
         self.tracklet_end_button.clicked.connect(self.tracklet_end)
@@ -311,9 +302,6 @@ class ResultsWidget(QtGui.QWidget):
         self.reset_chunk_ids_b.clicked.connect(self.reset_chunk_ids)
         self.debug_box.layout().addWidget(self.reset_chunk_ids_b)
 
-        self.assign_ids_from_gt_b = QtGui.QPushButton('assign ID from GT')
-        self.assign_ids_from_gt_b.clicked.connect(self.assign_ids_from_gt)
-
         self.print_conflic_tracklets_b = QtGui.QPushButton('print conflicts')
         self.print_conflic_tracklets_b.clicked.connect(self.print_conflicts)
 
@@ -337,7 +325,6 @@ class ResultsWidget(QtGui.QWidget):
 
         self.debug_box.layout().addWidget(self.print_conflic_tracklets_b)
         self.debug_box.layout().addWidget(self.print_undecided_tracklets_b)
-        self.debug_box.layout().addWidget(self.assign_ids_from_gt_b)
         self.debug_box.layout().addWidget(self.show_idtracker_i)
         self.debug_box.layout().addWidget(self.show_idtracker_b)
         self.debug_box.layout().addWidget(self.head_fix_b)
@@ -395,7 +382,7 @@ class ResultsWidget(QtGui.QWidget):
         self.visu_controls_layout.addWidget(self.contour_without_colors)
 
         self.show_markers = QtGui.QCheckBox('GT markers')
-        self.show_markers.setChecked(True)
+        self.show_markers.setChecked(False)
         self.show_markers.stateChanged.connect(lambda x: self.redraw_video_player_visualisations())
         self.visu_controls_layout.addWidget(self.show_markers)
 
@@ -488,9 +475,6 @@ class ResultsWidget(QtGui.QWidget):
         ]
 
         # TODO: add develop option to load from project file...
-
-
-        self._load_gt()
 
         try:
             if len(self.project.animals) == len(self.project.chm.tracklets_in_frame(self.video_player.current_frame())):
@@ -1612,21 +1596,6 @@ class ResultsWidget(QtGui.QWidget):
         for i in range(num_ids):
             print " {}:{:.2%}".format(i, id_coverage[i] / float(len(frames)))
 
-    def __create_gt_from_results(self):
-        from utils.gt.gt import GT
-
-        if not hasattr(self.project, 'GT_file'):
-            path = self.project.working_directory + '/' + 'GT.pkl'
-        else:
-            path = self.project.GT_file
-
-        self._gt = GT()
-        self._gt.set_project_offsets(self.project)
-
-        self._gt.build_from_PN(self.project)
-
-        self._gt.save(path)
-
     def load_gt_file_dialog(self):
         import os
         import gui.gui_utils
@@ -1635,7 +1604,7 @@ class ResultsWidget(QtGui.QWidget):
         if os.path.isdir(S_.temp.last_gt_path):
             path = S_.temp.last_gt_path
 
-        self.project.GT_file = gui.gui_utils.file_name_dialog(self, 'Select GT file', filter_="Pickle (*.pkl)", path=path)
+        self.project.GT_file = gui.gui_utils.file_name_dialog(self, 'Select GT file', filter_="Text files (*.txt);; All files (*)", path=path)
 
         if self.project.GT_file:
             S_.temp.last_gt_path = os.path.dirname(self.project.GT_file)
@@ -1645,52 +1614,8 @@ class ResultsWidget(QtGui.QWidget):
 
     def _load_gt(self):
         from utils.gt.gt import GT
-        self._gt = GT()
-
-        # self._gt.set_offset(y=self.project.video_crop_model['y1'],
-        #                        x=self.project.video_crop_model['x1'],
-        #                        frames=self.project.video_start_t)
-
-        try:
-            path = self.project.GT_file
-            self._gt.load(path)
-            self._gt.set_project_offsets(project)
-
-        except Exception as e:
-            self._gt = None
-
-    def assign_ids_from_gt(self):
-        import warnings
-        warnings.warn("this method is outdated and assigns IDs also to multi-regions...")
-
-        # for frame, data in self._gt.iteritems():
-        for frame, data in self._gt.get_clear_positions_dict().iteritems():
-            print frame
-            matches = [list() for _ in range(len(self.project.animals))]
-            for t in self.project.chm.tracklets_in_frame(frame):
-                rch = RegionChunk(t, self.project.gm, self.project.rm)
-                c = rch.centroid_in_t(frame)
-
-                best_d = 50
-                best_id = -1
-                for id_, c2 in enumerate(data):
-                    if c2 is not None:
-                        d = ((c[0]-c2[0])**2 + (c[1]-c2[1])**2)**0.5
-                        if best_d > d:
-                            best_d = d
-                            best_id = id_
-
-                if best_id > -1:
-                    matches[best_id].append(t)
-
-            for id_, arr in enumerate(matches):
-                if len(arr) == 1:
-                    tracklet = arr[0]
-                    if len(tracklet.P) != 1:
-                        tracklet.P = set([id_])
-                        tracklet.N = set(range(len(self.project.animals))) - set([id_])
-                        # TODO: update this...
-                        # self.decide_tracklet_callback(tracklet, id_)
+        self._gt = GT(self.project.GT_file)
+        self._gt.set_project_offsets(self.project)
 
     def print_conflicts(self):
         from tqdm import tqdm
@@ -1923,33 +1848,14 @@ class ResultsWidget(QtGui.QWidget):
 
         pass
 
-    def __duplicate_gt(self, max_history=1):
+    def interpolate_gt(self):
         frame = self.video_player.current_frame()
-
-        missing_in_current_frame = []
-        found_in_frame = {}
-        for i, a in enumerate(self._gt.get_clear_positions(frame)):
-            if a is None:
-                missing_in_current_frame.append(i)
-                found_in_frame[i] = -1
-            else:
-                found_in_frame[i] = frame + 1
-
-        gt_pos = {}
-        for prev_frame in reversed(range(max(0, frame-max_history), frame)):
-            for i, a in enumerate(self._gt.get_clear_positions(prev_frame)):
-                if a is not None:
-                    if found_in_frame[i] < 0:
-                        found_in_frame[i] = prev_frame
-                        gt_pos[i] = a
-
-        for id_ in range(len(self.project.animals)):
-            if id_ in gt_pos:
-                for f in range(found_in_frame[id_], frame + 1):
-                    self._gt.set_position(f, id_, gt_pos[id_][0], gt_pos[id_][1])
+        ds = self._gt.interpolate_positions(frames=[frame])
+        for obj_id in ds.id:
+            pos = ds.sel({'id': obj_id})
+            self._gt.set_position(frame, obj_id, pos.x, pos.y)
 
         self.video_player.redraw_visualisations()
-
 
     def show_movement_model(self):
         from scripts.regions_stats import hist_query, get_movement_descriptor_
