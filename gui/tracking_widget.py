@@ -25,20 +25,20 @@ class TrackingWidget(QtGui.QWidget):
         self.segmentation_thread = SegmentationThread(self.project.working_directory)
         # self.segmentation_thread.update.connect(self.progress_bar_update)
         self.segmentation_thread.finished.connect(self.segmentation_thread_finished)
-        if core.graph_assembly.is_assemply_completed(project):
-            self.ui.pbar_segmentation.setValue(self.ui.pbar_segmentation.maximum())
+        # if core.graph_assembly.is_assemply_completed(project):
+        #     self.ui.pbar_segmentation.setValue(self.ui.pbar_segmentation.maximum())
 
         self.graph_thread = GraphConstructionThread(self.project)
         # self.segmentation_thread.update.connect(self.progress_bar_update)
         self.graph_thread.finished.connect(self.graph_thread_finished)
-        if core.graph_assembly.is_assemply_completed(project):
-            self.ui.pbar_graph.setValue(self.ui.pbar_graph.maximum())
+        # if core.graph_assembly.is_assemply_completed(project):
+        #     self.ui.pbar_graph.setValue(self.ui.pbar_graph.maximum())
 
         self.regions_classification_thread = RegionsClassificationThread(self.project)
         # self.segmentation_thread.update.connect(self.progress_bar_update)
         self.regions_classification_thread.finished.connect(self.regions_classification_thread_finished)
-        if core.region.clustering.is_project_cardinality_classified(project):
-            self.ui.pbar_regions_classification.setValue(self.ui.pbar_regions_classification.maximum())
+        # if core.region.clustering.is_project_cardinality_classified(project):
+        #     self.ui.pbar_regions_classification.setValue(self.ui.pbar_regions_classification.maximum())
 
         self.reid_thread = ReIdentificationThread(self.project)
         # self.segmentation_thread.update.connect(self.progress_bar_update)
