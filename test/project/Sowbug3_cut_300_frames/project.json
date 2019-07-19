@@ -1,0 +1,178 @@
+{
+    "py/object": "core.project.project.Project",
+    "py/state": {
+        "active_snapshot": -1,
+        "animals": [
+            {
+                "color_": {
+                    "py/tuple": [
+                        145,
+                        95,
+                        22
+                    ]
+                },
+                "colormark_": null,
+                "id": 0,
+                "init_pos_center_": null,
+                "init_pos_head_": null,
+                "name": "Arnold",
+                "py/object": "core.animal.Animal"
+            },
+            {
+                "color_": {
+                    "py/tuple": [
+                        54,
+                        38,
+                        227
+                    ]
+                },
+                "colormark_": null,
+                "id": 1,
+                "init_pos_center_": null,
+                "init_pos_head_": null,
+                "name": "Bob",
+                "py/object": "core.animal.Animal"
+            },
+            {
+                "color_": {
+                    "py/tuple": [
+                        0,
+                        191,
+                        255
+                    ]
+                },
+                "colormark_": null,
+                "id": 2,
+                "init_pos_center_": null,
+                "init_pos_head_": null,
+                "name": "Cenek",
+                "py/object": "core.animal.Animal"
+            },
+            {
+                "color_": {
+                    "py/tuple": [
+                        204,
+                        102,
+                        153
+                    ]
+                },
+                "colormark_": null,
+                "id": 3,
+                "init_pos_center_": null,
+                "init_pos_head_": null,
+                "name": "Dusan",
+                "py/object": "core.animal.Animal"
+            },
+            {
+                "color_": {
+                    "py/tuple": [
+                        190,
+                        140,
+                        238
+                    ]
+                },
+                "colormark_": null,
+                "id": 4,
+                "init_pos_center_": null,
+                "init_pos_head_": null,
+                "name": "Emil",
+                "py/object": "core.animal.Animal"
+            }
+        ],
+        "arena_model": {
+            "py/object": "core.arena.circle.Circle",
+            "py/state": {
+                "center": [
+                    {
+                        "dtype": "float64",
+                        "py/object": "numpy.float64",
+                        "value": 206.0
+                    },
+                    {
+                        "dtype": "float64",
+                        "py/object": "numpy.float64",
+                        "value": 206.0
+                    }
+                ],
+                "im_height": 412,
+                "im_width": 412,
+                "radius": 205.62204487723076,
+                "weights_": null
+            }
+        },
+        "classes": null,
+        "colormarks_model": null,
+        "date_created": 1533939366.988497,
+        "date_last_modification": 1533939366.988499,
+        "description": "",
+        "groups": null,
+        "img_manager": {
+            "py/object": "utils.img_manager.ImgManager",
+            "py/state": {
+                "crop_cache": {},
+                "crop_properties": [],
+                "max_num_of_instances": 500,
+                "max_size_mb": -1
+            }
+        },
+        "log": {
+            "data_": [],
+            "py/object": "core.log.Log"
+        },
+        "mser_parameters": {
+            "area_roi_ratio_threshold": 0.0,
+            "gaussian_kernel_std": 0.0,
+            "intensity_percentile": 10,
+            "intensity_threshold": 120,
+            "max_area": 10000,
+            "min_area": 250,
+            "min_margin": 8,
+            "py/object": "core.project.mser_parameters.MSERParameters",
+            "region_min_intensity": 56,
+            "use_children_filter": true,
+            "use_intensity_percentile_threshold": true,
+            "use_min_margin_filter": true
+        },
+        "name": "Sowbug3_cut",
+        "next_processing_stage": "complete_sets_matching",
+        "other_parameters": {
+            "full_segmentation_refresh_in_spin": 25,
+            "img_subsample_factor": 1.0,
+            "py/object": "core.project.other_parameters.OtherParameters",
+            "segmentation_full_segmentation_refresh_in": 25,
+            "segmentation_prediction_optimisation_border": 25,
+            "segmentation_use_roi_prediction_optimisation": false,
+            "store_area_info": true,
+            "use_only_red_channel": false
+        },
+        "snapshot_id": 0,
+        "solver_parameters": {
+            "antlikeness_threshold": 0.1,
+            "certainty_threshold": 0.01,
+            "chunk_id": -1,
+            "global_view_min_chunk_len": 0,
+            "max_edge_distance_in_ant_length": 2.0,
+            "py/object": "core.project.solver_parameters.SolverParameters",
+            "use_colony_split_merge_relaxation_": false,
+            "use_emd_for_split_merge_detection_": true,
+            "graph_max_distance": 84.0
+        },
+        "stats": {
+            "area_median": 100,
+            "major_axis_median": 21,
+            "margin_median": 5,
+            "py/object": "core.classes_stats.ClassesStats"
+        },
+        "use_colormarks": false,
+        "version": "3.1.0",
+        "video_crop_model": {
+            "x1": 46,
+            "x2": 458,
+            "y1": 52,
+            "y2": 464
+        },
+        "video_end_t": 300,
+        "video_paths": "/datagrid/ferda/data/youtube/Sowbug3_cut.mp4",
+        "video_start_t": 0
+    }
+}
