@@ -21,10 +21,7 @@ class Solver:
         """
 
         self.project = project
-        if project.stats is not None:
-            self.major_axis_median = project.stats.major_axis_median
-        else:
-            self.major_axis_median = None
+        self.parameters = project.solver_parameters
 
         # TODO: add to config
         self.antlike_filter = True
@@ -108,7 +105,7 @@ class Solver:
             return []
 
         best_in_scores, best_in_vertices = self.project.gm.get_2_best_in_vertices(best_out_vertices[0])
-        if best_in_vertices[0] == vertex and best_in_scores[0] >= self.project.solver_parameters.certainty_threshold:
+        if best_in_vertices[0] == vertex and best_in_scores[0] >= self.parameters.certainty_threshold:
             cert = best_out_scores[0]
             v1 = vertex
             v2 = best_out_vertices[0]
@@ -132,7 +129,7 @@ class Solver:
 
             self.project.gm.g.ep['movement_score'][self.project.gm.g.edge(v1, v2)] = cert
 
-            if cert > self.project.solver_parameters.certainty_threshold:
+            if cert > self.parameters.certainty_threshold:
                 affected = self.confirm_edges([(v1, v2)])
 
             return affected
@@ -213,7 +210,7 @@ class Solver:
                 n_ = float(len(s1))
                 cert = abs(sc1 / n_) * (abs(sc1-sc2))
 
-            if cert >= self.project.solver_parameters.certainty_threshold:
+            if cert >= self.parameters.certainty_threshold:
                 for n1, n2 in matchings[0]:
                     if n1 and n2:
                         # for n2_ in n1.out_neighbors():
@@ -320,13 +317,13 @@ class Solver:
         return affected
 
     def assignment_score(self, r1, r2, pred=0):
-        d = np.linalg.norm(r1.centroid() + pred - r2.centroid()) / float(self.major_axis_median)
-        max_d = self.project.solver_parameters.max_edge_distance_in_ant_length
+        d = np.linalg.norm(r1.centroid() + pred - r2.centroid()) / float(self.project.stats.major_axis_median)
+        max_d = self.parameters.max_edge_distance_in_ant_length
         ds = max(0, (max_d-d) / max_d)
 
         s = ds
 
-        if self.project.solver_parameters.use_colony_split_merge_relaxation():
+        if self.parameters.use_colony_split_merge_relaxation():
             a1 = r1.area()
             a2 = r2.area()
 
@@ -359,8 +356,8 @@ class Solver:
 
         """
 
-        d = np.linalg.norm(r1.centroid() - r2.centroid()) / float(self.major_axis_median)
-        max_d = self.project.solver_parameters.max_edge_distance_in_ant_length
+        d = np.linalg.norm(r1.centroid() - r2.centroid()) / float(self.project.stats.major_axis_median)
+        max_d = self.parameters.max_edge_distance_in_ant_length
         ds = max(0, (max_d-d) / max_d)
 
         dt = (r1.theta_ - r2.theta_) % np.pi
@@ -657,7 +654,7 @@ class Solver:
         to_remove = []
         for n in self.g:
             is_ch, t_reversed, ch = self.is_chunk(n)
-            if not is_ch or ch.length() < self.project.solver_parameters.global_view_min_chunk_len:
+            if not is_ch or ch.length() < self.parameters.global_view_min_chunk_len:
                 to_remove.append(n)
 
         print("NODES", len(self.g))

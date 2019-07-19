@@ -19,14 +19,13 @@ def graph_assembly(project):
     logger.info("start")
     # TODO: add to settings
 
+    project.reset_managers()  # clean-up possible previously computed data
     parts_path = join(project.working_directory, 'temp')
     n_parts = get_parts_num(parts_path)
-    merged_rm = RegionManager()
     for rm in [RegionManager.from_dir(join(parts_path, str(i))) for i in range(n_parts)]:
-        merged_rm.extend(rm)
+        project.rm.extend(rm)
         rm.close()  # otherwise the shutil.rmtree(parts_path) fails on NFS while the regions.h5 maybe still open
         # TODO: possibly close / open to unload already written data from memory
-    project.set_rm(merged_rm)
     logger.debug(project.rm.regions_df.describe())
     for frame, df_frame in tqdm(project.rm.regions_df.set_index('frame_').groupby(level=0), desc='creating graph'):
         regions = [project.rm[i] for i in df_frame['id_'].values]

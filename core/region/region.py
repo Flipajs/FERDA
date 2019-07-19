@@ -448,6 +448,11 @@ class Region(object):
         return image_manager.get_crop(self.frame(), self.roi(), **kwargs)
 
     def get_head_tail(self, min_angle_difference_deg=90):
+        """
+
+        :param min_angle_difference_deg:
+        :return: yx head, yx tail
+        """
         dists = np.linalg.norm(self.pts() - self.centroid(), axis=1)
         sorted_indices = dists.argsort()[::-1]
         extreme_points = []

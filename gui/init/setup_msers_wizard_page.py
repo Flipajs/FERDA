@@ -22,7 +22,6 @@ from core.graph.graph_manager import GraphManager
 from core.graph.solver import Solver
 from core.graph.chunk_manager import ChunkManager
 from core.animal import Animal
-# from core.classes_stats import dummy_classes_stats
 
 __author__ = 'filip@naiser.cz', 'dita'
 
@@ -163,19 +162,18 @@ class SetupMSERsWizardPage(QtGui.QWizardPage):
         self.project.other_parameters.full_segmentation_refresh_in_spin = \
             self.full_segmentation_refresh_in_spin.value()
 
-        self.project.stats = dummy_classes_stats()
+        # TODO: move to proper Project() initialization methods
         self.project.stats.major_axis_median = self.major_axis_median.value()
-        self.project.solver.major_axis_median = self.project.stats.major_axis_median
-        self.project.solver_parameters.max_edge_distance_in_ant_length = self.max_dist_object_length.value()
-        self.project.gm.max_distance = self.project.solver_parameters.max_edge_distance_in_ant_length * \
-                                       2 * self.project.solver.major_axis_median
 
-        # TODO: remove?
+        self.project.solver_parameters.max_edge_distance_in_ant_length = self.max_dist_object_length.value()
+
+        self.project.solver_parameters.graph_max_distance = self.max_dist_object_length.value() * \
+                                       2 * self.project.stats.major_axis_median
+
+        # TODO: remove
         self.project.animals = []
         for i in range(self.num_animals_sb.value()):
             self.project.animals.append(Animal(i))
-
-        self.project.solver_parameters.certainty_threshold = .01
 
         return True
 

@@ -18,14 +18,13 @@ class GraphManager(object):
     the first and last vertices are connected by an edge, see core.graph.chunk.Chunk#__init__
 
     """
-    def __init__(self, assignment_score=None, max_distance=None):
+    def __init__(self, assignment_score_fun=None, max_distance=None):
         self.rm = None
         self.chm = None
         self.g = graph_tool.Graph(directed=True)  # actual graph
         self.vertices_in_t = {}  # vertices in frames, {frame: [vertex_id, vertex_id, ...], frame: [...]}
-        # multiply 2 times to get ant length
-        self.major_axis_median = None
-        self.assignment_score = assignment_score  # TODO: rename to assignment_score_fun
+        self.assignment_score_fun = assignment_score_fun
+
         self.max_distance = max_distance
 
         self.g.set_fast_edge_removal(fast=True)
@@ -50,7 +49,7 @@ class GraphManager(object):
             graph_manager.chm = chm
         if rm is not None:
             graph_manager.rm = rm
-        # TODO: missing assignment_score, max_distance in old jsons
+        # TODO: missing assignment_score_fun, max_distance in old jsons
         return graph_manager
 
     def __getstate__(self):
@@ -268,7 +267,7 @@ class GraphManager(object):
                         # Only exception is chunk of length 1 (checked inside functions).
                         if self.is_start_of_longer_chunk(v_t1) or self.is_end_of_longer_chunk(v_t2):
                             continue
-                        s, ds, multi, _ = self.assignment_score(r_t1, r_t2)
+                        s, ds, multi, _ = self.assignment_score_fun(r_t1, r_t2)
                         self.add_edge(v_t1, v_t2, s)
 
     def time_boundaries(self):
@@ -661,7 +660,6 @@ class GraphManager(object):
                     strongly_better_e.append((val, e[0]))
 
         return strongly_better_e
-
 
     def remove_edges(self, edges):
         for e in edges:

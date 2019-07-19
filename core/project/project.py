@@ -5,7 +5,6 @@ import numpy as np
 import os
 from os.path import join
 import tqdm
-import json
 import errno
 
 from core.graph.solver import Solver
@@ -16,9 +15,14 @@ from core.log import Log
 from core.project.mser_parameters import MSERParameters
 from core.project.other_parameters import OtherParameters
 from core.project.solver_parameters import SolverParameters
+from core.classes_stats import ClassesStats
+from utils.misc import makedirs
 from core.config import config
 from utils.img_manager import ImgManager
 import jsonpickle
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class ProjectNotFoundError(OSError):
@@ -30,6 +34,7 @@ class Project(object):
     """
     This class encapsulates one experiment using FERDA
     """
+
     def __init__(self, project_directory=None, video_file=None):
         self.working_directory = ''
 
@@ -41,32 +46,24 @@ class Project(object):
         self.date_created = -1
         self.date_last_modification = -1
         self.next_processing_stage = 'segmentation'  # initialization, segmentation, assembly, cardinality_classification,
-                                           # re_identification,
-
+        # re_identification,
 
         self.video_crop_model = None
         # {'x1': ..., 'x2':..., 'y1':..., 'y2':...}
         # cropped image: img[cm['y1']:cm['y2'], cm['x1']:cm['x2']]
-        self.stats = None  # TODO: review if needed
+        self.stats = ClassesStats()  # TODO: review if needed
         self.mser_parameters = MSERParameters()  # TODO: change to dict, initialized from config
         self.other_parameters = OtherParameters()  # TODO: change to dict, initialized from config
         self.solver_parameters = SolverParameters()  # TODO: change to dict, initialized from config
         self.version = "3.1.0"
 
-        self.rm = RegionManager()
-        self.chm = ChunkManager()
-        self.gm = GraphManager()
         self._solver = Solver(self)
-        set_managers(self, self.rm, self.chm, self.gm)
+        self.reset_managers()
 
         self.arena_model = None
         self.img_manager = None
         self.region_cardinality_classifier = None
         self.bg_model = None
-
-        if project_directory is not None:
-            self.load(project_directory, video_file)
-
 
         # TODO: remove
         self.log = Log()
@@ -78,6 +75,15 @@ class Project(object):
         self.use_colormarks = False
         self.colormarks_model = None
         self.animals = None
+
+        if project_directory is not None:
+            self.load(project_directory, video_file)
+
+    def reset_managers(self):
+        self.rm = RegionManager()
+        self.chm = ChunkManager()
+        self.gm = GraphManager(self.solver.assignment_score, self.solver_parameters.graph_max_distance)
+        set_managers(self, self.rm, self.chm, self.gm)
 
     def version_is_le(self, ver):
         # returns true if self.version is lower or equal then version
@@ -199,7 +205,7 @@ class Project(object):
     def solver(self, solver):
         self._solver = solver
         if self.gm is not None:
-            self.gm.assignment_score = self._solver.assignment_score
+            self.gm.assignment_score_fun = self._solver.assignment_score
 
     def video_exists(self):
         if isinstance(self.video_paths, list):
@@ -251,17 +257,6 @@ class Project(object):
         return n_swaps
 
 
-def dummy_project():
-    from core.classes_stats import dummy_classes_stats
-    from core.region.region_manager import RegionManager
-
-    p = Project()
-    p.stats = dummy_classes_stats()
-    p.rm = RegionManager()
-
-    return p
-
-
 def set_managers(project=None, rm=None, chm=None, gm=None):
     if rm is not None:
         if project is not None:
@@ -276,7 +271,7 @@ def set_managers(project=None, rm=None, chm=None, gm=None):
     if gm is not None:
         if project is not None:
             project.gm = gm
-            gm.assignment_score = project.solver.assignment_score
+            gm.assignment_score_fun = project.solver.assignment_score
         if chm is not None:
             chm.set_graph_manager(gm)
 
@@ -290,5 +285,3 @@ if __name__ == "__main__":
     # rt = RegionChunk(t, p.gm, p.rm)
     # rt.draw()
     # plt.show()
-
-

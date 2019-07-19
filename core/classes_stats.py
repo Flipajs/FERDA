@@ -1,19 +1,15 @@
 __author__ = 'fnaiser'
 
 import numpy as np
-# from core.antlikeness import Antlikeness, DummyAntlikeness
 
-class ClassesStats():
+
+class ClassesStats(object):
     def __init__(self):
-        self.area_median = -1
-        self.major_axis_median = -1
-        self.margin_median = -1
-        # self.antlikeness_svm = Antlikeness()
+        self.area_median = None
+        self.major_axis_median = None
+        self.margin_median = None
 
     def compute_stats(self, regions, classes):
-        # if not isinstance(self.antlikeness_svm, DummyAntlikeness):
-        #     self.antlikeness_svm.learn(regions, classes)
-
         areas = []
         major_axes = []
         margins = []
@@ -33,13 +29,3 @@ class ClassesStats():
         self.major_axis_median = np.median(major_axes)
         self.margin_median = np.median(margins)
 
-def dummy_classes_stats():
-    from core.antlikeness import DummyAntlikeness
-
-    cs = ClassesStats()
-    cs.area_median = 100
-    cs.major_axis_median = 5
-    cs.margin_median = 5
-    cs.antlikeness_svm = DummyAntlikeness()
-
-    return cs

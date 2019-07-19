@@ -94,8 +94,7 @@ def do_segmentation_part(project_dir, part_id, frame_start, frame_done_func=None
         print('Part {} already processed.'.format(part_id))
         return
     p = Project.from_dir(project_dir, tracklets_optional=True)
-    p.rm = RegionManager()  # reset RegionManager to force temporary hdf5
-    set_managers(p, p.rm, p.chm, p.gm)
+    p.reset_managers()  # clean possible previously computed data, force RegionManager to temporary hdf5
 
     config['general']['log_graph_edits'] = False
     vid = get_auto_video_manager(p)
