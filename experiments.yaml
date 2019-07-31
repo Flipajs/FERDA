@@ -7,25 +7,25 @@ datasets:
         video: /datagrid/ferda/data/idTracker/5Zebrafish_nocover_22min.avi
         gt: data/GT/5Zebrafish_nocover_22min.txt
         reidentification_weights: /datagrid/ferda/models/180421_reidentification/Zebrafish/best_model_967_weights.h5
-        initial_project: /datagrid/ferda/projects/1_initial_projects_180921_ILP/180811_0832_5Zebrafish_nocover_22min_ILP_cardinality
+        initial_project: /datagrid/ferda/projects/1_initial_projects_180810_diverse/5Zebrafish_nocover_22min
         visualize_experiments: [-1, gt, idtracker_nogaps, toxtrac]
     Sowbug3_cut:
         video: /datagrid/ferda/data/youtube/Sowbug3_cut.mp4
         gt: data/GT/Sowbug3_cut.txt
         reidentification_weights: /datagrid/ferda/models/180421_reidentification/Sowbugs3/best_model_998_weights.h5
-        initial_project: /datagrid/ferda/projects/1_initial_projects_180921_ILP/180819_Sowbug3_cut_new_setup_ILP_cardinality
+        initial_project: /datagrid/ferda/projects/1_initial_projects_180810_diverse/Sowbug3_cut
         visualize_experiments: [-1, gt, idtracker_nogaps, toxtrac]
     Cam1_clip:
         video: /datagrid/ferda/data/ants_ist/camera_1/Cam1_clip.avi
         gt: data/GT/Cam1_clip.avi.txt
         reidentification_weights: /datagrid/ferda/models/180421_reidentification/Cam1_clip/best_model_996_weights.h5
-        initial_project: /datagrid/ferda/projects/1_initial_projects_180921_ILP/180810_2359_Cam1_ILP_cardinality
+        initial_project: /datagrid/ferda/projects/1_initial_projects_180810_diverse/Cam1_clip
         visualize_experiments: [-1, gt, idtracker_nogaps, toxtrac]
     Camera3-5min:
         video: /datagrid/ferda/data/ants_ist/Camera3-5min.mp4
         gt: data/GT/Camera3-5min.mp4.txt
         reidentification_weights: /datagrid/ferda/models/180421_reidentification/Ants3/best_model_980_weights.h5
-        initial_project: /datagrid/ferda/projects/1_initial_projects_180921_ILP/180811_0205_Camera3-5min_ILP_cardinality
+        initial_project: /datagrid/ferda/projects/1_initial_projects_180810_diverse/Camera3-5min
         visualize_experiments: [-1, gt, idtracker_nogaps] # toxtrac
 #    camera_1_ss45:
 #        video: /datagrid/ferda/data/ants_ist/camera_1/camera_1_ss00:45:00_t00:05:00.mp4
