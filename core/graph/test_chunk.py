@@ -25,7 +25,6 @@ class TestChunk(unittest.TestCase):
 
     def test_init(self):
         ch = Chunk([1, 2], 1, self.gm)
-
         self.assertEqual(2, len(ch.nodes_))
 
     def test_append_left_raise_discontinuity_test(self):
@@ -55,3 +54,13 @@ class TestChunk(unittest.TestCase):
         self.assertEqual(7, ch1.length())
         self.assertEqual(ch1.start_vertex_id(), self.gm.g.vertex(0))
         self.assertEqual(ch1.end_vertex_id(), self.gm.g.vertex(6))
+
+    def test_get_interval(self):
+        t = Chunk([0, 1], 1, self.gm)  # frames 1, 2
+        interval = t.get_interval()
+        self.assertEqual(interval.lower, 1)
+        self.assertEqual(interval.upper, 2)
+        self.assertTrue(interval.lower_inc)
+        self.assertTrue(interval.upper_inc)
+
+
