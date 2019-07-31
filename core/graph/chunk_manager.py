@@ -5,12 +5,9 @@ __author__ = 'flipajs'
 from os.path import join
 from chunk import Chunk
 from libs.intervaltree.intervaltree import IntervalTree
-from utils.misc import print_progress
 from tqdm import tqdm
-import warnings
 import numpy as np
 import jsonpickle
-import utils.load_jsonpickle
 
 
 class ChunkManager(object):
@@ -237,21 +234,32 @@ class ChunkManager(object):
         tracklets = []
         undecided_tracklets = []
         for t in self.tracklet_gen():
-            if t.is_only_one_id_assigned(num_objects):
+            if t.is_id_decided():
                 tracklets.append(t)
             else:
                 undecided_tracklets.append(t)
         if verbose:
             print('{} undecided tracklet(s).'.format(len(undecided_tracklets)))
 
+        # for every frame check tracklets P sets for non unique track ids, this means that
+        # a single track has multiple positions in single frame, which is obviously an error
         conflicts = {}
         for frame in xrange(min_frame, max_frame + 1):
-            decided = filter(lambda x: x.is_only_one_id_assigned(num_objects), self.tracklets_in_frame(frame))
+            decided = filter(lambda x: x.is_id_decided(), self.tracklets_in_frame(frame))
             obj_ids = [next(iter(t.P)) for t in decided]
-            if len(obj_ids) != len(np.unique(obj_ids)):
-                if verbose:
-                    print('Duplicated object ids at frame {}'.format(frame))
+            unique_ids, unique_ids_counts = np.unique(obj_ids, return_counts=True)
+            message = ''
+            for i in (unique_ids_counts > 1).nonzero()[0]:
+                conlicting_id = unique_ids[i]
+                message = 'Conflicting id {}'.format(conlicting_id)
+                for t_idx in (obj_ids == conlicting_id).nonzero()[0]:
+                    message += ', tracklet {}'.format(decided[t_idx].id())
+                message += '. '
+            if message:
                 conflicts[frame] = decided
+                if verbose:
+                    print('Duplicated object ids at frame {}. {}'.format(frame, message))
+        assert not conflicts
         return undecided_tracklets, conflicts
 
     def get_complete_sets(self, project):
