@@ -770,26 +770,26 @@ def generate_tracking_ranges(complete_sets, video_start_frame, video_end_frame, 
     for i, (cs0, cs1) in enumerate(zip(complete_sets[:-1], complete_sets[1:])):
         if forward:
             tracking_ranges.extend([
-                {'from': cs0.start_frame, 'to': cs0.end_frame, 'tracklets': cs0.tracklets},
-                {'from': cs0.end_frame, 'to': cs1.start_frame, 'tracklets': cs0.tracklets}
+                {'from': cs0.start_frame(), 'to': cs0.end_frame(), 'tracklets': cs0.tracklets},
+                {'from': cs0.end_frame(), 'to': cs1.start_frame(), 'tracklets': cs0.tracklets}
                 ])
         else:
             tracking_ranges.extend([
-                {'from': cs0.end_frame, 'to': cs0.start_frame, 'tracklets': cs0.tracklets},
-                {'from': cs1.start_frame, 'to': cs0.end_frame, 'tracklets': cs1.tracklets},
+                {'from': cs0.end_frame(), 'to': cs0.start_frame(), 'tracklets': cs0.tracklets},
+                {'from': cs1.start_frame(), 'to': cs0.end_frame(), 'tracklets': cs1.tracklets},
                 ])
 
     last_cs = complete_sets[-1]
     if forward:
         tracking_ranges.extend([
-            {'from': last_cs.start_frame, 'to': last_cs.end_frame, 'tracklets': last_cs.tracklets},
-            {'from': last_cs.end_frame, 'to': video_end_frame, 'tracklets': last_cs.tracklets}
+            {'from': last_cs.start_frame(), 'to': last_cs.end_frame(), 'tracklets': last_cs.tracklets},
+            {'from': last_cs.end_frame(), 'to': video_end_frame, 'tracklets': last_cs.tracklets}
         ])
     else:
-        tracking_ranges.append({'from': last_cs.end_frame, 'to': last_cs.start_frame, 'tracklets': last_cs.tracklets})
+        tracking_ranges.append({'from': last_cs.end_frame(), 'to': last_cs.start_frame(), 'tracklets': last_cs.tracklets})
         first_cs = complete_sets[0]
         tracking_ranges.insert(0,
-                {'from': first_cs.start_frame, 'to': video_start_frame, 'tracklets': first_cs.tracklets})
+                {'from': first_cs.start_frame(), 'to': video_start_frame, 'tracklets': first_cs.tracklets})
         tracking_ranges = tracking_ranges[::-1]
     return [tr for tr in tracking_ranges if tr['from'] != tr['to']]
 

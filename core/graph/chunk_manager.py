@@ -1,3 +1,5 @@
+from core.graph.complete_set import CompleteSet
+
 __author__ = 'flipajs'
 
 from os.path import join
@@ -296,12 +298,3 @@ class ChunkManager(object):
         for t in self.chunk_gen():
             yx = np.array([r.centroid() for r in t.r_gen(rm)])
             plt.plot(yx[:, 1], yx[:, 0])
-
-
-class CompleteSet(object):
-    def __init__(self, tracklets):
-        self.tracklets = tracklets
-        self.start_frame = max([t.start_frame() for t in tracklets])
-        self.end_frame = min([t.end_frame() for t in tracklets])
-
-
