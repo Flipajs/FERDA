@@ -23,10 +23,11 @@ from collections import defaultdict
 import webbrowser
 from utils.experiment import Parameters, Experiment
 from core.region.region_manager import RegionManager
-from utils.gt.mot import results_to_mot
+from utils.gt.mot import results_to_mot, metrics_higher_is_better, metrics_lower_is_better
 import sys
 from core.config import config
 from warnings import warn
+import pandas as pd
 
 
 def setup_logging():
@@ -331,6 +332,23 @@ def load_experiments(experiments_dir, evaluation_required=False, trajectories_re
     return experiments
 
 
+def load_evaluations(datasets, experiments_dir):
+    experiments = defaultdict(list)
+    df_evaluations = {}
+    for dataset_name in datasets:
+        experiments[dataset_name].extend(
+            load_experiments(join(experiments_dir, dataset_name), evaluation_required=True))
+        all_evals = []
+        for experiment in experiments[dataset_name]:
+            df = pd.read_csv(experiment['evaluation_filename'])
+            df.insert(0, 'experiment', experiment['experiment_name'])
+            df.insert(0, 'datetime', experiment['datetime'])
+            all_evals.append(df)
+        df_evaluations[dataset_name] = pd.concat(all_evals).set_index('experiment').sort_values(by='datetime')
+        # df.drop(['obj_frequencies', 'pred_frequencies', 'track_ratios', 'id_global_assignment'], axis=1, inplace=True)
+    return df_evaluations
+
+
 def save_results_mot(project, out_filename):
     results = project.get_results_trajectories()
     df = results_to_mot(results)
@@ -394,6 +412,7 @@ if __name__ == '__main__':
     group.add_argument('--run-experiments-yaml', type=str, help='run and evaluate experiments on all datasets described in yaml file')
     group.add_argument('--run-visualizations-yaml', type=str, help='visualize experiments described in yaml file')
     group.add_argument('--run-evaluation-yaml', type=str, help='re-evaluate all stored experiments')
+    group.add_argument('--run-benchmarking-yaml', type=str, help='show changes in benchmarking metrics for all experiments')
 
     args = parser.parse_args()
 
@@ -422,7 +441,7 @@ if __name__ == '__main__':
                 run_visualization(dataset['visualize_experiments'], experiments,
                                   dataset['gt'], dataset['video'],
                                   join(experiments_config['dir'], dataset_name,
-                                       time.strftime("%y%m%d_%H%M", time.localtime()) + '_visualization.webm'))
+                                       time.strftime("%y%m%d_%H%M", time.localtime()) + '_visualization.mp4'))
         sys.exit(0)
 
     if args.run_evaluation_yaml:
@@ -438,6 +457,17 @@ if __name__ == '__main__':
                 else:
                     run_evaluation(experiment['mot_trajectories_filename'], experiment['dataset']['gt'],
                                    join(experiment['dir'], 'evaluation.csv'))
+        sys.exit(0)
+
+    if args.run_benchmarking_yaml:
+        with open(args.run_benchmarking_yaml, 'r') as fr:
+            experiments_config = yaml.load(fr)
+        datasets_evaluations = load_evaluations(experiments_config['datasets'].keys(), experiments_config['dir'])
+        for dataset, evaluations in datasets_evaluations.items():
+            print('\n\n{} (higher is better)'.format(dataset))
+            print(evaluations.diff()[['datetime'] + metrics_higher_is_better])
+            print('\n{} (lower is better)'.format(dataset))
+            print(evaluations.diff()[['datetime'] + metrics_lower_is_better])
         sys.exit(0)
 
     if args.project:
