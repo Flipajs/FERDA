@@ -13,8 +13,8 @@ class Region(object):
 
     """
 
-    def __init__(self, data=None, frame=-1, id=-1, is_origin_interaction=False):
-        self.id_ = id
+    def __init__(self, data=None, frame=-1, region_id=None, is_origin_interaction=False):
+        self.id_ = region_id
         self.pts_ = None
         self.pts_rle_ = None
         self.centroid_ = np.array([-1, -1])
@@ -50,7 +50,6 @@ class Region(object):
 
         self.roi_ = None
         self.frame_ = frame
-        self.id_ = id
         self.contour_ = None
 
         # TODO: refactor + method...

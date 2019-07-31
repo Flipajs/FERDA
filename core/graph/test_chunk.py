@@ -1,22 +1,19 @@
 import unittest
 from chunk import Chunk
 from core.graph.graph_manager import GraphManager
-from core.project.project import dummy_project
+from core.project.project import Project
 from core.region.region import Region
 
 
 class TestChunk(unittest.TestCase):
     def setUp(self):
-        self.p = dummy_project()
-        self.gm = GraphManager(self.p, None)
-
+        self.p = Project()
+        # region ids:   0  1  2  3  4  5  6  7   8  9
         self.frames_ = [1, 2, 3, 3, 4, 5, 6, 90, 0, 12]
-        self.regions_ = [Region() for i in range(10)]
-        for r, f, i in zip(self.regions_, self.frames_, range(len(self.regions_))):
-            self.p.rm.append(r)
-            r.frame_ = f
-            r.id_ = i + 1
-
+        self.regions_ = [Region(None, frame) for frame in self.frames_]
+        for r in self.regions_:
+            self.p.rm.append(r)  # RegionManager.append takes care about id
+        self.gm = self.p.gm
         self.gm.add_vertices(self.regions_)
 
     # exceptions disabled in core/graph/chunk.py:16

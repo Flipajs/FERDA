@@ -117,8 +117,7 @@ def do_segmentation_part(project_dir, part_id, frame_start, frame_done_func=None
         # get segmented regions
         regions = get_filtered_regions(img, p, frame)
         for r in regions:
-            r.id_ = len(p.rm)
-            p.rm.append(r)
+            p.rm.append(r)  # RegionManager.append takes care about id
         if frame_done_func is not None:
             frame_done_func()
 

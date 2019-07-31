@@ -57,6 +57,12 @@ class RegionManager(UserList):
         added.region_contour_h5_dataset[len(self.regions_df):] = other.region_contour_h5_dataset[:len(other.regions_df)]
         return added
 
+    def append(self, item):
+        if item.id() is None:
+            item.id_ = len(self)
+        assert item.id() == len(self)
+        super(RegionManager, self).append(item)
+
     def extend(self, other):
         n_self = len(self.regions_df)
         n_other = len(other.regions_df)

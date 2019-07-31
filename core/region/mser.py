@@ -35,20 +35,20 @@ class Mser():
             intensity_threshold = 256
 
         self.mser.process_image(gray, intensity_threshold)
-        regions = self.mser.get_regions()
+        mser_regions = self.mser.get_regions()
 
         if prefiltered:
-            groups = get_region_groups_dict_(regions)
+            groups = get_region_groups_dict_(mser_regions)
             if use_margin_filter:
-                ids = margin_filter_dict_(regions, groups)
+                ids = margin_filter_dict_(mser_regions, groups)
             else:
-                ids = range(len(regions))
+                ids = range(len(mser_regions))
 
             if region_min_intensity is not None and region_min_intensity < 256:
 
                 # fix minI:
                 for r_id in ids:
-                    r = regions[r_id]
+                    r = mser_regions[r_id]
                     min_i_ = 255
 
                     if intensity_percentile > 0:
@@ -67,19 +67,17 @@ class Mser():
                     if intensity_percentile > 0:
                         r['intensity_percentile'] = np.percentile(dd, intensity_percentile)
 
-                ids = min_intensity_filter_dict_(regions, ids, region_min_intensity, intensity_percentile > 0)
+                ids = min_intensity_filter_dict_(mser_regions, ids, region_min_intensity, intensity_percentile > 0)
 
-            regions = [Region(regions[id], frame, id) for id in ids]
+            regions = [Region(mser_regions[i], frame) for i in ids]
         else:
-            regions = [Region(dr, frame, id) for dr, id in zip(regions, range(len(regions)))]
+            regions = [Region(dr, frame) for i, dr in enumerate(mser_regions)]
 
         if use_children_filter:
-            ids = range(len(regions))
-            ids = children_filter(regions, ids)
-
-            regions = [regions[i] for i in ids]
-
-        return regions
+            ids = children_filter(regions, range(len(regions)))
+            return [regions[i] for i in ids]
+        else:
+            return regions
 
     def set_max_area_relative(self, max_area_relative):
         self.mser.set_max_area(max_area_relative)
