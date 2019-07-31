@@ -12,13 +12,15 @@ Install Conda: https://conda.io.
 
 Setup Conda environment with GUI support:
 
-`$ conda env create -f conda_exported.yml` or tune `conda.yml`
+`$ conda env create -f conda_gui_exported.yml` or tune `conda_gui.yml`
 
 Setup Conda environment for batch processing (without pyqt4):
 
 `$ conda env create -f conda_cli_exported.yml` or tune `conda_cli.yml`
 
 ### Manual
+
+**This section is outdated.**
 
 * python 2.7.\*
 * [opencv](http://opencv.org) for python (pycv) builded with FFMPEG support (2.4.12)
@@ -31,7 +33,7 @@ Setup Conda environment for batch processing (without pyqt4):
 
 Activate environment if necessary:
 
-`$ conda activate ferda` or `$ conda activate ferda_noqt`
+`$ conda activate ferda_gui` or `$ conda activate ferda_cli`
 
 Start gui:
 

@@ -1,8 +1,8 @@
 # Conda environment file with direct project dependencies without secondary dependencies.
 # Won't probably work out of the box. First try the *_exported.yml version.
 #
-# create a new environment: conda env create -f conda_cli.yml
-name: ferda_cli
+# create a new environment: conda env create -f conda_gui.yml
+name: ferda_gui
 channels: 
     - conda-forge
     - ostrokach-forge  # graph-tool on linux
@@ -21,6 +21,7 @@ dependencies:
   - opencv=3.3  # opencv 3.4.1 has issue "OpenCV Error: Assertion failed (chunk.m_size <= 0xFFFF)" https://github.com/opencv/opencv/issues/11126
   - pandas
   - pillow
+  - pyqt=4
   - python=2.7
   - pyyaml
   - scikit-image
