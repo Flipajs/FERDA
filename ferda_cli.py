@@ -70,6 +70,11 @@ def run_tracking(project, force_recompute=False, reid_model_weights_path=None):
     if project.next_processing_stage == 'cardinality_classification':
         logger.info('run_tracking: cardinality classification')
         project.region_cardinality_classifier.classify_project(project)
+        project.next_processing_stage = 'fix_regions_orientation'
+        project.save()
+    if project.next_processing_stage == 'fix_regions_orientation':
+        logger.info('run_tracking: fix regions orientation')
+        project.fix_regions_orientation()
         project.next_processing_stage = 're-identification'
         project.save()
     if project.next_processing_stage == 're-identification':
