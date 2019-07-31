@@ -7,9 +7,21 @@ from core.log import LogCategories, ActionNames
 from core.region.region import Region
 from random import randint
 import warnings
+from intervals import IntInterval
 
 
-class Chunk():  # object
+class Chunk(object):  # object
+    """
+    Each tracklet has 2 track id sets.
+    P - ids are surely present
+    N - ids are surely not present
+
+    A - set of all animal ids.
+    When P.union(N) == A, tracklet is decided. When len(P) == 1, it is a tracklet with one id.
+
+    When len(P.intersection(N)) > 0 it is a CONFLICT
+
+    """
     def __init__(self, vertices_ids, id_, gm, color=None, origin_interaction=False):
         assert color is None or isinstance(color, np.ndarray)
         # if not isinstance(vertices_ids, list):
@@ -31,7 +43,7 @@ class Chunk():  # object
         self.origin_interaction = origin_interaction
 
         if not self.origin_interaction:
-            if len(vertices_ids) > 1:
+            if vertices_ids is not None and len(vertices_ids) > 1:
                 if vertices_ids[0] > 0:
                     v1 = gm.g.vertex(vertices_ids[0])
                     out_edges = [e for e in v1.out_edges()]
@@ -516,4 +528,19 @@ class Chunk():  # object
     def get_track_id(self):
         assert self.is_id_decided()
         return next(iter(self.P))
+
+    def get_interval(self):
+        return IntInterval([self.start_frame(), self.end_frame()])
+
+    def is_overlapping(self, other):
+        return self.get_interval().is_connected(other.get_interval())
+
+    def draw(self, rm, *args, **kwargs):
+        if len(self):
+            import matplotlib.pylab as plt
+            xy = np.array([region.centroid()[::-1] for region in self.r_gen(rm)])
+            plt.plot(xy[:, 0], xy[:, 1], *args, **kwargs)
+            plt.annotate('{}'.format(self.id()), xy=xy[0], textcoords='offset pixels', xytext=(10, 10), color='w')
+
+
 
