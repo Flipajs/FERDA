@@ -1,9 +1,15 @@
 import numpy as np
 import matplotlib.cm as cm
-from PyQt4 import QtGui
+import matplotlib.pylab as plt
+
+
+def generate_colors(count):
+    cm = plt.get_cmap('gist_rainbow')
+    return np.array([cm(1. * i / count) for i in range(count)]).astype(float)
 
 
 def get_q_color(id, ant_num):
+    from PyQt4 import QtGui
     r, g, b = get_color(id, ant_num)
     return QtGui.QColor(r, g, b)
 
