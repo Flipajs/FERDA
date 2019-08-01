@@ -49,6 +49,7 @@ class CompleteSetMatching:
         self.prototype_distance_threshold = np.inf  # ignore
         self.new_track_id = 0
         self.tracks = {}  # {track id: [tracklet, tracklet, ...] }
+        self.tracks_obj = {} # {track id: Track, ... }
         self.tracklets_2_tracks = {}  # {tracklet: track id, ...}
         self.prototypes = {}  # {track id: [TrackPrototype, TrackPrototype, ...], ...}
         self.merged_tracks = {}  # {old_merged_track_id: new_merged_track_id, ...}
@@ -587,6 +588,7 @@ class CompleteSetMatching:
     def register_tracklet_as_track(self, t):
         if t not in self.tracklets_2_tracks:
             self.tracks[self.new_track_id] = [t]
+            self.tracks_obj[self.new_track_id] = Track([t], self.p.gm, self.new_track_id)
             self.tracklets_2_tracks[t] = self.new_track_id
             self.prototypes[self.new_track_id] = self.get_tracklet_prototypes(t)
             t.P = set([self.new_track_id])
@@ -727,6 +729,7 @@ class CompleteSetMatching:
                 self.merge_tracks(track1_id, track2_id)
 
     def merge_tracks(self, track1_id, track2_id, decision_info='global_matching'):
+        self.tracks_obj[track1_id].merge(self.tracks_obj[track2_id])
         self.update_prototypes(self.prototypes[track1_id], self.prototypes[track2_id])
         for tracklet in self.tracks[track2_id]:
             self.tracklets_2_tracks[tracklet] = track1_id
@@ -737,6 +740,7 @@ class CompleteSetMatching:
         self.merged_tracks[track2_id] = track1_id
 
         del self.tracks[track2_id]
+        del self.tracks_obj[track2_id]
         del self.prototypes[track2_id]
 
     def sort_track_CSs(self, track_CSs):
@@ -902,17 +906,15 @@ class CompleteSetMatching:
             P_a = self.get_prototypes_similarity_matrix(cs1, cs2)
 
             if use_spatial_probabilities:
-
-                # 1 - ... it is minimum weight matching
                 P_s = self.get_spatial_matching_matrix(cs1, cs2, lower_bound=0.5)
-                P = 1 - np.multiply(P_a, P_s)
             else:
-                P = 1 - P_a
+                P_s = self.get_overlap_matrix(cs1, cs2)
 
-            assert np.sum(P < 0) == 0
+            # 1 - ... it is minimum weight matching
+            cost_matrix = 1 - np.multiply(P_a, P_s)
+            assert np.sum(cost_matrix < 0) == 0
 
-            row_ind, col_ind = linear_sum_assignment(P)
-
+            row_ind, col_ind = linear_sum_assignment(cost_matrix)
             for rid, cid in zip(row_ind, col_ind):
                 track_id_matches.append((cs1[rid], cs2[cid]))
 
@@ -993,6 +995,25 @@ class CompleteSetMatching:
             else:
                 return False
 
+
+    def get_overlap_matrix(self, cs1, cs2):
+        """
+        Return matrix that indicates whether tracks from two lists overlap or not.
+
+        :param cs1: list of tracks
+        :param cs2: list of tracks
+        :return: array, shape=(len(cs1), len(cs2)); 0 if overlapping, 1 if not
+        """
+
+        # should 0 if ta
+        # should be restrictive when spatial distance is big
+        P = np.ones((len(cs1), len(cs2)), dtype=np.float)
+        for i, track_id1 in enumerate(cs1):
+            for j, track_id2 in enumerate(cs2):
+                if track_id1 != track_id2:
+                    if self.tracks_obj[track_id1].is_overlapping(self.tracks_obj[track_id2]):
+                        P[i, j] = 0
+        return P
 
     def remove_shared_tracks(self, cs1, cs2):
         cs1 = set(cs1)
