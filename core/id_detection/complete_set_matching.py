@@ -2,22 +2,38 @@ import random
 import matplotlib.pyplot as plt
 import numpy as np
 import os
-from scipy.misc import imread
 from tqdm import tqdm
 import pickle
-from utils.video_manager import get_auto_video_manager
 import logging
 import itertools
+from sklearn.cluster import AgglomerativeClustering
+from scipy.misc import imread
+from scipy.optimize import linear_sum_assignment
+from scipy.spatial.distance import cdist, pdist, squareform
+import warnings
+
+from utils.rand_cmap import rand_cmap
+from utils.video_manager import get_auto_video_manager
+from track_prototype import TrackPrototype
+from core.graph.track import Track
+from core.graph.complete_set import CompleteSet
+from utils.visualization_utils import generate_colors
+
 
 logger = logging.getLogger(__name__)
 
 
 class CompleteSetMatching:
-    def __init__(self, project, lp, descriptors, quality_threshold=0.1, quality_threshold2=0.01, tracks={},
-                 tracklets_2_tracks={}, prototypes={}):
-        self.prototype_distance_threshold = np.inf # ignore
-        self.QUALITY_THRESHOLD = quality_threshold
-        self.QUALITY_THRESHOLD2 = quality_threshold2
+    def __init__(self, project, lp, descriptors, quality_threshold=0.1, quality_threshold2=0.01):
+        """
+        Merge tracklets into tracks by matching complete sets of tracklets.
+
+        :param project: Project instance
+        :param lp: LearningProcess instance
+        :param descriptors: re-identification descriptors list or pkl filename
+        :param quality_threshold:
+        :param quality_threshold2:
+        """
         self.p = project
         self.lp = lp
         self.get_probs = self.lp._get_tracklet_proba
@@ -27,20 +43,22 @@ class CompleteSetMatching:
                 self.descriptors = pickle.load(fr)
         else:
             self.descriptors = descriptors
+        self.QUALITY_THRESHOLD = quality_threshold
+        self.QUALITY_THRESHOLD2 = quality_threshold2
 
+        self.prototype_distance_threshold = np.inf  # ignore
         self.new_track_id = 0
-        self.tracks = tracks
-        self.tracklets_2_tracks = tracklets_2_tracks
-        self.prototypes = prototypes
-        self.tracks_link = {}
-
+        self.tracks = {}  # {track id: [tracklet, tracklet, ...] }
+        self.tracklets_2_tracks = {}  # {tracklet: track id, ...}
+        self.prototypes = {}  # {track id: [TrackPrototype, TrackPrototype, ...], ...}
+        self.merged_tracks = {}  # {old_merged_track_id: new_merged_track_id, ...}
         self.update_distances = []
         self.update_weights = []
 
-    def start_matching_process(self):
+    def run(self):
         track_CSs = self.find_track_cs()
 
-        qualities, track_CSs = self.sequential_matching(track_CSs)
+        track_CSs = self.sequential_matching(track_CSs)
 
         logger.debug('track complete sets: %s', str([sorted(CS) for CS in track_CSs]))
 
@@ -158,7 +176,7 @@ class CompleteSetMatching:
                             prohibited_ids[t_].append(list(test_t.P)[0])
 
             # 3) compute matching
-            P_a = self.prototypes_distance_probabilities(best_set, best_CS)
+            P_a = self.get_prototypes_similarity_matrix(best_set, best_CS)
 
             # TODO: add spatial cost as well
             # invert...
@@ -170,7 +188,6 @@ class CompleteSetMatching:
                         # ValueError: matrix contains invalid numeric entries was thrown in case of np.inf... so trying huge number instead..
                         P[i, j] = 1000000.0
 
-            from scipy.optimize import linear_sum_assignment
             assert np.sum(P < 0) == 0
             row_ind, col_ind = linear_sum_assignment(P)
 
@@ -213,7 +230,6 @@ class CompleteSetMatching:
         # self.single_track_assignment(best_CS, prototypes, tracklets_2_tracks)
 
         #### visualize and stats
-        from utils.rand_cmap import rand_cmap
 
         new_cmap = rand_cmap(self.new_track_id+1, type='bright', first_color_black=True, last_color_black=False)
         logger.debug('#IDs: {}'.format(self.new_track_id+1))
@@ -292,6 +308,32 @@ class CompleteSetMatching:
         #
         #     print quality
 
+    def assert_consistency(self, verbose=False):
+        tracklets_in_tracks = list(itertools.chain.from_iterable(self.tracks.itervalues()))
+        assert len(tracklets_in_tracks) == len(set(tracklets_in_tracks))  # no tracklet is used twice
+
+        for track_id, tracklets in self.tracks.iteritems():
+            for t in tracklets:
+                assert t.get_track_id() == track_id
+                if verbose:
+                    print('track_id {} P {}, N {}'.format(track_id, t.P, t.N))
+
+        tracklets_without_track = list(set(self.p.chm.chunk_gen()).difference(tracklets_in_tracks))
+        for t in tracklets_without_track:
+            assert not t.P
+            if verbose:
+                print('tracklet_id {} P {}, N {}'.format(t.id(), t.P, t.N))
+
+    def to_complete_sets(self, complete_set_list):
+        tracks_obj = {track_id: Track(tracklets, self.p.gm, track_id)
+                      for track_id, tracklets in self.tracks.iteritems()}
+        complete_sets = []
+        for cs in complete_set_list:
+            cs_tracks = [tracks_obj[track_id] for track_id in cs]
+            complete_sets.append(CompleteSet(cs_tracks))
+        complete_sets = sorted(complete_sets, key=lambda x: x.start_frame())
+        return complete_sets
+
     def remap_ids_from_0(self, support):
         """
         Remaps track ids in tracklets form a sequence 0, 1, 2, 3,...
@@ -366,7 +408,7 @@ class CompleteSetMatching:
                 continue
 
             if t not in tracklets_prototypes:
-                tracklets_prototypes[t.id()] = self.get_track_prototypes(t)
+                tracklets_prototypes[t.id()] = self.get_tracklet_prototypes(t)
 
             best_p, best_track = self.find_best_track_for_tracklet(best_CS, probs2, prototypes, t, tracklets_prototypes)
 
@@ -384,7 +426,6 @@ class CompleteSetMatching:
         tracklets = np.array(tracklets)
         ids = np.argsort(-probs)
         best_track_ids = np.array(best_track_ids)
-        import warnings
 
         while len(probs):
             id_ = np.argmax(probs)
@@ -435,45 +476,35 @@ class CompleteSetMatching:
 
     def sequential_matching(self, CSs):
         """
-        Try to match consecutive (nearest in time) complete sets of tracklets.
+        Try to match consecutive (nearest in time) complete sets.
 
-        :param CSs:
-        :return: qualities, track_CSs
+        :param CSs: list of complete sets of tracks; list of lists of track ids,
+                 e.g. [[141, 404, 1, 93, 6], [141, 93, 1, 404, 6], ...]
+                      [complete set 0, complete set 1, ...]
+        :return: track_CSs
         """
         logger.info("beginning of sequential matching")
 
+        # init with the first complete set
         track_CSs = [[]]
-
-        for i, track in enumerate(CSs[0]):
-            # new_track_id = self.register_tracklet_as_track(t)
-            for t in self.tracks[track]:
+        for i, track_id in enumerate(CSs[0]):
+            for t in self.tracks[track_id]:
                 t.id_decision_info = 'sequential_matching'
+            track_CSs[-1].append(track_id)
 
-            track_CSs[-1].append(track)
-
-        qualities = []
         for i in tqdm(range(len(CSs) - 1), desc='sequential matching'):
             logger.debug("CS {}, CS {}".format(i, i + 1))
 
-            # done previously...
-            # # first create new virtual tracks and their prototypes for CSs[i+1] which are not already in tracks
-            # for track in CSs[i + 1]:
-            #     if t in self.tracklets_2_tracks:
-            #         continue
-            #
-            #     self.register_tracklet_as_track(t)
+            self.update_merged_tracks(CSs, i)
+            self.update_merged_tracks(CSs, i + 1)
 
-            self.update_tracks_from_links(CSs, i)
-            self.update_tracks_from_links(CSs, i+1)
-
-            # perm, quality = self.cs2cs_matching_descriptors_and_spatial(CSs[i], CSs[i+1])
-            perm, quality = self.cs2cs_matching_prototypes_and_spatial(CSs[i], CSs[i + 1])
-            logger.debug('quality {}'.format(quality))
+            track_ids_matches, quality_min, quality_avg = self.cs2cs_matching_prototypes_and_spatial(CSs[i], CSs[i + 1])
+            logger.debug('quality min {}, avg {}'.format(quality_min, quality_avg))
 
             # cs1_max_frame = 0
             # cs2_min_frame = np.inf
             # dividing_frame = 0
-            # for (track1, track2) in perm:
+            # for (track1, track2) in track_ids_matches:
             #     if track1 == track2:
             #         break
             #
@@ -487,12 +518,12 @@ class CompleteSetMatching:
             # TODO: threshold 1-
 
             not_same = 0
-            c = [0. + 1 - quality[1], quality[1], 0., 0.2]
+            c = [0. + 1 - quality_avg, quality_avg, 0., 0.2]
             # propagate IDS if quality is good enough:
-            if quality[1] > self.QUALITY_THRESHOLD:
+            if quality_avg > self.QUALITY_THRESHOLD:
                 # TODO: transitivity? when t1 -> t2 assignment uncertain, look on ID probs for t2->t3 and validate wtih t1->t3
 
-                for (track1, track2) in perm:
+                for (track1, track2) in track_ids_matches:
                     # print "[{} |{}| (te: {})] -> {} |{}| (ts: {})".format(track1, len(track1), self.track_end_frame(track1),
                     #                                                       track2, len(track2), self.track_start_frame(track2))
                     logger.debug("[{} -> {}]".format(track1, track2))
@@ -504,7 +535,7 @@ class CompleteSetMatching:
                 # c = [1., 0.,0.,0.7]
 
                 track_CSs.append([])
-                for pair in perm:
+                for pair in track_ids_matches:
                     track2 = pair[1]
                     # if len(t.P) == 0:
                     #     t.P = set([self.new_track_id])
@@ -512,14 +543,12 @@ class CompleteSetMatching:
 
                     track_CSs[-1].append(track2)
 
-                for pair in perm:
+                for pair in track_ids_matches:
                     if pair[0] != pair[1]:
                         not_same += 1
 
             # plt.plot([dividing_frame, dividing_frame], [-5, -5 + 4.7 * quality[1]], c=c)
             # plt.plot([dividing_frame, dividing_frame], [0, self.new_track_id - 1 + not_same], c=c)
-
-            qualities.append(quality)
 
         tracks_unassigned_len = 0
         tracks_unassigned_num = 0
@@ -535,15 +564,21 @@ class CompleteSetMatching:
                      len(self.tracks), len(self.tracklets_2_tracks), tracks_unassigned_num,
                      tracks_unassigned_len, num_prototypes))
 
-        return qualities, track_CSs
+        return track_CSs
 
-    def update_tracks_from_links(self, CSs, i):
+    def update_merged_tracks(self, CSs, i):
+        """
+        Update track ids to reflect merged tracks.
+
+        :param CSs: list of complete sets
+        :param i: idx of complete set
+        """
         for j in range(len(CSs[i])):
             track_id = CSs[i][j]
             if track_id not in self.tracks:
                 while True:
-                    if track_id in self.tracks_link:
-                        track_id = self.tracks_link[track_id]
+                    if track_id in self.merged_tracks:
+                        track_id = self.merged_tracks[track_id]
                     else:
                         break
 
@@ -553,7 +588,7 @@ class CompleteSetMatching:
         if t not in self.tracklets_2_tracks:
             self.tracks[self.new_track_id] = [t]
             self.tracklets_2_tracks[t] = self.new_track_id
-            self.prototypes[self.new_track_id] = self.get_track_prototypes(t)
+            self.prototypes[self.new_track_id] = self.get_tracklet_prototypes(t)
             t.P = set([self.new_track_id])
 
             self.new_track_id += 1
@@ -589,6 +624,14 @@ class CompleteSetMatching:
             if t.is_single() and t != tracklet:
                 t.N.add(track_id)
 
+    def draw_complete_sets(self, css):
+        for i, (cs, color) in enumerate(zip(css, generate_colors(len(css)))):
+            for j, t in enumerate(cs):
+                intervals = t.get_temporal_intervals()
+                for k, start_end in enumerate(intervals):
+                    plt.plot(start_end, [t.id(), t.id()], c=color, alpha=0.5, label=i if j == 0 and k == 0 else "")
+        plt.legend()
+
     def tracks_CS_matching(self, track_CSs):
         """
         1. get CS of tracks (we already have them in track_CSs from sequential process.
@@ -601,10 +644,12 @@ class CompleteSetMatching:
         :param track_CSs: complete sets of tracklets; list of lists of tracklet ids,
                  e.g. [[141, 404, 1, 93, 6], [141, 93, 1, 404, 6], ...]
         """
+
         logger.info("beginning of global matching")
         updated = True
         with tqdm(total=len(track_CSs), desc='global matching') as pbar:
             while len(track_CSs) > 1 and updated:
+                _, conflicts = self.p.chm.get_conflicts(len(self.p.animals), verbose=True)
                 updated = False
 
                 # 2. sort CS by sum of track lengths
@@ -612,69 +657,69 @@ class CompleteSetMatching:
 
                 # 3.
                 for i in range(len(ordered_CSs)-1):
+                    self.assert_consistency()
                     pivot = ordered_CSs[i]
 
                     best_quality = 0
-                    best_perm = None
+                    best_track_id_pairs = None
                     best_CS = None
 
                     for CS in ordered_CSs[i+1:]:
-                        perm, quality = self.cs2cs_matching_prototypes_and_spatial(
+                        track_id_pairs, quality_min, quality_avg = self.cs2cs_matching_prototypes_and_spatial(
                             pivot, CS, use_spatial_probabilities=False
                         )
 
-                        if quality[1] > best_quality:
-                            best_quality = quality[1]
-                            best_perm = perm
+                        if quality_avg > best_quality:
+                            best_quality = quality_avg
+                            best_track_id_pairs = track_id_pairs
                             best_CS = CS
 
                     if best_quality > self.QUALITY_THRESHOLD:
                         track_CSs.remove(best_CS)
-                        update_success = self.update_all_track_CSs(best_perm, track_CSs)
+                        update_success = self.update_all_track_CSs(best_track_id_pairs, track_CSs)
                         if update_success:
-                            self.merge_track_CSs(best_perm)
-                            logger.debug("Best track CS match accepted. {}, {}".format(best_perm, best_quality))
+                            self.merge_track_CSs(best_track_id_pairs)
+                            logger.debug("Best track CS match accepted. {}, {}".format(best_track_id_pairs, best_quality))
                             updated = True
                         else:
                             # conflict
                             track_CSs.append(best_CS)  # add the best_CS back
-                            logger.debug("Best track CS match is in conflict. {}, {}".format(best_perm, best_quality))
+                            logger.debug("Best track CS match is in conflict. {}, {}".format(best_track_id_pairs, best_quality))
                         pbar.update()
                         break
                     else:
-                        logger.debug("Best track CS match rejected. {}, {}".format(perm, quality))
+                        logger.debug("Best track CS match rejected. {}, min {} avg {}".format(track_id_pairs, quality_min, quality_avg))
 
-    def update_all_track_CSs(self, pair, track_CSs):
+    def update_all_track_CSs(self, track_id_pairs, complete_sets):
         """
         Replace track references in complete sets to respect a complete sets merge.
 
-        :param pair: pair of merged complete sets, the first stays, the second gets replaced
+        :param track_id_pairs: pair of track ids, the first stays, the second gets replaced
                      list of tuples, e.g. [(1, 416), ...]
-        :param track_CSs: complete sets
-                          list of lists of tracklet ids, e.g. [[141, 404, 1, 93, 6], [141, 93, 1, 404, 6], ...]
+        :param complete_sets: list of lists of tracklet ids, e.g. [[141, 404, 1, 93, 6], [141, 93, 1, 404, 6], ...]
         :return False on conflict, True when CSs update finished ok
         """
-        for CS_for_update in track_CSs:
-            CS_for_update_ = CS_for_update[:]
-            size_before = len(CS_for_update_)
-            for track_id1, track_id2 in pair:
-                for i, track_id in enumerate(CS_for_update_):
+        for cs in complete_sets:
+            cs_copy = cs[:]
+            size_before = len(cs_copy)
+            for track_id1, track_id2 in track_id_pairs:
+                for i, track_id in enumerate(cs_copy):
                     if track_id == track_id2:
-                        CS_for_update_[i] = track_id1
+                        cs_copy[i] = track_id1
 
             # TODO: this means conflict...
-            if len(set(CS_for_update_)) != size_before:
-                logger.debug("CONFLICT {}".format(CS_for_update_))
+            if len(set(cs_copy)) != size_before:
+                logger.debug("CONFLICT {}".format(cs_copy))
                 return False
             else:
-                CS_for_update[:] = CS_for_update_
+                cs[:] = cs_copy
 
         return True
-            # assert len(set(CS_for_update)) == size_before
+            # assert len(set(cs)) == size_before
 
-    def merge_track_CSs(self, perm):
+    def merge_track_CSs(self, track_id_pairs):
         # keep attention, here we have tracks, not tracklets...
-        for (track1_id, track2_id) in perm:
+        for (track1_id, track2_id) in track_id_pairs:
             logger.debug("{} -> {}".format(track1_id, track2_id))
 
             # if merge...
@@ -689,7 +734,7 @@ class CompleteSetMatching:
             tracklet.P = set([track1_id])
             tracklet.id_decision_info = decision_info
 
-        self.tracks_link[track2_id] = track1_id
+        self.merged_tracks[track2_id] = track1_id
 
         del self.tracks[track2_id]
         del self.prototypes[track2_id]
@@ -718,49 +763,43 @@ class CompleteSetMatching:
 
     def find_track_cs(self):
         """
-        Find complete sets of tracklets.
+        Find complete sets of tracks / tracklets.
 
-        Complete set C is set of tracklets where |C| = number of objects. Then it is guaranteed that no object is
+        Complete set C is set of tracklets/tracks where |C| = number of objects. Then it is guaranteed that no object is
         missing in the set.
 
-        :return: complete sets of tracklets; list of lists of tracklet ids,
+        :return: complete sets of tracks; list of lists of track ids,
                  e.g. [[141, 404, 1, 93, 6], [141, 93, 1, 404, 6], ...]
         """
         for t in self.p.chm.tracklet_gen():
             if t.is_single():
                 self.register_tracklet_as_track(t)
 
-        unique_tracklets = set()
         CSs = []
         vm = get_auto_video_manager(self.p)
         total_frame_count = vm.total_frame_count()
 
         frame = 0
-        i = 0
         old_frame = 0
         logger.info("analysing project, searching for complete sets")
         with tqdm(total=total_frame_count, desc='searching for complete sets') as pbar:
             while True:
-                group = self.p.chm.tracklets_in_frame(frame)
-                if len(group) == 0:
+                tracklets = self.p.chm.tracklets_in_frame(frame)
+                if len(tracklets) == 0:
                     break
 
-                singles_group = filter(lambda x: x.is_single(), group)
+                single_tracklets = filter(lambda x: x.is_single(), tracklets)
 
-                if len(singles_group) == len(self.p.animals) and min([len(t) for t in singles_group]) >= 1:
-                    # tracklets to tracks
-                    singles_group = map(lambda x: self.tracklets_2_tracks[x], singles_group)
-                    if len(CSs) == 0 or singles_group != CSs[-1]:
-                        CSs.append(singles_group)
+                if len(single_tracklets) == len(self.p.animals) and min([len(t) for t in single_tracklets]) >= 1:
+                    # found a complete set
+                    cs_tracks = map(lambda x: self.tracklets_2_tracks[x], single_tracklets)
+                    if len(CSs) == 0 or cs_tracks != CSs[-1]:
+                        CSs.append(cs_tracks)
 
-                    for t in singles_group:
-                        unique_tracklets.add(t)
-
-                    frame = min([self.track_end_frame(t) for t in singles_group]) + 1
+                    frame = min([self.track_end_frame(t) for t in cs_tracks]) + 1
                 else:
-                    frame = min([t.end_frame() for t in group]) + 1
+                    frame = min([t.end_frame() for t in tracklets]) + 1
 
-                i += 1
                 pbar.update(frame - old_frame)
                 old_frame = frame
 
@@ -781,25 +820,24 @@ class CompleteSetMatching:
         # register matched tracklets to have the same virtual ID
         perm = []
 
-        cs1, cs2, cs_shared = self.remove_straightforward_tracklets(cs1, cs2)
+        cs1, cs2, cs_shared = self.remove_shared_tracks(cs1, cs2)
         if len(cs1) == 1:
             perm.append((cs1[0], cs2[0]))
             quality = [1.0, 1.0]
         else:
-            P_a = self.appearance_probabilities(cs1, cs2)
-            P_s = self.spatial_probabilities(cs1, cs2, lower_bound=0.5)
+            P_a = self.get_appearance_matching_matrix(cs1, cs2)
+            P_s = self.get_spatial_matching_matrix(cs1, cs2, lower_bound=0.5)
 
             # 1 - ... it is minimum weight matching
-            P = 1 - np.multiply(P_a, P_s)
+            cost_matrix = 1 - np.multiply(P_a, P_s)
 
-            from scipy.optimize import linear_sum_assignment
-            row_ind, col_ind = linear_sum_assignment(P)
+            row_ind, col_ind = linear_sum_assignment(cost_matrix)
 
             for rid, cid in zip(row_ind, col_ind):
                 perm.append((cs1[rid], cs2[cid]))
 
-            x_ = 1 - P[row_ind, col_ind]
-            quality = (x_.min(), x_.sum() / float(len(x_)))
+            probs = 1 - cost_matrix[row_ind, col_ind]
+            quality = (probs.min(), probs.sum() / float(len(probs)))
 
         for t in cs_shared:
             perm.append((t, t))
@@ -814,18 +852,17 @@ class CompleteSetMatching:
         # register matched tracklets to have the same virtual ID
         perm = []
 
-        cs1, cs2, cs_shared = self.remove_straightforward_tracklets(cs1, cs2)
+        cs1, cs2, cs_shared = self.remove_shared_tracks(cs1, cs2)
         if len(cs1) == 1:
             perm.append((cs1[0], cs2[0]))
             quality = [1.0, 1.0]
         else:
             P_a = self.appearance_distance_probabilities(cs1, cs2)
-            P_s = self.spatial_probabilities(cs1, cs2, lower_bound=0.5)
+            P_s = self.get_spatial_matching_matrix(cs1, cs2, lower_bound=0.5)
 
             # 1 - ... it is minimum weight matching
             P = 1 - np.multiply(P_a, P_s)
 
-            from scipy.optimize import linear_sum_assignment
             row_ind, col_ind = linear_sum_assignment(P)
 
             for rid, cid in zip(row_ind, col_ind):
@@ -840,43 +877,53 @@ class CompleteSetMatching:
         return perm, quality
 
     def cs2cs_matching_prototypes_and_spatial(self, cs1, cs2, use_spatial_probabilities=True):
-        perm = []
-        cs1, cs2, cs_shared = self.remove_straightforward_tracklets(cs1, cs2)
-        # assert len(cs1) == len(cs2)
+        """
+        Match two complete sets of tracks based on similarity and spatial distances (optional).
+
+        :param cs1: complete set of tracks
+        :param cs2: complete set of tracks
+        :param use_spatial_probabilities: bool
+        :return: (track ids matches, quality of match)
+            track ids matches: [(track id from cs1, track id from cs2), (...), ...]
+            quality_min: minimum match probability
+            quality_avg: mean match probability
+        """
+        track_id_matches = []
+        quality_min = 1.
+        quality_avg = 1.
+        cs1, cs2, cs_shared = self.remove_shared_tracks(cs1, cs2)
 
         if len(cs1) == 1:
-            perm.append((cs1[0], cs2[0]))
-            quality = (1.0, 1.0)
+            track_id_matches.append((cs1[0], cs2[0]))
         elif len(cs1) == 0:
-            quality = (1.0, 1.0)
+            pass
         else:
             assert len(cs2) > 1
-            P_a = self.prototypes_distance_probabilities(cs1, cs2)
+            P_a = self.get_prototypes_similarity_matrix(cs1, cs2)
 
             if use_spatial_probabilities:
-                P_s = self.spatial_probabilities(cs1, cs2, lower_bound=0.5)
 
                 # 1 - ... it is minimum weight matching
+                P_s = self.get_spatial_matching_matrix(cs1, cs2, lower_bound=0.5)
                 P = 1 - np.multiply(P_a, P_s)
             else:
                 P = 1 - P_a
-
-            from scipy.optimize import linear_sum_assignment
 
             assert np.sum(P < 0) == 0
 
             row_ind, col_ind = linear_sum_assignment(P)
 
             for rid, cid in zip(row_ind, col_ind):
-                perm.append((cs1[rid], cs2[cid]))
+                track_id_matches.append((cs1[rid], cs2[cid]))
 
-            x_ = 1 - P[row_ind, col_ind]
-            quality = (x_.min(), x_.sum() / float(len(x_)))
+            probs = 1 - cost_matrix[row_ind, col_ind]  # back to similarity "probability"
+            quality_min = probs.min()
+            quality_avg = probs.mean()
 
         for t in cs_shared:
-            perm.append((t, t))
+            track_id_matches.append((t, t))
 
-        return perm, quality
+        return track_id_matches, quality_min, quality_avg
 
     def track_end_frame(self, track):
         return max([t.end_frame() for t in self.tracks[track]])
@@ -894,26 +941,26 @@ class CompleteSetMatching:
         start_track = min(self.tracks[track], key=lambda x: x.start_frame())
         return start_track.start_node()
 
-    def spatial_probabilities(self, cs1, cs2, lower_bound=0.5):
+    def get_spatial_matching_matrix(self, cs1, cs2, lower_bound=0.5):
         # should be neutral if temporal distance is too big
         # should be restrictive when spatial distance is big
         max_d = self.p.solver_parameters.max_edge_distance_in_ant_length * self.p.stats.major_axis_median
         P = np.zeros((len(cs1), len(cs2)), dtype=np.float)
 
-        for i, track1 in enumerate(cs1):
-            t1_ef = self.track_end_frame(track1)
-            for j, track2 in enumerate(cs2):
-                if track1 == track2:
+        for i, track_id1 in enumerate(cs1):
+            track1_end_frame = self.track_end_frame(track_id1)
+            for j, track_id2 in enumerate(cs2):
+                if track_id1 == track_id2:
                     prob = 1.0
                 else:
                     # TODO: solve it even for tracks not in sequence
-                    temporal_d = self.track_start_frame(track2) - t1_ef
+                    temporal_d = self.track_start_frame(track_id2) - track1_end_frame
 
                     if temporal_d < 0:
                         prob = -np.inf
                     else:
-                        t1_end_r = self.p.gm.region(self.track_end_node(track1))
-                        t2_start_r = self.p.gm.region(self.track_start_node(track2))
+                        t1_end_r = self.p.gm.region(self.track_end_node(track_id1))
+                        t2_start_r = self.p.gm.region(self.track_start_node(track_id2))
                         spatial_d = np.linalg.norm(t1_end_r.centroid() - t2_start_r.centroid())
 
                         # should be there any weight?
@@ -939,14 +986,21 @@ class CompleteSetMatching:
 
         return P
 
-    def remove_straightforward_tracklets(self, cs1, cs2):
+    def are_tracks_overlapping(self, track_id1, track_id2):
+        if track1_start_frame < track2_start_frame:
+            if track1_end_frame >= track2_start_frame:
+                return True
+            else:
+                return False
+
+
+    def remove_shared_tracks(self, cs1, cs2):
         cs1 = set(cs1)
         cs2 = set(cs2)
         shared = cs1.intersection(cs2)
-
         return list(cs1.difference(shared)), list(cs2.difference(shared)), list(shared)
 
-    def appearance_probabilities(self, cs1, cs2):
+    def get_appearance_matching_matrix(self, cs1, cs2):
         # ...thoughts...
         # get probabilities for each tracklet
         # ? just probabilities? Or "race conditions term" included ?
@@ -981,7 +1035,6 @@ class CompleteSetMatching:
                 descriptors.append(self.descriptors[r_id])
 
         if len(descriptors) == 0:
-            import warnings
             warnings.warn("descriptors missing for t_id: {}, creating zero vector".format(tracklet.id()))
 
             descriptors.append(np.zeros(32, ))
@@ -997,7 +1050,6 @@ class CompleteSetMatching:
 
     def appearance_distance_probabilities(self, cs1, cs2):
         # returns distances to mean descriptors
-        from scipy.spatial.distance import cdist
 
         cs1_descriptors = []
         for i, t1 in enumerate(cs1):
@@ -1098,26 +1150,23 @@ class CompleteSetMatching:
             else:
                 ps1[j].update(p2)
 
-    def prototypes_distance_probabilities(self, cs1, cs2):
-        P = np.zeros((len(cs1), len(cs2)))
-        # P2 = np.zeros((len(cs1), len(cs2)))
+    def get_prototypes_similarity_matrix(self, cs1, cs2):
+        """
+        Compute matrix of probabilities that two tracks from two complete sets belong to the same track.
 
-        # assert len(cs1) == len(cs2)
-
+        :param cs1: complete set
+        :param cs2: complete set
+        :return: array, shape=len(cs1), len(cs2):
+        """
+        probabilities = np.zeros((len(cs1), len(cs2)))
         for j, track2 in enumerate(cs2):
             for i, track1 in enumerate(cs1):
-                prob = prob_prototype_represantion_being_same_id_set(self.prototypes[track1], self.prototypes[track2])
-                # prob = self.prototypes_match_probability(prototypes[track1], prototypes[track2])
-
-                P[i, j] = prob
-                # P2[i, j] = p
-                # P2[j, i] = p
-
-        return P
+                probabilities[i, j] = get_probability_that_prototypes_are_same_tracks(
+                    self.prototypes[track1], self.prototypes[track2])
+        return probabilities
 
     def desc_clustering_analysis(self):
         from sklearn.cluster import KMeans
-        import numpy as np
 
         Y = []
         X = []
@@ -1163,25 +1212,22 @@ class CompleteSetMatching:
 
         kmeans.cluster_centers_
 
-    def get_track_prototypes(self, tracklet, n=5, debug=False):
+    def get_tracklet_prototypes(self, tracklet, n_clusters_aglomerative=5, visualize=False):
+        """
+        Create descriptor prototypes for a tracklet.
+
+        :param tracklet: Chunk
+        :param n_clusters_aglomerative: number of clusters for AgglomerativeClustering
+        :param visualize: bool, visualize prototypes for debugging purposes
+        :return: list of TrackPrototype
+        """
         linkages = ['average', 'complete', 'ward']
         linkage = linkages[0]
         connectivity = None
 
-        from sklearn.cluster import AgglomerativeClustering
-
-        # for given GT ID
-        # for id_ in range(6):
         X = []
         r_ids = []
-
         r_ids_arr = tracklet.rid_gen()
-
-        # r_ids_arr = []
-        # import os
-        # for r_id in os.listdir('/Users/flipajs/Documents/wd/FERDA/CNN_desc_training_data_Cam1/'+str(id_)+'/'):
-        #     r_id = int(r_id[:-4])
-        #     r_ids_arr.append(r_id)
 
         for r_id in r_ids_arr:
             if r_id in self.descriptors:
@@ -1200,67 +1246,59 @@ class CompleteSetMatching:
 
         # we need at least 2 samples for aglomerative clustering...
         if X.shape[0] > 1:
-            n = min(n, X.shape[0])
+            n_clusters_aglomerative = min(n_clusters_aglomerative, X.shape[0])
 
             model = AgglomerativeClustering(linkage=linkage,
                                             connectivity=connectivity,
-                                            n_clusters=n)
+                                            n_clusters=n_clusters_aglomerative)
             y = model.fit_predict(X)
         else:
             y = np.array([0])
 
         prototypes = []
-        from track_prototype import TrackPrototype
-
         # TODO: set this properly!
         std_eps = 1e-6
-        for i in range(n):
+        for i in range(n_clusters_aglomerative):
             ids = y == i
             weight = np.sum(ids)
             if weight:
                 desc = np.mean(X[ids, :], axis=0)
-                # from sklearn.covariance import LedoitWolf
-                # lw = LedoitWolf()
-                # lw.fit(X[ids, :])
-                # cov = lw.covariance_
-                # cov_ = np.cov(X[ids, :].T)
-
                 # this is for case when weight = 1, thus std = 0
-                from scipy.spatial.distance import cdist, pdist, squareform
                 # TODO: np.mean(cdist([desc], X)**2)**0.5
                 d_std = np.mean(cdist([desc], X))
                 # std = max(np.mean(np.std(X[ids, :], axis=0)), std_eps)
                 prototypes.append(TrackPrototype(desc, d_std, weight))
 
-        if debug:
-            # print np.histogram(y, bins=n)
-
-            num_examples = 5
-            fig, axarr = plt.subplots(num_examples, n)
-            axarr = axarr.flatten()
-
-            for i in range(n):
-                for j, r_id in enumerate(np.random.choice(r_ids[y == i], min(num_examples, np.sum(y == i)))):
-                    for k in range(6):
-                        img = np.random.rand(50, 50, 3)
-                        try:
-                            img = imread('/Users/flipajs/Documents/wd/FERDA/CNN_desc_training_data_Cam1/' + str(k) + '/' + str(
-                                r_id) + '.jpg')
-                            break
-                        except:
-                            pass
-
-                    axarr[j * n + i].imshow(img)
-                    if j == 0:
-                        axarr[j * n + i].set_title(str(np.sum(y == i)))
-
-            for i in range(n*num_examples):
-                axarr[i].axis('off')
-
-            plt.suptitle(len(y))
-            plt.show()
+        if visualize:
+            self.__visualize_prototypes(y, r_ids, n_clusters_aglomerative)
 
         return prototypes
+
+    @staticmethod
+    def __visualize_prototypes(y, r_ids, n_clusters_aglomerative):
+        # print np.histogram(y, bins=n_clusters_aglomerative)
+        num_examples = 5
+        fig, axes = plt.subplots(num_examples, n_clusters_aglomerative)
+        axes = axes.flatten()
+        for i in range(n_clusters_aglomerative):
+            for j, r_id in enumerate(np.random.choice(r_ids[y == i], min(num_examples, np.sum(y == i)))):
+                for k in range(6):
+                    img = np.random.rand(50, 50, 3)
+                    try:
+                        img = imread(
+                            '/Users/flipajs/Documents/wd/FERDA/CNN_desc_training_data_Cam1/' + str(k) + '/' + str(
+                                r_id) + '.jpg')
+                        break
+                    except:
+                        pass
+
+                axes[j * n_clusters_aglomerative + i].imshow(img)
+                if j == 0:
+                    axes[j * n_clusters_aglomerative + i].set_title(str(np.sum(y == i)))
+        for i in range(n_clusters_aglomerative * num_examples):
+            axes[i].axis('off')
+        plt.suptitle(len(y))
+        plt.show()
 
     def dist(self, r1, r2):
         if r1 is None:
@@ -1546,15 +1584,19 @@ def test_descriptors_distance(descriptors, n=2000):
     plt.show()
 
 
-def prob_prototype_represantion_being_same_id_set(prot1, prot2):
+def get_probability_that_prototypes_are_same_tracks(prot1, prot2):
     p1 = prototypes_distribution_probability(prot1, prot2)
     p2 = prototypes_distribution_probability(prot2, prot1)
-
-    p = (p1 + p2) / 2.
-    return p
+    return (p1 + p2) / 2.
 
 
 def prototypes_distribution_probability(prot1, prot2):
+    """
+
+    :param prot1: list of TrackPrototype
+    :param prot2: list of TrackPrototype
+    :return:
+    """
     from scipy.stats import norm
 
     W1 = float(sum([p1.weight for p1 in prot1]))
@@ -1601,7 +1643,7 @@ def do_complete_set_matching(project):
 
     # csm.solve_interactions()
     # csm.solve_interactions_regression()
-    csm.start_matching_process()
+    csm.run()
     logger.info('do_complete_set_matching finished')
 
 
@@ -1626,7 +1668,7 @@ def load_dense_sections_tracklets_test():
 
 def do_complete_set_matching_new(csm, dense_sections_tracklets):
     csm.solve_interactions_regression(dense_sections_tracklets)
-    csm.start_matching_process()
+    csm.run()
 
 
 if __name__ == '__main__':

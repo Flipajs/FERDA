@@ -9,7 +9,7 @@ from core.id_detection.learning_process import LearningProcess
 from core.id_detection.complete_set_matching import CompleteSetMatching
 from os.path import join
 import numpy as np
-from core.id_detection.complete_set_matching import prob_prototype_represantion_being_same_id_set
+from core.id_detection.complete_set_matching import get_probability_that_prototypes_are_same_tracks
 import itertools
 import tqdm
 import utils.gt.gt as gt
@@ -22,7 +22,7 @@ def prototype_distances(tracklets, prototypes):
     
     tp = tracklet_prototypes_sorted_with_id
     num = len(tp)
-    prob_ij = Parallel(n_jobs=-1, verbose=10)(delayed(prob_prototype_represantion_being_same_id_set)(tp[i][1], tp[j][1]) for i, j in 
+    prob_ij = Parallel(n_jobs=-1, verbose=10)(delayed(get_probability_that_prototypes_are_same_tracks)(tp[i][1], tp[j][1]) for i, j in
                                               list(itertools.product(range(num), range(num))))
     m = np.zeros((num, num))
     for prob, (i, j) in zip(prob_ij, itertools.product(range(num), range(num))):
@@ -38,7 +38,7 @@ def get_distance_matrix(project_path, gt_path):
     ground_truth.load(gt_path)
     
     tracklets = [t for t in p.chm.chunk_gen() if t.is_single()]
-    prototypes = [csm.get_track_prototypes(t) for t in tracklets]
+    prototypes = [csm.get_tracklet_prototypes(t) for t in tracklets]
     gt_matches = ground_truth.match_on_data(p, max_d=100)
 
     # add gt id to tracklets
