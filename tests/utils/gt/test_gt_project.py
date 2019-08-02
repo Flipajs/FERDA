@@ -1,5 +1,5 @@
 from utils.gt.gt import GT
-from utils.gt.gt_project import GtProjectMixin
+from utils.gt.gt_project import GtProjectMixin, GtDummyReIdMixin
 from core.project.project import Project
 import unittest
 from numpy.testing import assert_array_almost_equal

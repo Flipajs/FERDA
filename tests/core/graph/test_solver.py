@@ -1,7 +1,7 @@
 import unittest
 
 from core.graph.solver import Solver
-from core.project.project import dummy_project
+from core.project.project import Project
 from core.graph.graph_manager import GraphManager
 from core.region.region import Region
 from core.graph.chunk_manager import ChunkManager
@@ -10,7 +10,7 @@ from core.graph.chunk_manager import ChunkManager
 class TestSolver(unittest.TestCase):
 
     def setUp(self):
-        self.p = dummy_project()
+        self.p = Project()
         self.p.chm = ChunkManager()
         self.p.gm = GraphManager(self.p, None)
         self.solver = Solver(self.p)
@@ -22,8 +22,6 @@ class TestSolver(unittest.TestCase):
         for r, f, i in zip(self.regions_, self.frames_, range(len(self.regions_))):
             self.p.rm.append(r)
             r.frame_ = f
-            r.id_ = i + 1
-
             gm.add_vertex(r)
 
         # simple graph with following structure
@@ -35,16 +33,16 @@ class TestSolver(unittest.TestCase):
         #
         # each edge with score 1
 
-        gm.add_edge(0, 3)
-        gm.add_edge(0, 4)
-        gm.add_edge(1, 3)
-        gm.add_edge(1, 4)
-        gm.add_edge(2, 4)
-        gm.add_edge(3, 5)
-        gm.add_edge(3, 6)
-        gm.add_edge(4, 5)
-        gm.add_edge(4, 6)
-        gm.add_edge(4, 7)
+        gm.add_edge(0, 3, 1)
+        gm.add_edge(0, 4, 1)
+        gm.add_edge(1, 3, 1)
+        gm.add_edge(1, 4, 1)
+        gm.add_edge(2, 4, 1)
+        gm.add_edge(3, 5, 1)
+        gm.add_edge(3, 6, 1)
+        gm.add_edge(4, 5, 1)
+        gm.add_edge(4, 6, 1)
+        gm.add_edge(4, 7, 1)
 
     def test_confirm_edge(self):
         gm = self.p.gm

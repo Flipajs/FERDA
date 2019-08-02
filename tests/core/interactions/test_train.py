@@ -29,8 +29,7 @@ class LossFunctionsTestCase(unittest.TestCase):
         self.y_b1 = np.array([[150, 170, 25, 5, 0],
                              [170, 120, 25, 5, 5]])
 
-        self.ti = TrainInteractions(num_objects=2,
-                                    predicted_properties=['x', 'y', 'angle_deg', 'major', 'minor'],
+        self.ti = TrainInteractions(predicted_properties=['x', 'y', 'angle_deg', 'major', 'minor'],
                                     error_functions=['abs', 'abs', 'angle_180', 'abs', 'abs'])
 
     def test_errors_ij(self):

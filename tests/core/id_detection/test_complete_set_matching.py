@@ -131,6 +131,6 @@ class CompleteSetMatchingTestCase(unittest.TestCase):
         assert_array_equal(P, [[0, 0],
                                [1, 1]])
 
-    def test_cs2cs_matching_prototypes_and_spatial(self):
-        self.csm.cs2cs_matching_prototypes_and_spatial()
+    # def test_cs2cs_matching_prototypes_and_spatial(self):
+    #     self.csm.cs2cs_matching_prototypes_and_spatial()
 
