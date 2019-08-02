@@ -22,31 +22,11 @@ default_settings = {
     'mser_max_area': 100000,
     'mser_min_margin': 5,
     'mser_min_area': 5,
-
-    #COLORMARKS
-    'igbr_i_norm': (255*3 + 1) * 3,
-    'igbr_i_weight': 0.5,
-
-    'colormarks_use': True,
-    'colormarks_mser_max_area': 200,
-    'colormarks_mser_min_area': 5,
-    'colormarks_mser_min_margin': 5,
-    'colormarks_avg_radius': 10,
-    'colormarks_debug': True,
 }
 
 tooltips = {
     'cache_use': 'There will be stored information in working directory to speed up mainly the results tool.',
     'cache_mser': 'Storing MSERs have huge impact on speed but it also needs huge space amount.',
-
-    'igbr_i_weight': 'Used in Igbr space. Defines I component weight compared to gbr, this is useful during computation of distance in Igbr space when you want to have this distance predominantly based on color',
-
-    'colormarks_use': '...',
-    'colormarks_mser_max_area': 'Used in colormark detection process to ignore all regions bigger then this parameter (in pixels)',
-    'colormarks_mser_min_area': 'Used in colormark detection process to ignore all regions lower then this parameter (in pixels)',
-    'colormarks_mser_min_margin': 'Used in colormark detection process to ignore all regions with margin (stability) lower then this parameter',
-    'colormarks_avg_radius': 'is automatically set by algorithm, you should not modify this value...',
-    'colormarks_debug': 'More values will be stored for easier debug...'
 }
 
 def get_default(key):

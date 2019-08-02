@@ -1,6 +1,0 @@
-*.pyc
-.pypirc
-build/
-dist/
-.DS_Store
-.idea

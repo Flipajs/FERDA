@@ -14,7 +14,6 @@ from gui.img_controls.gui_utils import cvimg2qtpixmap
 from scripts.region_graph3 import visualize_nodes
 from utils.video_manager import get_auto_video_manager
 from core.region.mser import get_regions_in_img
-from core.graph.reduced import Reduced
 import scipy.io as sio
 from scipy.spatial import ConvexHull
 import time

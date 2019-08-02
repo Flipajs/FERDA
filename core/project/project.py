@@ -72,8 +72,6 @@ class Project(object):
         # so for new projects it is True as default but it will still works for the older ones without this support...
         self.other_parameters.store_area_info = True
         self.color_manager = None
-        self.use_colormarks = False
-        self.colormarks_model = None
         self.animals = None
 
         if project_directory is not None:

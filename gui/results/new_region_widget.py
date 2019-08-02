@@ -151,19 +151,4 @@ class NewRegionWidget(QtGui.QWidget):
 
         marks['circle'].add_points(marks['center'], marks['radius'])
 
-        if S_.colormarks.use:
-            brush.setColor(QtGui.QColor(0, 0xFF, 0, 0x11))
-            marks['c_circle'] = Circle(self.active_id)
-            marks['c_circle'].setBrush(brush)
-
-            brush.setColor(QtGui.QColor(0,0xff,0,0xaa))
-            marks['c_center'] = Mark(marks['c_circle'])
-            marks['c_center'].setBrush(brush)
-
-            brush.setColor(QtGui.QColor(0xff,0,0,0x11))
-            marks['c_radius'] = Mark(marks['c_circle'])
-            marks['c_radius'].setBrush(brush)
-
-            marks['c_circle'].add_points(marks['c_center'], marks['c_radius'])
-
         return marks

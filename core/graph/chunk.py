@@ -1,16 +1,11 @@
-__author__ = 'fnaiser'
-
 import numpy as np
-from reduced import Reduced
-from utils.constants import EDGE_CONFIRMED
-from core.log import LogCategories, ActionNames
 from core.region.region import Region
 from random import randint
 import warnings
 from intervals import IntInterval
 
 
-class Chunk(object):  # object
+class Chunk(object):
     """
     Each tracklet has 2 track id sets.
     P - ids are surely present

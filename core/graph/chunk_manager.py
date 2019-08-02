@@ -4,7 +4,7 @@ __author__ = 'flipajs'
 
 from os.path import join
 from chunk import Chunk
-from libs.intervaltree.intervaltree import IntervalTree
+from intervaltree import IntervalTree
 from tqdm import tqdm
 import numpy as np
 import jsonpickle

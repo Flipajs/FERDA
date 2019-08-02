@@ -5,7 +5,6 @@ import time
 import numpy as np
 from PIL import ImageQt
 from PyQt4 import QtGui, QtCore
-import cv2
 
 from core.segmentation_helper import SegmentationHelper
 from core.project.project import Project
@@ -17,10 +16,6 @@ from utils.drawing.points import draw_points_crop, get_contour, draw_points_bina
 from utils.img import prepare_for_segmentation
 from utils.video_manager import get_auto_video_manager
 from core.region.mser import get_filtered_regions
-from core.region.region_manager import RegionManager
-from core.graph.graph_manager import GraphManager
-from core.graph.solver import Solver
-from core.graph.chunk_manager import ChunkManager
 from core.animal import Animal
 
 __author__ = 'filip@naiser.cz', 'dita'
@@ -255,7 +250,6 @@ class SetupMSERsWizardPage(QtGui.QWizardPage):
 
         # get msers
         s = time.time()
-        from core.region.mser import get_regions_in_img
         # msers = get_msers_(img_, self.project, 0, prefiltered=False)
 
         msers = get_filtered_regions(img_, self.project, 0)
@@ -336,7 +330,7 @@ class SetupMSERsWizardPage(QtGui.QWizardPage):
         :return: None
         """
 
-        from core.region.mser_operations import get_region_groups, margin_filter, area_filter, children_filter
+        from core.region.mser_operations import get_region_groups, margin_filter
 
         groups = get_region_groups(msers)
         ids = margin_filter(msers, groups)

@@ -70,18 +70,6 @@ class Item:
 #     img_manager_size_MB = Item('cache/img_manager_size_MB', 500, '')
 #     region_manager_num_of_instances = Item('cache/region_manager_num_of_instances', 0, '')
 
-class Colormarks:
-    __metaclass__ = SettingsType
-    use = Item('colormarks/use', True)
-    mser_max_area = Item('colormarks/mser_max_area', 200, 'Used in colormark detection process to ignore all regions bigger then this parameter (in pixels)')
-    mser_min_area = Item('colormarks/mser_min_area', 5, 'Used in colormark detection process to ignore all regions lower then this parameter (in pixels)')
-    mser_min_margin = Item('colormarks/mser_min_margin', 5, 'Used in colormark detection process to ignore all regions with margin (stability) lower then this parameter')
-    avg_radius = Item('colormarks/avg_radius', 10, 'is automatically set by algorithm, you should not modify this value...')
-    debug = Item('colormarks/debug', True, 'More values will be stored for easier debug...')
-    igbr_i_norm = Item('colormarks/igbr_i_norm', (255*3 + 1) * 3)
-    igbr_i_weight = Item('colormarks/igbr_i_weight', 0.5)
-
-
 class Visualization:
     __metaclass__ = SettingsType
     default_region_color = Item('visualization/default_region_color', QtGui.QColor(0, 255, 255, 50), '')
@@ -145,7 +133,6 @@ class Controls:
 
 
 class Settings:
-    colormarks = Colormarks
     visualization = Visualization
     temp = Temp
     controls = Controls

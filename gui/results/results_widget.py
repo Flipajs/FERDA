@@ -454,8 +454,6 @@ class ResultsWidget(QtGui.QWidget):
 
         self.highlight_timer2nd.timeout.connect(partial(self.decrease_highlight_marker_opacity, True))
 
-        self.colormarks_items = []
-
         self.one_frame_items = []
 
         self.alpha_contour = 240

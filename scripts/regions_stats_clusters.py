@@ -11,8 +11,7 @@ import math
 from functools import partial
 import cPickle as pickle
 import json
-from libs.hickle import hickle
-# import hickle
+import hickle
 from utils.video_manager import get_auto_video_manager
 import cv2
 from utils.drawing.points import draw_points

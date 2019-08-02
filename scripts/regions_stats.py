@@ -3,8 +3,6 @@ import cPickle as pickle
 from itertools import izip
 
 import cv2
-from libs.hickle import hickle
-# import hickle
 import numpy as np
 from sklearn import svm, preprocessing
 from sklearn.ensemble import RandomForestClassifier, IsolationForest
@@ -99,6 +97,7 @@ def display_pairs(p, pairs, file_name, cols=7, item_height=100, item_width=200, 
 
 
 def display_head_pairs(project):
+    import hickle
     import matplotlib.pyplot as plt
     print ("displaying pairs...")
     pairs = hickle.load('/Users/flipajs/Desktop/temp/pairs/pairs.pkl')
@@ -369,6 +368,7 @@ def fix_heads(p, frames):
 
 
 def head_detector_classify(p):
+    import hickle
     data_head = hickle.load('/Users/flipajs/Desktop/temp/pairs/'+EXP+'/head_data.pkl')
     data_swap = hickle.load('/Users/flipajs/Desktop/temp/pairs/'+EXP+'/head_data_swap.pkl')
     rfc = RandomForestClassifier()
@@ -854,6 +854,7 @@ def expand_based_on_movement_model(p):
 
 
 def simple_tracklets(p):
+    import hickle
     with open('/Users/flipajs/Documents/wd/FERDA/Cam1_playground/temp/part0_modified.pkl', 'rb') as f:
         g = pickle.load(f)
 

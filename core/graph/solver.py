@@ -1,9 +1,6 @@
 __author__ = 'fnaiser'
 
-from core.graph.graph_utils import *
 import numpy as np
-from core.graph.configuration import Configuration
-from utils.constants import EDGE_CONFIRMED
 import pickle
 from tqdm import tqdm
 
@@ -364,86 +361,6 @@ class Solver:
         dt = max(0, (np.pi/2-dt) / (np.pi/2))
 
         return ds*dt, ds, dt
-
-    def get_ccs(self, queue=[]):
-        if not queue:
-            queue = self.project.gm.g.nodes()
-
-        # sort nodes so the order of ccs is always the same thus the ID of ccs make sense.
-        queue = sorted(queue, key=lambda k: (k.frame_, k.id_))
-
-        touched = {}
-        ccs = []
-        for n in queue:
-            if n not in touched:
-                out_n, _ = num_out_edges_of_type(self.g, n, EDGE_CONFIRMED)
-                if out_n == 1:
-                    touched[n] = True
-                    continue
-
-                # We don't want to show last nodes as problem
-                if n.frame_ == self.end_t:
-                    continue
-
-                c1, c2 = get_cc(self.g, n)
-
-                for n_ in c1:
-                    touched[n_] = True
-
-                #TODO:
-                if len(c1) + len(c2) > 12:
-                    cert = 0
-                    confs = [[]]
-                    for r in c1:
-                        best_n2 = None
-                        best_score = -1
-                        for _, n2 in self.g.out_edges(r):
-                            if self.g[r][n2]['score'] > best_score:
-                                best_n2 = n2
-                                best_score = -1
-
-                        confs[0].append((n, best_n2))
-
-                    scores = [0]
-                else:
-                    cert, confs, scores = cc_certainty(self.g, c1, c2)
-
-                conf = Configuration(self.cc_id, c1, c2, cert, confs, scores)
-                self.cc_id += 1
-
-                ccs.append(conf)
-
-        return ccs
-
-    def get_new_ccs(self, all_affected):
-        new_ccs = []
-        node_representative = []
-        touched = {}
-        while all_affected:
-            n = all_affected.pop()
-            if n in touched:
-                continue
-
-            node_representative.append(n)
-
-            if n not in self.g:
-                new_ccs.append(None)
-                continue
-
-            cc = self.get_ccs([n])
-            for c_ in cc:
-                for n_ in c_.regions_t1:
-                    touched.setdefault(n_, True)
-
-            if len(cc) == 1:
-                new_ccs.append(cc[0])
-            elif len(cc) > 1:
-                print("WARINGN: confirm_edges MULTIPLE ccs")
-                raise IndexError
-            else:
-                new_ccs.append(None)
-
-        return new_ccs, node_representative
 
     def confirm_edges(self, vertex_pairs):
         """

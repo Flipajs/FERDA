@@ -1,8 +1,3 @@
-from gui.arena.my_ellipse import MyEllipse
-from gui.arena.my_popup   import MyPopup
-from gui.arena.my_view    import MyView
-from gui.img_controls.my_scene import MyScene
-
 __author__ = 'dita'
 
 from PyQt4 import QtGui, QtCore

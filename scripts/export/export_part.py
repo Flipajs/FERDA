@@ -1,13 +1,9 @@
-import sys
 from core.graph.region_chunk import RegionChunk
 import numpy as np
 import cPickle as pickle
 import os.path
-from core.graph.chunk_manager import ChunkManager
 from core.project.project import Project
-from core.region.region_manager import RegionManager
 import scipy.io as sio
-from core.fake_background_computer import FakeBGComp
 from tqdm import tqdm
 
 class Exporter:

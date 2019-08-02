@@ -11,10 +11,7 @@ from gui.gui_utils import cvimg2qtpixmap
 from gui.segmentation.my_scene import MyScene
 from gui.segmentation.my_view import MyView
 from gui.segmentation.painter import mask2qimage
-from gui.segmentation.segmentation import SegmentationPicker
-from utils.drawing.points import get_contour, get_contour_without_holes
-from utils.video_manager import get_auto_video_manager
-import cPickle
+from utils.drawing.points import get_contour_without_holes
 
 __author__ = 'simon'
 

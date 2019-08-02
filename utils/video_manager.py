@@ -232,28 +232,8 @@ def get_auto_video_manager(project):
     if isinstance(file_paths, list) and len(file_paths) == 1:
         file_paths = file_paths[0]
 
-    if not isinstance(file_paths, list):
-        return VideoManager(file_paths, start_t=project.video_start_t, end_t=project.video_end_t, crop_model=crop_model)
-
-    # test which one is the lossless one
-    compressed = file_paths[0]
-    lossless = file_paths[1]
-
-    c_v = VideoManager(compressed, start_t=project.video_start_t, end_t=project.video_end_t)
-    c_img = c_v.next_frame()
-
-    l_v = VideoManager(lossless, start_t=project.video_start_t, end_t=project.video_end_t)
-    l_img = l_v.next_frame()
-
-    c_mask = (c_img[:, :, 0] == 255) & (c_img[:, :, 1] == 255) & (c_img[:, :, 2] == 255)
-    l_mask = (l_img[:, :, 0] == 255) & (l_img[:, :, 1] == 255) & (l_img[:, :, 2] == 255)
-
-    if sum(sum(c_mask)) > sum(sum(l_mask)):
-        compressed = lossless
-        lossless = file_paths[0]
-
-    from utils.ferda_compressed_video_manager import FerdaCompressedVideoManager
-    return FerdaCompressedVideoManager(compressed, lossless, start_t=project.video_start_t, end_t=project.video_end_t)
+    assert not isinstance(file_paths, list)
+    return VideoManager(file_paths, start_t=project.video_start_t, end_t=project.video_end_t, crop_model=crop_model)
 
 
 def optimize_frame_access_vertices(vertices, project, ra_n_times_slower=40):

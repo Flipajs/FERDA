@@ -15,7 +15,6 @@ import time
 from math import ceil
 # TODO: UNCOMMENT THIS AND PUBLISH...
 from libs import img_features
-from thesis.config import *
 from utils.img import img_saturation_coef
 
 
@@ -1013,8 +1012,6 @@ if __name__ == '__main__':
 
         # fm_names = ['fm_idtracker_i.sqlite3', 'fm_idtracker_c.sqlite3', 'fm_colornames.sqlite3', 'fm_hog.sqlite3', 'fm_lbp.sqlite3', 'fm_basic.sqlite3']
         fm_names = ['fm_colornames_corr_lvl1.sqlite3', 'fm_colornames_corr_lvl3.sqlite3']
-
-        from thesis.config import RESULT_WD
 
         if True:
             # results = evaluate_features_performance(p, fm_names, seed=42, test_split_method='random',

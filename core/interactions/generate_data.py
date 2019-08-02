@@ -2,6 +2,12 @@ from __future__ import print_function
 # import matplotlib
 # matplotlib.use('qt4agg')
 """
+Generate augmented training and testing data from FERDA project for
+
+- detection of fixed number of interacting objects
+- regression tracking
+- segmentation  
+
 use: $ python -m core.interactions.generate_data
 """
 

@@ -33,6 +33,7 @@ dependencies:
     - cachetools
     - imutils
     - intervals
+    - intervaltree
     - joblib
     - jsonpickle
     - lazyme

@@ -1,3 +1,10 @@
+"""
+Detector of interacting objects.
+
+- single object regression tracking (Scholar: GOTURN)
+- extract multi-region subgraph
+
+"""
 import itertools
 import os.path
 import tempfile
@@ -584,7 +591,7 @@ class InteractionDetector:
 
 
 def plot_frame(frame, i, img, out_dir, regions_in_frame=None, paths=None, roi=None, gt=None, colors=None):
-    from scripts.montage import save_figure_as_image
+    from utils.montage import save_figure_as_image
     from core.interactions.visualization import plot_interaction
     import matplotlib.pylab as plt
     fig = plt.figure()
