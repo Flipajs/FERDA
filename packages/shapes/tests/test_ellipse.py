@@ -13,7 +13,7 @@ class EllipseTestCase(unittest.TestCase):
         plt.plot(v1[0], v1[1], 'r*')
         plt.plot(v2[0], v2[1], 'b*')
         plt.gca().invert_yaxis()
-        plt.show()
+        # plt.show()
 
     def test_get_point(self):
         el = Ellipse(100, 100, angle_deg=20, major=50, minor=10, frame=0)
@@ -23,7 +23,7 @@ class EllipseTestCase(unittest.TestCase):
         xy = el.get_point(-20)
         plt.plot(*xy, color='b', marker='*')
         plt.gca().invert_yaxis()
-        plt.show()
+        # plt.show()
 
 
 if __name__ == '__main__':

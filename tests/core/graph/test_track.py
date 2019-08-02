@@ -1,5 +1,5 @@
 import unittest
-from track import Track
+from core.graph.track import Track
 from core.graph.graph_manager import GraphManager
 from core.project.project import Project
 from intervals.interval import IntInterval

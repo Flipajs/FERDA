@@ -111,13 +111,13 @@ class Ellipse(Point):
 
     def draw(self, ax=None, label=None, color=None):
         import matplotlib.pylab as plt
-        from matplotlib.patches import Ellipse
+        import matplotlib.patches
         if ax is None:
             ax = plt.gca()
         if color is None:
             color = 'r'
         super(Ellipse, self).draw(ax, label, color)
-        ax.add_patch(Ellipse(self.xy, self.major, self.minor, self.angle_deg,
+        ax.add_patch(matplotlib.patches.Ellipse(self.xy, self.major, self.minor, self.angle_deg,
                              facecolor='none', edgecolor=color,
                              label=label, linewidth=1))
 

@@ -47,9 +47,13 @@ from core.interactions.io import read_gt
 from utils.img import safe_crop
 from utils.dataset_io import ImageIOFile, ImageIOHdf5, DataIOCSV, DataIOVot, Dataset
 from utils.gt.gt import GT
+from utils.gt.gt_project import GtProjectMixin
 from utils.misc import makedirs
 
 # memory = Memory('out/cache', verbose=1)
+
+class GtProject(GtProjectMixin, GT):
+    pass
 
 
 class TrainingDataset(Dataset):
@@ -138,7 +142,7 @@ class DataGenerator(object):
         #     self._get_single_region_tracklets_cached,
         #     ignore=['self'])  # uncomment to enable caching, disabled due to extremely slow speed
 
-    def _load_project(self, project_dir=None, video_file=None):
+    def _load_project(self, project_dir=None):
         # self._project = Project()
         # self._project.load(project_dir, video_file=video_file)
         self._project = Project(project_dir)
@@ -446,7 +450,7 @@ class DataGenerator(object):
         """
         self._load_project(project_dir)
         if gt_filename is not None:
-            gt = GT(gt_filename)
+            gt = GtProject(gt_filename)
             gt.set_project_offsets(self._project)
             gt.break_on_inconsistency = True
         else:

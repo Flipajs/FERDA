@@ -5,7 +5,6 @@ import numpy as np
 import os
 from os.path import join
 import tqdm
-import errno
 
 from core.graph.solver import Solver
 from core.graph.graph_manager import GraphManager
@@ -17,8 +16,6 @@ from core.project.other_parameters import OtherParameters
 from core.project.solver_parameters import SolverParameters
 from core.classes_stats import ClassesStats
 from utils.misc import makedirs
-from core.config import config
-from utils.img_manager import ImgManager
 import jsonpickle
 import logging
 

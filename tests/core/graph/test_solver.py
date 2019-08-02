@@ -11,18 +11,14 @@ class TestSolver(unittest.TestCase):
 
     def setUp(self):
         self.p = Project()
-        self.p.chm = ChunkManager()
-        self.p.gm = GraphManager(self.p, None)
-        self.solver = Solver(self.p)
+        self.solver = self.p.solver
 
-        gm = self.p.gm
-
+        self.ids_ =    [0, 1, 2, 3, 4, 5, 6, 7]
         self.frames_ = [0, 0, 0, 1, 1, 2, 2, 2]
-        self.regions_ = [Region() for i in range(8)]
-        for r, f, i in zip(self.regions_, self.frames_, range(len(self.regions_))):
+        self.regions_ = [Region(frame=frame, region_id=rid) for rid, frame in zip(self.ids_, self.frames_)]
+        for r in self.regions_:
             self.p.rm.append(r)
-            r.frame_ = f
-            gm.add_vertex(r)
+            self.p.gm.add_vertex(r)
 
         # simple graph with following structure
         # 0 - 3 - 5
@@ -33,16 +29,16 @@ class TestSolver(unittest.TestCase):
         #
         # each edge with score 1
 
-        gm.add_edge(0, 3, 1)
-        gm.add_edge(0, 4, 1)
-        gm.add_edge(1, 3, 1)
-        gm.add_edge(1, 4, 1)
-        gm.add_edge(2, 4, 1)
-        gm.add_edge(3, 5, 1)
-        gm.add_edge(3, 6, 1)
-        gm.add_edge(4, 5, 1)
-        gm.add_edge(4, 6, 1)
-        gm.add_edge(4, 7, 1)
+        self.p.gm.add_edge(0, 3, 1)
+        self.p.gm.add_edge(0, 4, 1)
+        self.p.gm.add_edge(1, 3, 1)
+        self.p.gm.add_edge(1, 4, 1)
+        self.p.gm.add_edge(2, 4, 1)
+        self.p.gm.add_edge(3, 5, 1)
+        self.p.gm.add_edge(3, 6, 1)
+        self.p.gm.add_edge(4, 5, 1)
+        self.p.gm.add_edge(4, 6, 1)
+        self.p.gm.add_edge(4, 7, 1)
 
     def test_confirm_edge(self):
         gm = self.p.gm
@@ -53,22 +49,25 @@ class TestSolver(unittest.TestCase):
 
         self.assertEqual(num_edges-3, gm.g.num_edges())
 
-        # there should be one chunk
-        self.assertEqual(1, len(self.p.chm.chunks_))
+        # confirm edge no longer creates tracklets, see graph_assembly
+        # # there should be one chunk
+        # self.assertEqual(1, len(self.p.chm.chunks_))
 
     def test_confim_multiple_edges(self):
         gm = self.p.gm
-        num_edges = gm.g.num_edges()
+        num_edges_before = gm.g.num_edges()
 
         self.solver.confirm_edges([
             [gm.g.vertex(0), gm.g.vertex(3)],
             [gm.g.vertex(3), gm.g.vertex(6)]
         ])
+        # this removes: 0-4, 1-3, 3-5, 4-6
 
-        # there should be one chunk
-        self.assertEqual(1, len(self.p.chm.chunks_))
+        # confirm edge no longer creates tracklets, see graph_assembly
+        # # there should be one chunk
+        # self.assertEqual(1, len(self.p.chm.chunks_))
 
-        self.assertEqual(num_edges-5, gm.g.num_edges())
+        self.assertEqual(4, num_edges_before - gm.g.num_edges())
 
     def test_remove_vertex(self):
         gm = self.p.gm

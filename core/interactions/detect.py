@@ -331,13 +331,13 @@ class InteractionDetector:
         """
         if template_img is None:
             img0 = self.project.img_manager.get_whole_img(frame - 1)
-            if self.parameters['input_channels'] == 4:
+            if 'input_channels' in self.parameters and self.parameters['input_channels'] == 4:
                 img0 = np.dstack((img0, self.project.img_manager.get_foreground(frame - 1)))
         else:
             img0 = None
 
         img = self.project.img_manager.get_whole_img(frame)
-        if self.parameters['input_channels'] == 4:
+        if 'input_channels' in self.parameters and self.parameters['input_channels'] == 4:
             img = np.dstack((img, self.project.img_manager.get_foreground(frame)))
 
         pred_dict, pred_, delta_xy, img_crop = self.detect_single(img, prev_detection, img0, template_img)

@@ -9,13 +9,12 @@ from utils.video_manager import get_auto_video_manager
 
 class InteractionDetectorTestCase(unittest.TestCase):
     def setUp(self):
-        project_file = '../projects/2_temp/180810_2359_Cam1_clip_fixed_cardinality'
+        project_dir = '../projects/2_temp/Cam1_clip/190802_1621'
         # it = Interactions()
-        # it._load_project(project_file)
+        # it._load_project(project_dir)
         # it._init_regions()
         # self.project = it._project
-        self.project = Project()
-        self.project.load(project_file)
+        self.project = Project(project_dir)
         self.vm = get_auto_video_manager(self.project)
         self.gm = self.project.gm
         self.rm = self.project.rm
@@ -24,15 +23,14 @@ class InteractionDetectorTestCase(unittest.TestCase):
         self.tracklets_multi = [t for t in self.cm.chunk_gen() if t.is_multi()]
         self.tracklets_two = [t for t in self.tracklets_multi if t.get_cardinality() == 2]
         self.tracklets_two.sort(lambda x, y: cmp(len(x), len(y)), reverse=True)  # descending by tracklet length
-        self.detector = InteractionDetector('/home/matej/prace/ferda/experiments/180830_1637_single_50')
+        self.detector = InteractionDetector('../experiments/180830_1637_single_50', self.project)
         # assert len(self.detector.ti.PREDICTED_PROPERTIES) == 3
 
     def test_detect(self):
         t = np.random.choice(self.tracklets_two)
         regions = list(t.r_gen(self.rm))
         r = np.random.choice(regions)
-        img = self.im.get_whole_img(r.frame())
-        detections = self.detector.detect(img, r.centroid()[::-1])
+        detections = self.detector.detect_single_frame(r.frame(), r.centroid()[::-1])
         assert len(detections) == 6
 
     def test_single_detect(self):
@@ -40,7 +38,6 @@ class InteractionDetectorTestCase(unittest.TestCase):
         r = t.get_region(-1)
         img = self.im.get_whole_img(r.frame() + 1)
         detections = self.detector.detect_single(img, self.detector.region_to_dict(r))
-
 
     def get_detections(self, tracklet):
         images = []

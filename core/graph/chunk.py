@@ -214,6 +214,7 @@ class Chunk(object):
         return last
 
     def merge(self, ch2):
+        assert False, 'not implemented, see bellow'
         """
         |ch1.start| ... |ch1.end|   |ch2.start|... |ch2.end|
         -> |ch1.start| ... |ch2.end|
@@ -508,7 +509,7 @@ class Chunk(object):
         detections = []
         for r in self.r_gen(rm):
             img = im.get_whole_img(r.frame())
-            pred = detector.detect(img, r.centroid()[::-1])
+            pred = detector.detect_single(img, r.centroid()[::-1])
             detections.append(pred)
         tracks, confidence, costs = detector.track(detections)
         return tracks, confidence
