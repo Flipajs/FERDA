@@ -64,6 +64,8 @@ class ResultsWidget(QtGui.QWidget):
         self.pixMap = None
         self.pixMapItem = None
 
+        self.visualize_contours_without_id = True
+
         # used when save GT is called
         self._gt_markers = {}
 
@@ -793,7 +795,7 @@ class ResultsWidget(QtGui.QWidget):
             only_contour = True
 
         pts_, roi = get_cropped_pts(r, return_roi=True, only_contour=only_contour)
-        if highlight_contour:
+        if highlight_contour and not self.visualize_contours_without_id:
             pts_, roi = self.__dilate(pts_, roi)
 
         offset = roi.top_left_corner()
@@ -837,6 +839,13 @@ class ResultsWidget(QtGui.QWidget):
             c = (c[0], c[1], c[2], 255)
 
         rgba = np.zeros((roi.width(), roi.height(), 4), dtype=np.uint8)
+
+        if self.visualize_contours_without_id:
+            step = 1
+            c = [255, 255, 255, 255]
+            if tracklet.id() == self.active_tracklet_id:
+               c = [255, 0, 0, 255]
+
         # 2 1 0 BGR vs RGB...
         # this if might help a little bit with performance...
         if step > 1:
@@ -1028,7 +1037,8 @@ class ResultsWidget(QtGui.QWidget):
                     y = centroid[0]
                     x = centroid[1]
 
-                    self.__add_marker(x, y, c_, None, 0.5, type_='default', radius=r_, alpha=alpha)
+                    if not self.visualize_contours_without_id:
+                        self.__add_marker(x, y, c_, None, 0.5, type_='default', radius=r_, alpha=alpha)
 
     def draw_id_profiles(self):
         from utils.img import get_safe_selection
