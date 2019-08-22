@@ -11,13 +11,13 @@ def get_collateral_sets(project, max_frame=maxsize):
     all_end_frames = []
     for t in project.chm.tracklet_gen():
         # if len(t) == 1:
-        #     all_end_frames.append(t.end_frame(project.gm))
+        #     all_end_frames.append(t.end_frame())
 
-        all_end_frames.append(t.start_frame(project.gm))
-        all_end_frames.append(t.end_frame(project.gm))
+        all_end_frames.append(t.start_frame())
+        all_end_frames.append(t.end_frame())
 
     all_end_frames = sorted(all_end_frames)
-    # all_end_frames = sorted([t.end_frame(project.gm) ])
+    # all_end_frames = sorted([t.end_frame() ])
 
     for frame in all_end_frames:
         if frame > max_frame:
@@ -28,7 +28,7 @@ def get_collateral_sets(project, max_frame=maxsize):
 
         min_end_frame = maxsize
         for tracklet in collateral_tracklets:
-            min_end_frame = min(min_end_frame, tracklet.end_frame(project.gm))
+            min_end_frame = min(min_end_frame, tracklet.end_frame())
 
     return list(collateral_sets)
 
@@ -37,7 +37,7 @@ def get_median_areas(tracklets, project):
     import numpy as np
     areas = {}
     for t in tracklets:
-        areas[t] = np.median([r.area() for r in t.r_gen(project.gm, project.rm)])
+        areas[t] = np.median([r.area() for r in t.r_gen(project.rm)])
 
     return areas
 
@@ -119,7 +119,7 @@ def generate_predecessor_map(tracklets, project):
     predecessors = {}
 
     for t in tracklets:
-        for t_pred in t.entering_tracklets(project.gm):
+        for t_pred in t.entering_tracklets():
             if t not in predecessors:
                 predecessors[t] = []
 
@@ -132,7 +132,7 @@ def generate_successor_map(tracklets, project):
     successors = {}
 
     for t in tracklets:
-        for t_pred in t.entering_tracklets(project.gm):
+        for t_pred in t.entering_tracklets():
             if t not in successors:
                 successors[t] = []
 
@@ -177,6 +177,22 @@ def solve(prob, x, print_ilp):
 
 def build_ilp_and_solve(tracklets, collateral_sets, predecesors, successors, K, median_area, areas, remap_to_ids=True,
                         print_ilp=False, gamma=2.0, tracklet_weights=None):
+    """
+    Build the Integral linear program and solve the cardinality problem.
+
+    :param tracklets:
+    :param collateral_sets:
+    :param predecesors:
+    :param successors:
+    :param K:
+    :param median_area:
+    :param areas:
+    :param remap_to_ids:
+    :param print_ilp:
+    :param gamma:
+    :param tracklet_weights:
+    :return: dict, {tracklet id: number of objects}
+    """
     t = time.time()
     ilp, variable_mapping = build_ilp(tracklets, collateral_sets, predecesors, successors, K, median_area, areas,
                                       remap_to_ids,
