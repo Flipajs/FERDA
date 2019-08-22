@@ -39,6 +39,7 @@ dependencies:
 #    - matplotlib  # this was once a solution to the pyqt4 conflict
     - motmetrics
     - moviepy
+    - pulp
     - pympler
     - pyqtgraph
     - qimage2ndarray

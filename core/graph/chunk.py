@@ -32,6 +32,7 @@ class Chunk(object):
         self.animal_id_ = -1
         self.P = set()
         self.N = set()
+        self.cardinality = None  # estimated number of objects
         self.segmentation_class = -1  # -1 undefined, 0 single, 1 multi, 2 noise, 3 part of object
         self.gm = gm
 

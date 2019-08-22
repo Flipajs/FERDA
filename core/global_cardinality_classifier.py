@@ -1,6 +1,50 @@
 import pulp
 import time
 from sys import maxsize
+import numpy as np
+
+
+def get_tracklet_cardinalities(project):
+    """
+
+    :param project: Project()
+    :return: dict, {tracklet id: number of objects}
+    """
+    collateral_sets = get_collateral_sets(project, max_frame=5000)
+    tracklets = set([t for cs in collateral_sets for t in cs])
+
+    predecessors = generate_predecessor_map(tracklets, project)
+    successors = generate_successor_map(tracklets, project)
+    # print("predecessors t: {}".format(time.time() - t))
+
+    num_animals = len(project.animals)
+    t = time.time()
+    areas = get_median_areas(tracklets, project)
+    # TODO: medain_area should probably be median from all areas...
+    median_area = np.median(areas.values())
+    print("area median extraction time: {}".format(time.time() - t))
+    area_relaxation_coef = 0
+
+    print("#animals {}, #tracklets: {}, #collateral sets: {}, mean area: {}".format(num_animals, len(tracklets),
+                                                                                    len(collateral_sets), median_area))
+
+    cardinalities = build_ilp_and_solve(tracklets, collateral_sets, predecessors, successors,
+                                                          num_animals,
+                                                          median_area, areas,
+                                                          print_ilp=False)  # area_relaxation_coef=area_relaxation_coef,
+    return cardinalities
+
+
+def fill_tracklet_cardinalites(project):
+    tracklet_cardinalities = get_tracklet_cardinalities(project)
+    for t_id, cardinality in tracklet_cardinalities.iteritems():
+        project.chm[t_id].cardinality = cardinality
+        if cardinality == 1:
+            project.chm[t_id].segmentation_class = 0  # single
+        elif cardinality >= 1:
+            project.chm[t_id].segmentation_class = 1  # multi
+        else:
+            project.chm[t_id].segmentation_class = 2  # noise
 
 
 def get_collateral_sets(project, max_frame=maxsize):

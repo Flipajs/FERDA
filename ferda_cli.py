@@ -54,6 +54,7 @@ def run_tracking(project, force_recompute=False, reid_model_weights_path=None):
     import core.segmentation
     import core.graph_assembly
     import core.graph.solver
+    from core.global_cardinality_classifier import fill_tracklet_cardinalites
     from scripts.CNN.siamese_descriptor import compute_descriptors
     from core.id_detection.complete_set_matching import do_complete_set_matching
     if force_recompute:
@@ -70,7 +71,7 @@ def run_tracking(project, force_recompute=False, reid_model_weights_path=None):
         project.save()
     if project.next_processing_stage == 'cardinality_classification':
         logger.info('run_tracking: cardinality classification')
-        project.region_cardinality_classifier.classify_project(project)
+        fill_tracklet_cardinalites(project)
         project.next_processing_stage = 'fix_regions_orientation'
         project.save()
     if project.next_processing_stage == 'fix_regions_orientation':

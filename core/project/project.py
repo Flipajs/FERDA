@@ -138,7 +138,7 @@ class Project(object):
 
     def load(self, directory, video_file=None,
              regions_optional=False, graph_optional=False, tracklets_optional=False):
-        with tqdm.tqdm(total=5, desc='loading project') as pbar:
+        with tqdm.tqdm(total=4, desc='loading project') as pbar:
             self.__dict__.update(
                 jsonpickle.decode(open(join(directory, 'project.json'), 'r').read(), keys=True).__dict__)
             if self.arena_model is not None:
@@ -171,11 +171,6 @@ class Project(object):
                 raise ProjectNotFoundError('tracklets.json not found and tracklets not optional')
             else:
                 self.chm = ChunkManager()
-            pbar.update()
-            pbar.set_description('loading cardinality classifier')
-            cardinality_model_filename = join(directory, 'region_cardinality_clustering.pkl')
-            if os.path.exists(cardinality_model_filename):
-                self.region_cardinality_classifier = pickle.load(open(cardinality_model_filename, 'r'))
             pbar.update()
 
             self.solver = Solver(self)
