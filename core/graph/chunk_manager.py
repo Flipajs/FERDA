@@ -45,7 +45,12 @@ class ChunkManager(object):
 
     @classmethod
     def from_dir(cls, directory, gm=None):
-        chm = jsonpickle.decode(open(join(directory, 'tracklets.json'), 'r').read(), keys=True)
+        chm = cls()
+        # this loading form allows to propagate changes in class structure into
+        # saved objects
+        chm.__dict__.update(
+            jsonpickle.decode(open(join(directory, 'tracklets.json'), 'r').read(), keys=True).__dict__)
+
         if gm is not None:
             chm.set_graph_manager(gm)
         return chm
