@@ -215,7 +215,6 @@ class Chunk(object):
         return last
 
     def merge(self, ch2):
-        assert False, 'not implemented, see bellow'
         """
         |ch1.start| ... |ch1.end|   |ch2.start|... |ch2.end|
         -> |ch1.start| ... |ch2.end|
