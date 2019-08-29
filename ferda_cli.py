@@ -24,6 +24,7 @@ import webbrowser
 from utils.experiment import Parameters, Experiment
 from core.region.region_manager import RegionManager
 from utils.gt.mot import results_to_mot, metrics_higher_is_better, metrics_lower_is_better
+from utils.gt.gt_project import GtProject
 import sys
 from core.config import config
 from warnings import warn
