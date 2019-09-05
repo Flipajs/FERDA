@@ -74,9 +74,8 @@ class RegionManager(UserList):
             filename = self.regions_h5.filename
             self.regions_h5.close()
             self.open_h5_store(filename, 'r+')
-        self.region_pts_h5_dataset.resize(len(self.regions_df), axis=0)
+        self.__resize_h5(len(self.regions_df))
         self.region_pts_h5_dataset[n_self:] = other.region_pts_h5_dataset[:n_other]
-        self.region_contour_h5_dataset.resize(len(self.regions_df), axis=0)
         self.region_contour_h5_dataset[n_self:] = other.region_contour_h5_dataset[:n_other]
         # self.regions_h5.close()
         # self.open_h5_store(filename)
@@ -94,6 +93,8 @@ class RegionManager(UserList):
 
     def regions_to_ext_storage(self):
         self.regions_df = self.get_regions_df()
+        if len(self.data) > self.region_pts_h5_dataset.shape[0]:
+            self.__resize_h5(int(len(self.data) * 1.2))
         for i, r in enumerate(tqdm.tqdm(self.data, desc='converting Regions to RegionExtStorage')):
             if r is not None and not isinstance(r, RegionExtStorage):
                 assert isinstance(r, Region)
@@ -140,6 +141,10 @@ class RegionManager(UserList):
             return self.regions_df
         else:
             return self.regions2dataframe(self.data)
+
+    def __resize_h5(self, num_items):
+        self.region_pts_h5_dataset.resize(num_items, axis=0)
+        self.region_contour_h5_dataset.resize(num_items, axis=0)
 
     @staticmethod
     def regions2dataframe(regions):
