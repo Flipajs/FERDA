@@ -172,7 +172,7 @@
             "y2": 464
         },
         "video_end_t": 300,
-        "video_paths": "/datagrid/ferda/data/youtube/Sowbug3_cut.mp4",
+        "video_path": "/datagrid/ferda/data/youtube/Sowbug3_cut.mp4",
         "video_start_t": 0
     }
 }

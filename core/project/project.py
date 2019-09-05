@@ -10,6 +10,7 @@ from core.graph.solver import Solver
 from core.graph.graph_manager import GraphManager
 from core.graph.chunk_manager import ChunkManager
 from core.region.region_manager import RegionManager
+from utils.img_manager import ImgManager
 from core.log import Log
 from core.project.mser_parameters import MSERParameters
 from core.project.other_parameters import OtherParameters
@@ -37,7 +38,7 @@ class Project(object):
 
         self.name = ''
         self.description = ''
-        self.video_paths = []
+        self.video_path = None
         self.video_start_t = 0
         self.video_end_t = None  # inclusive
         self.date_created = -1
@@ -54,13 +55,13 @@ class Project(object):
         self.solver_parameters = SolverParameters()  # TODO: change to dict, initialized from config
         self.version = "3.1.0"
 
-        self._solver = Solver(self)
-        self.reset_managers()
-
         self.arena_model = None
         self.img_manager = None
         self.region_cardinality_classifier = None
         self.bg_model = None
+
+        self._solver = Solver(self)
+        self.reset_managers()
 
         # TODO: remove
         self.log = Log()
@@ -78,6 +79,7 @@ class Project(object):
         self.rm = RegionManager()
         self.chm = ChunkManager()
         self.gm = GraphManager(self.solver.assignment_score, self.solver_parameters.graph_max_distance)
+        self.img_manager = ImgManager(self)
         set_managers(self, self.rm, self.chm, self.gm)
 
     def version_is_le(self, ver):
@@ -145,8 +147,7 @@ class Project(object):
                 self.arena_model.load_mask(join(directory, 'mask.png'))
             # check for video file
             if video_file is not None:
-                self.video_paths = video_file
-            self.img_manager.set_project(self)
+                self.video_path = video_file
             pbar.update()
             pbar.set_description('loading regions')
             if os.path.exists(join(directory, 'regions.csv')) and os.path.exists(join(directory, 'regions.h5')):
@@ -196,16 +197,10 @@ class Project(object):
             self.gm.assignment_score_fun = self._solver.assignment_score
 
     def video_exists(self):
-        if isinstance(self.video_paths, list):
-            for path in self.video_paths:
-                if os.path.isfile(path):
-                    return True
-            return False
-        return os.path.isfile(self.video_paths)
+        return os.path.isfile(self.video_path)
 
     def get_video_manager(self):
-        from utils.video_manager import get_auto_video_manager
-        return get_auto_video_manager(self)
+        return self.img_manager.vid
 
     def num_frames(self):
         return self.get_video_manager().total_frame_count()

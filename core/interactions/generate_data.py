@@ -159,7 +159,7 @@ class DataGenerator(object):
         return m.hexdigest()
 
     def _init_regions(self, cache_dir='../data/cache', gt=None):
-        hash = self._get_hash(self._project.video_paths, self.params)
+        hash = self._get_hash(self._project.video_path, self.params)
         regions_filename = join(cache_dir, hash + '.pkl')
         if os.path.exists(regions_filename):
             print('regions loading...')

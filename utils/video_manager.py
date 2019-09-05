@@ -222,18 +222,12 @@ def get_auto_video_manager(project):
     based on file_paths return VideoManager or FerdaCompressedVideoManager instance
     :type file_paths: [str]
     """
-    file_paths = project.video_paths
-
     if hasattr(project, 'video_crop_model'):
         crop_model = project.video_crop_model
     else:
         crop_model = None
 
-    if isinstance(file_paths, list) and len(file_paths) == 1:
-        file_paths = file_paths[0]
-
-    assert not isinstance(file_paths, list)
-    return VideoManager(file_paths, start_t=project.video_start_t, end_t=project.video_end_t, crop_model=crop_model)
+    return VideoManager(project.video_path, start_t=project.video_start_t, end_t=project.video_end_t, crop_model=crop_model)
 
 
 def optimize_frame_access_vertices(vertices, project, ra_n_times_slower=40):

@@ -344,7 +344,7 @@ class InteractionDetector:
         return pred_dict, pred_, delta_xy, img_crop
 
     def detect_single_frame(self, frame, prev_detection, template_img=None):
-        return self._detect_single_frame(basename(self.project.video_paths), frame, prev_detection, template_img)
+        return self._detect_single_frame(basename(self.project.video_path), frame, prev_detection, template_img)
 
     def get_rotated_crop(self, img, timg, xy):
         timg.set_img(img)

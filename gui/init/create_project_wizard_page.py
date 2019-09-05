@@ -80,7 +80,7 @@ class CreateProjectPage(QtGui.QWizardPage):
     def validatePage(self):
         project = self.wizard().project
         project.working_directory = str(self.field('project_folder').toString())
-        project.video_paths = str(self.field('video_file').toString())
+        project.video_path = str(self.field('video_file').toString())
         project.name = str(self.field('project_name').toString())
         if not len(project.name):
             project.name = 'untitled'

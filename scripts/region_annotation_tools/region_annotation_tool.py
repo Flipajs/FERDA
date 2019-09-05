@@ -29,7 +29,7 @@ class AntBlobGtManager(object):
         self.project = project
         if not exists(pkl_file):
             logging.info("There is no file named {}, creating a new one".format(self.pkl_file))
-            self.pickle_gt = project.name, project.video_paths, AntBlobs(), TrackletTypes()
+            self.pickle_gt = project.name, project.video_path, AntBlobs(), TrackletTypes()
         else:
             sys.path.append('data/GT/region_annotation_tools')  # hack to load old pkl file
             with open(self.pkl_file, 'r') as f:
@@ -48,10 +48,10 @@ class AntBlobGtManager(object):
             logging.warning("Project name of loaded pickle - '{0}' differs from name of actual project - '{1}'"
                             "Please fix this before proceeding".format(self.project_name, project.name))
             raise AttributeError("Different project names")
-        if self.video_file != project.video_paths:
+        if self.video_file != project.video_path:
             logging.warning(
                 "Video file(s) of loaded pickle - '{0}' differs from video file(s) of actual project - '{1}'"
-                "Please fix this before proceeding".format(self.video_file, project.video_paths))
+                "Please fix this before proceeding".format(self.video_file, project.video_path))
             raise AttributeError("Different video file names")
 
     def get_ant_blobs(self):

@@ -64,9 +64,9 @@ if __name__ == '__main__':
 
     p = Project('/home/matej/prace/ferda/projects/2_temp/180811_0205_Camera3-5min_fixed_cardinality')  # ''/home/matej/prace/ferda/projects/2_temp/180811_0147_Sowbug3_cut_fixed_cardinality') # '/home/matej/prace/ferda/projects/2_temp/180810_2359_Cam1_ILP_cardinality_dense')
 
-    # p.video_paths = ['/Volumes/Seagate Expansion Drive/IST - videos/colonies/Camera 1.avi']
-    # p.video_paths = ['/Users/flipajs/Downloads/crickets-out2/out2.mp4']
-    # p.video_paths = ['/home/matej/prace/ferda/camera1_ss00-05-00_t00-05-00.mp4']
+    # p.video_path = ['/Volumes/Seagate Expansion Drive/IST - videos/colonies/Camera 1.avi']
+    # p.video_path = ['/Users/flipajs/Downloads/crickets-out2/out2.mp4']
+    # p.video_path = ['/home/matej/prace/ferda/camera1_ss00-05-00_t00-05-00.mp4']
 
 
     num_steps = 10

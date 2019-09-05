@@ -2,7 +2,7 @@ import numpy as np
 import cv2
 
 from utils.img import prepare_for_visualisation, get_safe_selection
-from utils.video_manager import get_auto_video_manager
+from utils.video_manager import VideoManager
 from utils.drawing.points import draw_points
 from utils.roi import ROI, get_roi
 from core.region.region import Region
@@ -25,8 +25,8 @@ class ImgManager:
         self.max_size_mb = max_size_mb
         self.max_num_of_instances = max_num_of_instances
         self.bg_model = None
-        if project is not None:
-            self.set_project(project)
+        if self.project is not None:
+            self.open_video()
 
     def __getstate__(self):
         state = self.__dict__.copy()
@@ -35,9 +35,10 @@ class ImgManager:
         del state['bg_model']
         return state
 
-    def set_project(self, project):
-        self.project = project
-        self.vid = get_auto_video_manager(project)
+    def open_video(self):
+        if self.project.video_path is not None:
+            self.vid = VideoManager(self.project.video_path, self.project.video_start_t, self.project.video_end_t,
+                                    crop_model=self.project.video_crop_model)
 
     def get_whole_img(self, frame):
         """

@@ -767,18 +767,18 @@ if __name__ == "__main__":
 
     # proj.load('/Users/flipajs/Documents/wd/FERDA/Cam1_rfs')
     proj.load('/home/matej/prace/ferda/projects/1_initial_projects_180808_diverse/Cam1_clip (copy)')
-    # proj.video_paths = ['/Users/flipajs/Documents/wd/GT/C210_5000/C210.fproj']
+    # proj.video_path = ['/Users/flipajs/Documents/wd/GT/C210_5000/C210.fproj']
     # proj.arena_model = None
     # proj.bg_model = None
 
     # proj.video_crop_model = {'y1': 110, 'y2': 950, 'x1': 70, 'x2': 910}
 
-    # proj.video_paths = '/Users/flipajs/Desktop/S9T95min.avi'
-    # proj.video_paths = '/Volumes/Transcend/Dropbox/FERDA/F3C51min.avi'
+    # proj.video_path = '/Users/flipajs/Desktop/S9T95min.avi'
+    # proj.video_path = '/Volumes/Transcend/Dropbox/FERDA/F3C51min.avi'
 
-    # proj.video_paths = '/media/flipajs/Seagate Expansion Drive/TestSet/cuts/c6.avi'
-    # proj.video_paths = '/media/flipajs/Seagate Expansion Drive/TestSet/cuts/c1.avi'
-    # proj.video_paths = '/media/flipajs/Seagate Expansion Drive/TestSet/cuts/c2.avi'
+    # proj.video_path = '/media/flipajs/Seagate Expansion Drive/TestSet/cuts/c6.avi'
+    # proj.video_path = '/media/flipajs/Seagate Expansion Drive/TestSet/cuts/c1.avi'
+    # proj.video_path = '/media/flipajs/Seagate Expansion Drive/TestSet/cuts/c2.avi'
 
     ex = SetupMSERsWizardPage()
     ex.project = proj
