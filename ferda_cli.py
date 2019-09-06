@@ -155,7 +155,9 @@ def run_experiment(config, force_prefix=None):
                     shutil.copytree(experiment.params['dataset']['initial_project'], project_dir)
 
                 project = Project.from_dir(project_dir, regions_optional=True, graph_optional=True, tracklets_optional=True)
-                run_tracking(project, reid_model_weights_path=experiment.params['dataset']['reidentification_weights'])
+                run_tracking(project,
+                             reid_model_weights_path=experiment.params['dataset'].get('reidentification_weights'),
+                             gt=experiment.params['dataset'].get('gt'))
                 save_results_mot(project, mot_results_file)
         elif config['run'] == 'single_object_tracking':
             from core.interactions.detect import track_video
