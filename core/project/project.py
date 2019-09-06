@@ -107,6 +107,7 @@ class Project(object):
         del d['_solver']
         del d['bg_model']
         del d['color_manager']
+        del d['img_manager']
         return d
 
     def set_rm(self, rm):
@@ -175,6 +176,7 @@ class Project(object):
             pbar.update()
 
             self.solver = Solver(self)
+            self.img_manager = ImgManager(self)
             set_managers(self, self.rm, self.chm, self.gm)
             self.working_directory = directory
             pbar.set_description('loading project')
@@ -254,6 +256,8 @@ def set_managers(project=None, rm=None, chm=None, gm=None):
             gm.assignment_score_fun = project.solver.assignment_score
         if chm is not None:
             chm.set_graph_manager(gm)
+    if project is not None:
+        project.img_manager.open_video()
 
 
 if __name__ == "__main__":
