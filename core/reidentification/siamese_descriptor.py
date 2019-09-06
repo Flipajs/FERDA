@@ -10,9 +10,9 @@ from tqdm import tqdm
 import argparse
 import logging
 
-from scripts.CNN.prepare_siamese_data import get_region_crop
-from scripts.CNN.prepare_siamese_data import ELLIPSE_DILATION, APPLY_ELLIPSE, OFFSET, MASK_SIGMA
-from scripts.CNN.train_siamese_contrastive_lost import create_base_network10, euclidean_distance, eucl_dist_output_shape
+from scripts.reidentification.prepare_siamese_data import get_region_crop
+from scripts.reidentification.prepare_siamese_data import ELLIPSE_DILATION, APPLY_ELLIPSE, OFFSET, MASK_SIGMA
+from scripts.reidentification.train_siamese_contrastive_lost import create_base_network10, euclidean_distance, eucl_dist_output_shape
 from core.project.project import Project
 
 logger = logging.getLogger(__name__)
@@ -94,7 +94,7 @@ def create_model(model_weights_path):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='compute re-identification descriptors for tracklets')
-    parser.add_argument('--weights', type=str, help='filename of the CNN model weights')
+    parser.add_argument('--weights', type=str, help='filename of the reidentification model weights')
     parser.add_argument('--project-dir', type=str, help='project directory')
     parser.add_argument('--add-missing', default=False, action='store_true',
                         help='if used - only ids missing in descriptors.pkl will be computed')

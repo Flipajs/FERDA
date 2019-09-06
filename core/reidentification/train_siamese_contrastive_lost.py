@@ -514,7 +514,7 @@ class DataGenerator(object):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
-        description='train siamese CNN with contrastive loss')
+        description='train siamese reidentification with contrastive loss')
 
     parser.add_argument('--datadir', type=str,
                         default='/Users/flipajs/Documents/wd/FERDA/april-paper/Cam1_clip/',

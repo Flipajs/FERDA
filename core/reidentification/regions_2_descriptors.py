@@ -27,7 +27,7 @@ def process_batch(imgs_batch, ids_batch):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
-        description='train siamese CNN with contrastive loss')
+        description='train siamese reidentification with contrastive loss')
 
     parser.add_argument('--datadir', type=str,
                         default='/Users/flipajs/Documents/wd/FERDA/CNN_desc_training_data_Cam1/',

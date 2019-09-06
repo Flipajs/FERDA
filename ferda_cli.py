@@ -56,7 +56,7 @@ def run_tracking(project, force_recompute=False, reid_model_weights_path=None):
     import core.graph_assembly
     import core.graph.solver
     from core.global_cardinality_classifier import fill_tracklet_cardinalites
-    from scripts.CNN.siamese_descriptor import compute_descriptors
+    from core.reidentification.siamese_descriptor import compute_descriptors
     from core.id_detection.complete_set_matching import do_complete_set_matching
     if force_recompute:
         project.next_processing_stage = 'segmentation'
