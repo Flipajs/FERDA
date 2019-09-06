@@ -1,3 +1,4 @@
+# prepare datasets for training a dimensionality reduction network for re-identification
 from __future__ import print_function
 from __future__ import print_function
 import numpy as np
@@ -6,35 +7,37 @@ from cachetools import LRUCache
 from tqdm import tqdm
 import random
 import h5py
-from os.path import join
+from os.path import join, exists
 from core.project.project import Project
 from utils.img import get_safe_selection
 from utils.img import apply_ellipse_mask
+import yaml
 
-# TODO: project parameter?
-OFFSET = 45
-ELLIPSE_DILATION = 10
-MASK_SIGMA = 10
-BATCH_SIZE = 500
-APPLY_ELLIPSE = True
-ALIGN = True
-NUM_EXAMPLES = 5000
-TEST_RATIO = .1
+DEFAULT_PARAMETERS = {
+    'offset': 45,
+    'ellipse_dilation': 10,
+    'mask_sigma': 10,
+    'apply_ellipse': True,
+    'align': True,
+    'num_examples': 5000,
+    'test_ratio': .1,
+}
+
+cache = None
 
 
-def get_region_image(region, vm, offset=45, add_ellipse_mask=True, mask_sigma=10, ellipse_dilation=10, align=True):
+def get_region_image(region, **kwargs):
     global cache
     img = cache[region.frame()]
     # img = vm.get_frame(region.frame())
-    crop = get_region_crop(region, img, add_ellipse_mask, ellipse_dilation, mask_sigma, offset, align)
-
+    crop = get_region_crop(region, img, **kwargs)
     return crop
 
 
-def get_region_crop(region, img, add_ellipse_mask, ellipse_dilation, mask_sigma, offset, align=True):
+def get_region_crop(region, img, apply_ellipse=True, ellipse_dilation=10, mask_sigma=10, offset=45, align=True, **kwargs):
     y, x = region.centroid()
     crop = get_safe_selection(img, y - offset, x - offset, 2 * offset, 2 * offset)
-    if add_ellipse_mask:
+    if apply_ellipse:
         crop = apply_ellipse_mask(region, crop, mask_sigma, ellipse_dilation)
 
     if align:
@@ -46,38 +49,46 @@ def get_region_crop(region, img, add_ellipse_mask, ellipse_dilation, mask_sigma,
     return crop
 
 
-def generate_reidentification_training_data(project_path, out_dir):
+def exist_reidentification_training_data(data_dir):
+    return \
+        exists(join(data_dir, 'descriptor_cnn_imgs_train.h5')) and \
+        exists(join(data_dir, 'descriptor_cnn_imgs_test.h5')) and \
+        exists(join(data_dir, 'descriptor_cnn_labels_train.h5')) and \
+        exists(join(data_dir, 'descriptor_cnn_labels_test.h5')) and \
+        exists(join(data_dir, 'descriptor_cnn_params.yaml'))
+
+
+def generate_reidentification_training_data(project, out_dir, parameters=None):
+    if parameters is None:
+        parameters = DEFAULT_PARAMETERS
     LINEAR = False
     np.set_printoptions(precision=2)
 
-    p = Project(project_path)
-    vm = p.get_video_manager()
+    vm = project.get_video_manager()
+    global cache
     cache = LRUCache(maxsize=5000, missing=lambda x: vm.get_frame(x))
 
     if LINEAR:
-        for i in tqdm(range(p.num_frames())):
+        for i in tqdm(range(project.num_frames())):
             cache[i]
 
     imgs = []
     labels = []
     i = 0
-    with tqdm(total=NUM_EXAMPLES) as pbar:
-        while i < NUM_EXAMPLES:
+    with tqdm(total=parameters['num_examples']) as pbar:
+        while i < parameters['num_examples']:
             frame = random.randint(0, vm.total_frame_count())
 
-            tracklets = filter(lambda x: x.is_single(), p.chm.tracklets_in_frame(frame))
+            tracklets = filter(lambda x: x.is_single(), project.chm.tracklets_in_frame(frame))
             if len(tracklets) > 1:
-                trackletA, trackletB = random.sample(tracklets)
+                trackletA, trackletB = random.sample(tracklets, 2)
                 regionA1 = trackletA.get_random_region()
                 regionA2 = trackletA.get_random_region()
                 regionB = trackletB.get_random_region()
 
-                cropA1 = get_region_image(regionA1, vm, offset=OFFSET, add_ellipse_mask=APPLY_ELLIPSE,
-                                          mask_sigma=MASK_SIGMA, ellipse_dilation=ELLIPSE_DILATION, align=ALIGN)
-                cropA2 = get_region_image(regionA2, vm, offset=OFFSET, add_ellipse_mask=APPLY_ELLIPSE,
-                                          mask_sigma=MASK_SIGMA, ellipse_dilation=ELLIPSE_DILATION, align=ALIGN)
-                cropB = get_region_image(regionB, vm, offset=OFFSET, add_ellipse_mask=APPLY_ELLIPSE,
-                                         mask_sigma=MASK_SIGMA, ellipse_dilation=ELLIPSE_DILATION, align=ALIGN)
+                cropA1 = get_region_image(regionA1, **parameters)
+                cropA2 = get_region_image(regionA2, **parameters)
+                cropB = get_region_image(regionB, **parameters)
 
                 imgs += [[cropA1, cropA2]]
                 imgs += [[cropA1, cropB]]
@@ -91,7 +102,7 @@ def generate_reidentification_training_data(project_path, out_dir):
     labels = np.array(labels)
     imgs = np.array(imgs)
 
-    split_idx = int(TEST_RATIO * len(imgs))
+    split_idx = int(parameters['test_ratio'] * len(imgs))
     imgs_test = np.array(imgs[:split_idx])
     imgs_train = np.array(imgs[split_idx:])
     labels_test = np.array(labels[:split_idx])
@@ -100,18 +111,15 @@ def generate_reidentification_training_data(project_path, out_dir):
     print("imgs TEST: {}, TRAIN: {}".format(imgs_test.shape, imgs_train.shape))
     print("labels TEST: {}, TRAIN: {}".format(labels_test.shape, labels_train.shape))
 
-    if ALIGN:
-        aligned = '_aligned'
-    else:
-        aligned = ''
-    with h5py.File(join(out_dir, 'descriptor_cnn_imgs_train{}.h5'.format(aligned)), 'w') as hf:
+    with h5py.File(join(out_dir, 'descriptor_cnn_imgs_train.h5'), 'w') as hf:
         hf.create_dataset("data", data=imgs_train)
-    with h5py.File(join(out_dir, 'descriptor_cnn_imgs_test{}.h5'.format(aligned)), 'w') as hf:
+    with h5py.File(join(out_dir, 'descriptor_cnn_imgs_test.h5'), 'w') as hf:
         hf.create_dataset("data", data=imgs_test)
-    with h5py.File(join(out_dir, 'descriptor_cnn_labels_train{}.h5'.format(aligned)), 'w') as hf:
+    with h5py.File(join(out_dir, 'descriptor_cnn_labels_train.h5'), 'w') as hf:
         hf.create_dataset("data", data=labels_train)
-    with h5py.File(join(out_dir, 'descriptor_cnn_labels_test{}.h5'.format(aligned)), 'w') as hf:
+    with h5py.File(join(out_dir, 'descriptor_cnn_labels_test.h5'), 'w') as hf:
         hf.create_dataset("data", data=labels_test)
+    open(join(out_dir, 'descriptor_cnn_params.yaml'), 'w').write(yaml.dump(parameters))
 
 
 if __name__ == '__main__':
@@ -121,6 +129,7 @@ if __name__ == '__main__':
     # path = '/Users/flipajs/Documents/wd/FERDA/april-paper/Camera3-5min'
     path = '../projects/Sowbug_deleteme2'
     # P_WD = '/Users/flipajs/Documents/wd/FERDA/zebrafish_new'
-    generate_reidentification_training_data(path, path)
+    project = Project(path)
+    generate_reidentification_training_data(project, path)
 
 

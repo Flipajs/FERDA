@@ -1,18 +1,18 @@
+# compute re-identification descriptors for all regions in single tracklets
 from __future__ import absolute_import
 from __future__ import print_function
 import numpy as np
 import pickle
 from os.path import join
-from keras.models import Model, load_model
-from keras.layers import Input, Flatten, Dense, Dropout, Lambda
-from keras.layers import Conv2D, MaxPooling2D, Input, Dense, Flatten, BatchNormalization, Activation
+from keras.models import Model
+from keras.layers import Lambda
+from keras.layers import Input
 from tqdm import tqdm
 import argparse
 import logging
-
-from scripts.reidentification.prepare_siamese_data import get_region_crop
-from scripts.reidentification.prepare_siamese_data import ELLIPSE_DILATION, APPLY_ELLIPSE, OFFSET, MASK_SIGMA
-from scripts.reidentification.train_siamese_contrastive_lost import create_base_network10, euclidean_distance, eucl_dist_output_shape
+from core.reidentification.prepare_siamese_data import DEFAULT_PARAMETERS, get_region_crop
+from core.reidentification.train_siamese_contrastive_lost import create_base_network10, euclidean_distance, \
+    eucl_dist_output_shape
 from core.project.project import Project
 
 logger = logging.getLogger(__name__)
@@ -25,8 +25,10 @@ def normalize_and_prepare_imgs(imgs):
     return imgs
 
 
-def compute_descriptors(project_dir, model_weights_path, add_missing=False):
+def compute_descriptors(project_dir, model_weights_path, add_missing=False, parameters=None):
     logger.info('computing re-id descriptors')
+    if parameters is None:
+        parameters = DEFAULT_PARAMETERS
     model = create_model(model_weights_path)
 
     p = Project(project_dir)
@@ -50,7 +52,7 @@ def compute_descriptors(project_dir, model_weights_path, add_missing=False):
             if region.id() in descriptors:
                 continue
 
-            crop = get_region_crop(region, img, APPLY_ELLIPSE, ELLIPSE_DILATION, MASK_SIGMA, OFFSET)
+            crop = get_region_crop(region, img, **parameters)
             imgs.append(crop)
             r_ids.append(region.id())
 
@@ -72,8 +74,6 @@ def compute_descriptors(project_dir, model_weights_path, add_missing=False):
             descriptors[r_id] = descs[k, :]
     with open(join(project_dir, 'descriptors.pkl'), 'wb') as f:
         pickle.dump(descriptors, f)
-    import pandas as pd
-    # logger.debug(pd.DataFrame(descriptors).T)
     logger.info('done')
 
 

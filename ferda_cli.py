@@ -18,13 +18,10 @@ import logging.config
 import yaml
 import subprocess
 import shutil
-import itertools
 from collections import defaultdict
 import webbrowser
-from utils.experiment import Parameters, Experiment
-from core.region.region_manager import RegionManager
+from utils.experiment import Experiment
 from utils.gt.mot import results_to_mot, metrics_higher_is_better, metrics_lower_is_better
-from utils.gt.gt_project import GtProject
 import sys
 from core.config import config
 from warnings import warn
@@ -49,15 +46,13 @@ def fix_orientation(project):
     print('Swapped {} regions orientation.'.format(n_swaps))
 
 
-def run_tracking(project, force_recompute=False, reid_model_weights_path=None):
+def run_tracking(project, force_recompute=False, reid_model_weights_path=None, gt=None):
     if config['general']['fix_random_seed']:
         fix_randomness()
     import core.segmentation
     import core.graph_assembly
     import core.graph.solver
     from core.global_cardinality_classifier import fill_tracklet_cardinalites
-    from core.reidentification.siamese_descriptor import compute_descriptors
-    from core.id_detection.complete_set_matching import do_complete_set_matching
     if force_recompute:
         project.next_processing_stage = 'segmentation'
     if project.next_processing_stage == 'segmentation':
@@ -81,15 +76,31 @@ def run_tracking(project, force_recompute=False, reid_model_weights_path=None):
         project.next_processing_stage = 're-identification'
         project.save()
     if project.next_processing_stage == 're-identification':
-        # not os.path.isfile(join(project.working_directory, 'descriptors.pkl')):
         logger.info('run_tracking: re-identification descriptors computation')
         assert reid_model_weights_path is not None, \
             'missing reidentification model weights, to train a model see prepare_siamese_data.py, train_siamese_contrastive_lost.py'
-        compute_descriptors(project.working_directory, reid_model_weights_path)
+        reid_dir = os.path.dirname(reid_model_weights_path)
+        if not os.path.exists(reid_model_weights_path):
+            logger.info('run_tracking: re-identification network weights missing')
+            from core.reidentification import prepare_siamese_data
+            if not prepare_siamese_data.exist_reidentification_training_data(reid_dir):
+                logger.info('run_tracking: generating training data for re-identification')
+                prepare_siamese_data.generate_reidentification_training_data(project, reid_dir)
+            logger.info('run_tracking: training re-identification network')
+            from core.reidentification import train_siamese_contrastive_lost
+            train_siamese_contrastive_lost.train(reid_dir)
+        reid_params_path = join(reid_dir, 'parameters.yaml')
+        if os.path.exists(reid_params_path):
+            reid_params = yaml.load(open(reid_params_path, 'r'))
+        else:
+            reid_params = None
+        from core.reidentification.siamese_descriptor import compute_descriptors
+        compute_descriptors(project.working_directory, reid_model_weights_path, reid_params)
         project.next_processing_stage = 'complete_sets_matching'
         project.save()
     if project.next_processing_stage == 'complete_sets_matching':
         logger.info('run_tracking: complete set matching')
+        from core.id_detection.complete_set_matching import do_complete_set_matching
         do_complete_set_matching(project)
         project.next_processing_stage = 'export_results'
         # project.save()

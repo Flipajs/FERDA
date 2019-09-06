@@ -1,3 +1,5 @@
+# train a dimensionality reduction network for re-identification
+
 # based on https://github.com/keras-team/keras/blob/master/examples/mnist_siamese.py
 
 '''Trains a Siamese MLP on pairs of digits from the MNIST dataset.
@@ -17,6 +19,8 @@ Gets to 97.2% test accuracy after 20 epochs.
 from __future__ import absolute_import
 from __future__ import print_function
 import numpy as np
+import yaml
+from os.path import join
 
 import random
 from keras.datasets import mnist
@@ -47,6 +51,7 @@ def contrastive_loss(y_true, y_pred):
     return K.mean(y_true * K.square(y_pred) +
                   (1 - y_true) * K.square(K.maximum(margin - y_pred, 0)))
 
+
 def contrastive_loss2(y_true, y_pred):
     '''Contrastive loss from Hadsell-et-al.'06
     http://yann.lecun.com/exdb/publis/pdf/hadsell-chopra-lecun-06.pdf
@@ -54,6 +59,7 @@ def contrastive_loss2(y_true, y_pred):
     margin = 1
     return K.mean(y_true * K.square(K.maximum(y_pred, 0)) +
                   (1 - y_true) * K.square(K.maximum(margin - y_pred, 0)))
+
 
 def create_base_network1(input_shape):
     '''Base network to be shared (eq. to feature extraction).
@@ -90,6 +96,7 @@ def create_base_network1(input_shape):
     m.summary()
     return m
 
+
 def create_base_network2(input_shape):
     '''Base network to be shared (eq. to feature extraction).
     '''
@@ -125,6 +132,7 @@ def create_base_network2(input_shape):
     m.summary()
     return m
 
+
 def create_base_network3(input_shape):
     '''Base network to be shared (eq. to feature extraction).
     '''
@@ -151,6 +159,7 @@ def create_base_network3(input_shape):
     m = Model(input, x)
     m.summary()
     return m
+
 
 def create_base_network4(input_shape):
     '''Base network to be shared (eq. to feature extraction).
@@ -179,6 +188,7 @@ def create_base_network4(input_shape):
     m.summary()
     return m
 
+
 def create_base_network5(input_shape):
     '''Base network to be shared (eq. to feature extraction).
     '''
@@ -205,6 +215,7 @@ def create_base_network5(input_shape):
     m = Model(input, x)
     m.summary()
     return m
+
 
 def create_base_network6(input_shape):
     '''Base network to be shared (eq. to feature extraction).
@@ -234,6 +245,7 @@ def create_base_network6(input_shape):
     m.summary()
     return m
 
+
 def create_base_network7(input_shape):
     '''Base network to be shared (eq. to feature extraction).
     '''
@@ -262,6 +274,7 @@ def create_base_network7(input_shape):
     m.summary()
     return m
 
+
 def create_base_network8(input_shape):
     ''' Basiacly network 5 + padding added...
     '''
@@ -288,6 +301,7 @@ def create_base_network8(input_shape):
     m = Model(input, x)
     m.summary()
     return m
+
 
 def create_base_network9(input_shape):
     ''' Basiacly network 5 + padding added...
@@ -317,6 +331,7 @@ def create_base_network9(input_shape):
     m = Model(input, x)
     m.summary()
     return m
+
 
 def create_base_network10(input_shape):
     ''' Basiacly network 5 + padding added...
@@ -348,6 +363,7 @@ def create_base_network10(input_shape):
 
     return m
 
+
 def create_base_network11(input_shape):
     ''' Basiacly network 5 + padding added...
     '''
@@ -377,6 +393,7 @@ def create_base_network11(input_shape):
     m.summary()
 
     return m
+
 
 def create_base_network_mobilenet_like(input_shape):
     from keras.applications.mobilenet import _conv_block, _depthwise_conv_block
@@ -414,6 +431,7 @@ def create_base_network_mobilenet_like(input_shape):
 
     m.summary()
     return m
+
 
 def create_basenetwork_squeezenet_like(input_shape):
     from keras_squeezenet.squeezenet import fire_module
@@ -512,73 +530,42 @@ class DataGenerator(object):
             #     )
 
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(
-        description='train siamese reidentification with contrastive loss')
-
-    parser.add_argument('--datadir', type=str,
-                        default='/Users/flipajs/Documents/wd/FERDA/april-paper/Cam1_clip/',
-                        # default='/Users/flipajs/Documents/wd/FERDA/zebrafish_new/',
-                        help='path to dataset')
-    parser.add_argument('--epochs', type=int,
-                        default=10,
-                        help='number of epochs')
-    parser.add_argument('--batch_size', type=int,
-                        default=128,
-                        help='batch size')
-    parser.add_argument('--weights_name', type=str, default='best_weights',
-                        help='name used for saving intermediate results')
-    parser.add_argument('--num_negative', type=int, default=1,
-                        help='name used for saving intermediate results')
-    parser.add_argument('--continue_training', default=False, action='store_true',
-                        help='if True, use --weights as initialisation')
-
-    args = parser.parse_args()
-    print(args)
-
-    with h5py.File(args.datadir + '/descriptor_cnn_imgs_train.h5', 'r') as hf:
+def train(datadir, epochs=10, batch_size=128, continue_training=False):
+    with h5py.File(datadir + '/descriptor_cnn_imgs_train.h5', 'r') as hf:
         tr_pairs = hf['data'][:]
-
-    with h5py.File(args.datadir + '/descriptor_cnn_imgs_test.h5', 'r') as hf:
+    with h5py.File(datadir + '/descriptor_cnn_imgs_test.h5', 'r') as hf:
         te_pairs = hf['data'][:]
-
-    with h5py.File(args.datadir + '/descriptor_cnn_labels_train.h5', 'r') as hf:
+    with h5py.File(datadir + '/descriptor_cnn_labels_train.h5', 'r') as hf:
         tr_y = hf['data'][:]
-
-    with h5py.File(args.datadir + '/descriptor_cnn_labels_test.h5', 'r') as hf:
+    with h5py.File(datadir + '/descriptor_cnn_labels_test.h5', 'r') as hf:
         te_y = hf['data'][:]
-
+    parameters = yaml.load(open(join(datadir, 'descriptor_cnn_params.yaml'), 'r'))
     # # normalize..
     tr_pairs = tr_pairs.astype('float32')
     tr_pairs /= 255
-
     te_pairs = te_pairs.astype('float32')
     te_pairs /= 255
-
     print("train shape {}, min: {} max: {}".format(tr_pairs.shape, tr_pairs.min(), tr_pairs.max()))
     print("test shape {}, min: {} max: {}".format(te_pairs.shape, te_pairs.min(), te_pairs.max()))
     print("y_train shape {}, min: {} max: {}".format(tr_y.shape, tr_y.min(), tr_y.max()))
-
     input_shape = tr_pairs.shape[2:]
     print(input_shape)
-
     architectures = [
-                     # create_base_network1,
-                     # create_base_network2,
-                     # create_base_network3,
-                     # create_base_network4,
-                     # create_base_network5,
-                     # create_base_network6,
-                     # create_base_network7,
-                     # create_base_network8,
-                     # create_base_network9,
-                     create_base_network10,
-                     # create_base_network11,
-                     # create_base_network_mobilenet_like,
-                     # create_basenetwork_squeezenet_like
-                     ]
-    datagen = DataGenerator(args.batch_size, tr_pairs, tr_y)
-
+        # create_base_network1,
+        # create_base_network2,
+        # create_base_network3,
+        # create_base_network4,
+        # create_base_network5,
+        # create_base_network6,
+        # create_base_network7,
+        # create_base_network8,
+        # create_base_network9,
+        create_base_network10,
+        # create_base_network11,
+        # create_base_network_mobilenet_like,
+        # create_basenetwork_squeezenet_like
+    ]
+    datagen = DataGenerator(batch_size, tr_pairs, tr_y)
     for architecture in architectures:
         print("")
         print("")
@@ -601,32 +588,30 @@ if __name__ == '__main__':
         model = Model([input_a, input_b], distance)
         model.summary()
 
-        if args.continue_training:
+        if continue_training:
             from keras.models import load_model
-
-            # model = load_model('/Users/flipajs/Documents/wd/FERDA/CNN_desc_training_data_Cam1/best_model_on6_300_ft.h5', compile=False)
-            model = load_model(args.datadir+'/best_model.h5', compile=False)
-
+            model = load_model(datadir + '/weights.h5', compile=False)
 
         # train
         # rms = RMSprop()
         model.compile(loss=contrastive_loss2, optimizer='adam', metrics=[accuracy])
 
-        checkpoint = ModelCheckpoint(args.datadir+'/best_model.h5', monitor='val_accuracy', verbose=1, save_best_only=True, mode='max')
+        checkpoint = ModelCheckpoint(datadir + '/weights.h5', monitor='val_accuracy', verbose=1,
+                                     save_best_only=True, mode='max')
         callbacks_list = [checkpoint]
 
         model.fit_generator(generator=datagen.next_train(), samples_per_epoch=datagen.samples_per_train,
-                            nb_epoch=args.epochs, validation_data=([te_pairs[:, 0], te_pairs[:, 1]], te_y),
+                            nb_epoch=epochs, validation_data=([te_pairs[:, 0], te_pairs[:, 1]], te_y),
                             callbacks=callbacks_list)
 
-        # model.fit_generator(datagen.flow(te_pairs, tr_y, batch_size=args.batch_size),
+        # model.fit_generator(datagen.flow(te_pairs, tr_y, batch_size=batch_size),
         #                     steps_per_epoch=,
-        #                     epochs=args.epochs,
+        #                     epochs=epochs,
         #                     validation_data=([te_pairs[:, 0], te_pairs[:, 1]], te_y))
 
         # model.fit([tr_pairs[:, 0], tr_pairs[:, 1]], tr_y,
-        #           batch_size=args.batch_size,
-        #           epochs=args.epochs,
+        #           batch_size=batch_size,
+        #           epochs=epochs,
         #           validation_data=([te_pairs[:, 0], te_pairs[:, 1]], te_y))
 
         # compute final accuracy on training and test sets
@@ -637,3 +622,23 @@ if __name__ == '__main__':
 
         print('* Accuracy on training set: %0.2f%%' % (100 * tr_acc))
         print('* Accuracy on test set: %0.2f%%' % (100 * te_acc))
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(
+        description='train siamese reidentification with contrastive loss')
+
+    parser.add_argument('--datadir', type=str, help='path to dataset')
+    parser.add_argument('--epochs', type=int,
+                        default=10,
+                        help='number of epochs')
+    parser.add_argument('--batch_size', type=int,
+                        default=128,
+                        help='batch size')
+    parser.add_argument('--continue_training', default=False, action='store_true',
+                        help='if True, use --weights as initialisation')
+
+    args = parser.parse_args()
+    print(args)
+
+    train(args.datadir, args.epochs, args.batch_size, args.continue_training)

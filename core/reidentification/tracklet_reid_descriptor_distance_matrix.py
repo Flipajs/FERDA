@@ -1,5 +1,5 @@
 """
-Computes tracklet distance matrices based on reidentification descriptors.
+Computes a tracklet distance matrices based on reidentification descriptors.
 
 For a visualization see the VAIB paper and experiments/tracking/180427_vaib_tracklet_reid_descriptor_distance_matrix.ipynb.
 """
