@@ -12,9 +12,9 @@ handlers:
     level: DEBUG
     formatter: simple_funcname
     stream: ext://sys.stdout
-loggers:
-  core.id_detection.complete_set_matching:
-    level: DEBUG
+#loggers:
+#  core.id_detection.complete_set_matching:
+#    level: DEBUG
 #  core.segmentation:
 #    level: DEBUG
 #  scripts.regions_stats:
