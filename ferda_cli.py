@@ -454,7 +454,7 @@ if __name__ == '__main__':
                 print(dataset_name)
                 experiments = load_experiments(join(experiments_config['dir'], dataset_name), trajectories_required=True)
                 run_visualization(dataset['visualize_experiments'], experiments,
-                                  dataset['gt'], dataset['video'],
+                                  dataset.get('gt'), dataset['video'],
                                   join(experiments_config['dir'], dataset_name,
                                        time.strftime("%y%m%d_%H%M", time.localtime()) + '_visualization.mp4'))
         sys.exit(0)
