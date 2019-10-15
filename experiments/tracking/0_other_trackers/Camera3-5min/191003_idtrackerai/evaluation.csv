@@ -1,0 +1,2 @@
+num_frames,obj_frequencies,pred_frequencies,num_matches,num_switches,num_false_positives,num_misses,num_detections,num_objects,num_predictions,num_unique_objects,track_ratios,mostly_tracked,partially_tracked,mostly_lost,num_fragmentations,motp,mota,precision,recall,idfp,idfn,idtp,idp,idr,idf1,motp_px
+4500,,,36698,70,5,8202,36768,44970,36773,10,,5,5,0,632,53.502063212026954,0.8159439626417612,0.9998640306746798,0.8176117411607738,3883.0,12080.0,32890.0,0.8944062219563267,0.7313764732043585,0.8047172234931431,7.314510456074757
