@@ -1,6 +1,7 @@
 import unittest
 from core.reidentification.prepare_siamese_data import generate_reidentification_training_data, DEFAULT_PARAMETERS
 from utils.misc import makedirs
+from core.project.project import Project
 
 
 class PrepareSiameseDataTestCase(unittest.TestCase):
@@ -9,7 +10,8 @@ class PrepareSiameseDataTestCase(unittest.TestCase):
         makedirs(out_dir)
         params = DEFAULT_PARAMETERS.copy()
         params['num_examples'] = 10
-        generate_reidentification_training_data('test/project/Sowbug3_cut_300_frames', out_dir, params)
+        p = Project('test/project/Sowbug3_cut_300_frames')
+        generate_reidentification_training_data(p, out_dir, params)
 
 
 if __name__ == '__main__':
