@@ -27,11 +27,11 @@ class BBox(Shape):
             return cls(d['x'], d['y'], d['x'] + d['width'], d['y'] + d['height'], frame)
 
     @classmethod
-    def from_xyhw(cls, x, y, width, height, frame=None):
+    def from_xywh(cls, x, y, width, height, frame=None):
         return cls(x, y, x + width, y + height, frame)
 
     @classmethod
-    def from_xycenter_hw(cls, x_center, y_center, width, height, frame=None):
+    def from_xycenter_wh(cls, x_center, y_center, width, height, frame=None):
         return cls(x_center - width / 2, y_center - height / 2, x_center + width / 2, y_center + height / 2, frame)
 
     def __init__(self, xmin=None, ymin=None, xmax=None, ymax=None, frame=None):
