@@ -12,7 +12,7 @@ import numpy as np
 from core.id_detection.complete_set_matching import get_probability_that_prototypes_are_same_tracks
 import itertools
 import tqdm
-import utils.gt.gt as gt
+import utils.gt.mot as gt
 import joblib
 
 
@@ -34,7 +34,7 @@ def get_distance_matrix(project_path, gt_path):
     p = Project(project_path)
     lp = LearningProcess(p)
     csm = CompleteSetMatching(p, lp, join(project_path, 'descriptors.pkl'), quality_threshold=0.2, quality_threshold2=0.01)
-    ground_truth = gt.GT()
+    ground_truth = gt.Mot()
     ground_truth.load(gt_path)
     
     tracklets = [t for t in p.chm.chunk_gen() if t.is_single()]

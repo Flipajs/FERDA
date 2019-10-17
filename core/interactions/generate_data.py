@@ -46,13 +46,13 @@ from core.interactions.visualization import save_prediction_img, save_img_with_o
 from core.interactions.io import read_gt
 from utils.img import safe_crop
 from utils.dataset_io import ImageIOFile, ImageIOHdf5, DataIOCSV, DataIOVot, Dataset
-from utils.gt.gt import GT
-from utils.gt.gt_project import GtProjectMixin
+from utils.gt.mot import Mot
+from utils.gt.mot_project import MotProjectMixin
 from utils.misc import makedirs
 
 # memory = Memory('out/cache', verbose=1)
 
-class GtProject(GtProjectMixin, GT):
+class MotProject(MotProjectMixin, Mot):
     pass
 
 
@@ -450,7 +450,7 @@ class DataGenerator(object):
         """
         self._load_project(project_dir)
         if gt_filename is not None:
-            gt = GtProject(gt_filename)
+            gt = MotProject(gt_filename)
             gt.set_project_offsets(self._project)
             gt.break_on_inconsistency = True
         else:

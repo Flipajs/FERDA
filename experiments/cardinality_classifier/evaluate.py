@@ -1,5 +1,5 @@
 from core.project.project import Project
-from utils.gt.gt import GT
+from utils.gt.mot import Mot
 import tqdm
 
 
@@ -48,7 +48,7 @@ if __name__ == '__main__':
     p = Project()
     p.load(path)
 
-    gt = GT()
+    gt = Mot()
     gt.load(gt_path)
     gt.set_project_offsets(p)
     eval_cardinality_classification(p, gt)

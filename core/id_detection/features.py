@@ -6,7 +6,7 @@ import math
 from utils.img import rotate_img, centered_crop, get_bounding_box, endpoint_rot
 from skimage.feature import local_binary_pattern
 from core.id_detection.feature_manager import FeatureManager
-from utils.gt.gt import GT
+from utils.gt.mot import Mot
 from utils.misc import print_progress
 from itertools import izip
 # import pyximport; pyximport.install()
@@ -254,7 +254,7 @@ def evaluate_features_performance(
     from sklearn.model_selection import train_test_split
     from sklearn.ensemble import RandomForestClassifier
 
-    gt = GT()
+    gt = Mot()
     gt.load(project.GT_file)
 
     single_region_ids, animal_ids = gt.get_single_region_ids(project)
@@ -922,7 +922,7 @@ if __name__ == '__main__':
     #
     # plt.show()
 
-    gt = GT()
+    gt = Mot()
     gt.load(p.GT_file)
 
     # test_regions = []

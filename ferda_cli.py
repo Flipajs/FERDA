@@ -21,7 +21,7 @@ import shutil
 from collections import defaultdict
 import webbrowser
 from utils.experiment import Experiment
-from utils.gt.mot import results_to_mot, metrics_higher_is_better, metrics_lower_is_better
+from utils.gt.io import results_to_mot, metrics_higher_is_better, metrics_lower_is_better
 import sys
 from core.config import config
 from warnings import warn
@@ -231,7 +231,7 @@ def run_visualization(experiment_names, all_experiments, gt_file, in_video_file,
     :param in_video_file: input video filename
     :param out_video_file: output visualization filename
     """
-    from utils.gt.mot import visualize_mot, load_mot
+    from utils.gt.io import visualize_mot, load_mot
     df_mots = []
     names = []
     # fix for missing exp_name keys

@@ -17,6 +17,7 @@ from gui.settings import Settings as S_
 from gui.video_player.video_player import VideoPlayer
 from utils.idtracker import load_idtracker_data
 from utils.img import img_saturation_coef
+from utils.gt.mot_project import MotProject
 
 MARKER_SIZE = 15
 

@@ -30,7 +30,7 @@ from shapes.transformableregion import TransformableRegion
 from core.graph.region_chunk import RegionChunk
 from utils.img import safe_crop
 from utils.objectsarray import ObjectsArray
-from utils.gt.mot import load_mot, results_to_mot, eval_mot, mot_in_roi
+from utils.gt.io import load_mot, results_to_mot, eval_mot, mot_in_roi
 from shapes.ellipse import Ellipse
 from utils.roi import ROI
 from utils.misc import makedirs
@@ -847,7 +847,7 @@ def track_video(tracker_dir, project_dir, out_dir, forward=True):
         results[:, :, 0] += detector.project.video_crop_model['y1']
         results[:, :, 1] += detector.project.video_crop_model['x1']
 
-    from utils.gt.mot import results_to_mot
+    from utils.gt.io import results_to_mot
     df = results_to_mot(results)
     df.to_csv(join(out_dir, 'results.txt'), header=False, index=False)
 

@@ -144,8 +144,8 @@ class LearningProcess:
         self.GT_in_the_loop = False
 
         if self.GT_in_the_loop:
-            from utils.gt.gt import GT
-            self.GT = GT()
+            from utils.gt.mot import Mot
+            self.GT = Mot()
             self.GT.load(self.p.GT_file)
 
         try:
@@ -2158,8 +2158,8 @@ class LearningProcess:
 
         # load gt...
         path = '/Users/flipajs/Documents/dev/ferda/data/GT/Cam1_.pkl'
-        from utils.gt.gt import GT
-        self.GT = GT()
+        from utils.gt.mot import Mot
+        self.GT = Mot()
         self.GT.load(path)
         self.GT.set_project_offsets(p)
 
@@ -2483,8 +2483,8 @@ class LearningProcess:
         try:
             # path = '/Users/flipajs/Documents/dev/ferda/data/GT/Cam1_.pkl'
             path = '/Users/flipajs/Documents/dev/ferda/data/GT/rep1-cam2.pkl'
-            from utils.gt.gt import GT
-            self.GT = GT()
+            from utils.gt.mot import Mot
+            self.GT = Mot()
             self.GT.load(path)
             self.GT.set_project_offsets(p)
 
@@ -2620,8 +2620,8 @@ class LearningProcess:
 
         try:
             path = '/Users/flipajs/Documents/dev/ferda/data/GT/Cam1_.pkl'
-            from utils.gt.gt import GT
-            self.GT = GT()
+            from utils.gt.mot import Mot
+            self.GT = Mot()
             self.GT.load(path)
             self.GT.set_project_offsets(p)
 
