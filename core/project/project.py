@@ -180,6 +180,7 @@ class Project(object):
             set_managers(self, self.rm, self.chm, self.gm)
             self.working_directory = directory
             pbar.set_description('loading project')
+            assert not hasattr(self, 'video_paths'), 'old file format, rename video_paths to video_path'
 
     @classmethod
     def from_dir(cls, directory, video_file=None,
