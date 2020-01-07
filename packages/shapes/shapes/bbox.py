@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+import copy
 
 from shapes.shape import Shape
 from shapes.ep import p2e, e2p, column
@@ -61,8 +62,43 @@ class BBox(Shape):
     def to_poly(self):
         return [(self.xmin, self.ymin), (self.xmin, self.ymax), (self.xmax, self.ymax), (self.xmax, self.ymin)]
 
-    def is_outside_bounds(self, xmin, ymin, xmax, ymax):
-        return self.xmin < xmin or self.ymin < ymin or self.xmax > xmax or self.ymax > ymax
+    def is_strictly_outside_bounds(self, xmin, ymin, xmax, ymax):
+        return self.iou(BBox(xmin, ymin, xmax, ymax)) == 0
+
+    def is_strictly_outside_bbox(self, bbox):
+        return self.is_strictly_outside_bounds(*bbox.to_array()[:4])
+
+    def is_partially_outside_bounds(self, xmin, ymin, xmax, ymax):
+        return self.iou(BBox(xmin, ymin, xmax, ymax)) > 0 and not self.is_inside_bounds(xmin, ymin, xmax, ymax)
+
+    def is_partially_outside_bbox(self, bbox):
+        return self.is_partially_outside_bounds(*bbox.to_array()[:4])
+
+    def is_inside_bounds(self, xmin, ymin, xmax, ymax):
+        return self.xmin > xmin and self.ymin > ymin and self.xmax < xmax and self.ymax < ymax
+
+    def is_inside_bbox(self, bbox):
+        return self.is_inside_bounds(*bbox.to_array()[:4])
+
+    def cut(self, viewport_bbox):
+        if self.is_strictly_outside_bbox(viewport_bbox):
+            return None
+        elif self.is_inside_bbox(viewport_bbox):
+            return self
+        else:
+            assert self.is_partially_outside_bbox(viewport_bbox)
+            return self.intersection(viewport_bbox)
+
+    def intersection(self, other):
+        xmin = max(self.xmin, other.xmin)
+        ymin = max(self.ymin, other.ymin)
+        xmax = min(self.xmax, other.xmax)
+        ymax = min(self.ymax, other.ymax)
+        if ymin >= ymax or xmin >= xmax:
+            return None
+        else:
+            assert self.frame == other.frame
+            return BBox(xmin, ymin, xmax, ymax, self.frame)
 
     def to_array(self):
         return np.array([self.xmin, self.ymin, self.xmax, self.ymax, self.frame])
@@ -75,14 +111,15 @@ class BBox(Shape):
         # source: https://www.pyimagesearch.com/2016/11/07/intersection-over-union-iou-for-object-detection/
 
         # determine the (x, y)-coordinates of the intersection rectangle
-        inter_xmin = max(self.xmin, bbox.xmin)
-        inter_ymin = max(self.ymin, bbox.ymin)
-        inter_xmax = min(self.xmax, bbox.xmax)
-        inter_ymax = min(self.ymax, bbox.ymax)
+        intersection = self.intersection(bbox)
+
+        if intersection is None:
+            return 0
 
         # compute the area of intersection rectangle
         # interArea = max(0, inter_xmax - inter_xmin + 1) * max(0, inter_ymax - inter_ymin + 1)
-        interArea = max(0, inter_xmax - inter_xmin) * max(0, inter_ymax - inter_ymin)
+        # interArea = max(0, inter_xmax - inter_xmin) * max(0, inter_ymax - inter_ymin)
+        interArea = intersection.area
 
         # compute the area of both the prediction and ground-truth
         # rectangles
@@ -92,10 +129,7 @@ class BBox(Shape):
         # compute the intersection over union by taking the intersection
         # area and dividing it by the sum of prediction + ground-truth
         # areas - the interesection area
-        iou = interArea / float(self.area + bbox.area - interArea)
-
-        # return the intersection over union value
-        return iou
+        return interArea / float(self.area + bbox.area - interArea)
 
     def __sub__(self, other):
         return np.linalg.norm(self.xy - other.xy)
