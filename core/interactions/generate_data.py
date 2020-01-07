@@ -59,7 +59,7 @@ class MotProject(MotProjectMixin, Mot):
 class TrainingDataset(Dataset):
     def __init__(self, out_dir=None, count=None, image_format=None, data_format=None,
                  img_shape=None, overwrite=False, two_images=False, name='train', csv_name='train.csv',
-                 csv_columns=('x', 'y', 'major', 'minor', 'angle_deg_cw'), idx_start=0):
+                 csv_columns=('x', 'y', 'major', 'minor', 'angle_deg_cw'), idx_start=0, **kwargs):
         if out_dir is not None:
             assert count is not None
             padding = ':0{}d'.format(len(str(count)))
@@ -84,7 +84,7 @@ class TrainingDataset(Dataset):
                 else:
                     image_io = [ImageIOHdf5(h5_file.create_dataset(name, (count,) + img_shape, np.uint8))]
             elif image_format == 'file':
-                out_dir_imgs = join(out_dir, 'imgs')
+                out_dir_imgs = join(out_dir, 'JPEGImages')  # JPEGImages - pascal voc directory naming
                 makedirs(out_dir_imgs)
                 if two_images:
                     image_io = [
@@ -105,8 +105,17 @@ class TrainingDataset(Dataset):
                         raise OSError(errno.EEXIST, 'file %s already exists.' % csv_filename)
                 data_io = DataIOCSV(csv_filename, csv_columns)
             elif data_format == 'vot':
-                out_dir_annotations = join(out_dir, 'annotations')
+                out_dir_annotations = join(out_dir, 'Annotations')
                 makedirs(out_dir_annotations)
+                if 'vot_imagesets' in kwargs:
+                    self.vot_imagesets = kwargs['vot_imagesets']
+                else:
+                    self.vot_imagesets = {'trainval.txt': None,
+                                          'train.txt': 0.8,
+                                          'val.txt': 0.2}
+                out_dir_imagesets = join(out_dir, 'ImageSets/Main')
+                makedirs(out_dir_imagesets)
+                self.vot_imageset_dir = out_dir_imagesets
                 data_io = DataIOVot(join(out_dir_annotations, '{idx' + padding + '}.xml'),
                                     image_filename_template='{idx' + padding + '}.jpg',
                                     image_shape=img_shape)
@@ -121,6 +130,20 @@ class TrainingDataset(Dataset):
         super(TrainingDataset, self).__init__(image_io, data_io)
         self.next_idx = idx_start
 
+    def close(self):
+        if hasattr(self, 'vot_imagesets'):  # for vot
+            num_samples = self.next_idx
+            start_idx = 0
+            for filename, frac in self.vot_imagesets.iteritems():
+                if frac is None:  # include all samples
+                    idx_range = None
+                else:
+                    last_idx = min(start_idx + int(round(num_samples * frac)), num_samples)
+                    idx_range = range(start_idx, last_idx)
+                    start_idx = last_idx
+                self.data_io.write_imageset(join(self.vot_imageset_dir, filename), idx_range)
+        super(TrainingDataset, self).close()
+
 
 class DataGenerator(object):
     def __init__(self):
@@ -133,7 +156,8 @@ class DataGenerator(object):
                        'tracklet_min_speed_px': 0,
                        'tracklet_remove_fraction': 0,
                        'regression_tracking_image_size_px': 224,
-                       'detection_image_size_px': 224,
+                       # 'detection_image_size_px': 224,
+                       'detection_image_size_px': 800,
 #                       'augmentation_elliptic_mask_multipliers': (1, 1), # fishes, sowbugs
                        'augmentation_elliptic_mask_multipliers': (1.5, 4),  # ants
                        }
@@ -450,7 +474,7 @@ class DataGenerator(object):
         """
         self._load_project(project_dir)
         if gt_filename is not None:
-            gt = MotProject(gt_filename)
+            gt = MotProject(filename=gt_filename)
             gt.set_project_offsets(self._project)
             gt.break_on_inconsistency = True
         else:
@@ -517,35 +541,41 @@ class DataGenerator(object):
                                                        self.params['detection_image_size_px'],
                                                        return_src_range=True)
 
+            viewport = BBox(0, 0,
+                            self.params['detection_image_size_px'] - 1,
+                            self.params['detection_image_size_px'] - 1)
             # bboxes for first object and synthetic object
             model = timg.get_model_copy().move(-delta_xy)
             # model_dict = model.to_dict()
-            bbox_models = [BBox.from_planar_object(model)]
+            bbox_models = [BBox.from_planar_object(model).cut(viewport)]
             bbox_ids = [region.gt_id]
             points = [[Point(x, y, region.frame()).move(-delta_xy)] for y, x in region.get_head_tail()]
+            truncated = [0 if not bbox_models[-1].is_partially_outside_bbox(viewport) else 1]
             if augmentation:
                 model_aug = timg_aug.get_model_copy().move(-delta_xy)
                 # model_dict.update(model_aug.to_dict(1))
-                bbox_models.append(BBox.from_planar_object(model_aug))
+                bbox_models.append(BBox.from_planar_object(model_aug).cut(viewport))
                 bbox_ids.append(aug_region.gt_id)
                 for pointlist, yx in zip(points, aug_region.get_head_tail()):
                     x, y = timg_aug.get_transformed_coords(yx[::-1])
                     pointlist.append(Point(x, y, aug_region.frame()).move(-delta_xy))
+                truncated.append(0 if not bbox_models[-1].is_partially_outside_bbox(viewport) else 1)
 
             # bboxes for other present objects
-            size_px = self.params['detection_image_size_px']
             discard = False
             for r in regions_by_frame[region.frame()]:
                 bbox = BBox.from_planar_object(Ellipse.from_region(r)).move(-delta_xy)
-                if r != region and not bbox.is_outside_bounds(0, 0, size_px, size_px):
+                if r != region and not bbox.is_strictly_outside_bbox(viewport):
                     if r.cardinality == 'multi':
                         discard = True
                         break
                     else:
-                        bbox_models.append(bbox)
+                        bbox_models.append(bbox.cut(viewport))
                         bbox_ids.append(r.gt_id)
                         for pointlist, (y, x) in zip(points, r.get_head_tail()):
                             pointlist.append(Point(x, y, r.frame()).move(-delta_xy))
+                        truncated.append(0 if not bbox_models[-1].is_partially_outside_bbox(viewport) else 1)
+
             if discard:
                 continue
 
@@ -565,8 +595,9 @@ class DataGenerator(object):
             dataset.add_item(img_crop, [merge_two_dicts(bbox.to_dict(),
                                                        {'name': gt_id if gt_id is not None else 'ant',
                                                         'p0_x': p0.x, 'p0_y': p0.y,
-                                                        'p1_x': p1.x, 'p1_y': p1.y})
-                                        for bbox, p0, p1, gt_id in izip_longest(bbox_models, points[0], points[1], bbox_ids)] )
+                                                        'p1_x': p1.x, 'p1_y': p1.y,
+                                                        'truncated': trunc})
+                                        for bbox, p0, p1, gt_id, trunc in izip_longest(bbox_models, points[0], points[1], bbox_ids, truncated)] )
 
         if out_dir is not None:
             dataset.close()

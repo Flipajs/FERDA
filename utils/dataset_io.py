@@ -2,6 +2,7 @@ import csv
 import cv2
 import numpy as np
 from abc import ABCMeta, abstractmethod
+from os.path import basename, splitext
 
 
 class IO:
@@ -74,7 +75,7 @@ class DataIOCSV(IO):
 
 class DataIOVot(IO):
     def __init__(self, filename_template, image_filename_template=None, image_shape=None):
-        self.template = '<annotation><folder>GeneratedData_Train</folder>' \
+        self.template = '<annotation>\n\t<folder>GeneratedData_Train</folder>' \
                  '<filename>{filename}</filename>' \
                  '<path>{path}</path>' \
                  '<source>' \
@@ -85,11 +86,14 @@ class DataIOVot(IO):
                  '<height>{height}</height>' \
                  '<depth>{depth}</depth>' \
                  '</size>' \
-                 '<segmented>0</segmented>' \
+                 '<segmented>0</segmented>\n' \
                  '{annotation}</annotation>'
         self.bbox_template = '<object><name>{name}</name><bndbox>' \
                              '<xmin>{xmin}</xmin><xmax>{xmax}</xmax>' \
-                             '<ymin>{ymin}</ymin><ymax>{ymax}</ymax></bndbox>{points}</object>'
+                             '<ymin>{ymin}</ymin><ymax>{ymax}</ymax></bndbox>' \
+                             '<truncated>{truncated}</truncated>' \
+                             '<difficult>0</difficult>' \
+                             '{points}</object>'
         self.point_template = '<point id="{id}"><x>{x}</x><y>{y}</y></point>'
         self.next_idx = 0
         self.filename_template = filename_template
@@ -108,8 +112,11 @@ class DataIOVot(IO):
 
         bboxes_str = []
         for bbox in data:
-            point_annotations = self.point_template.format(id=0, x=bbox['p0_x'], y=bbox['p0_y']) + \
-                                self.point_template.format(id=1, x=bbox['p1_x'], y=bbox['p1_y'])
+            point_annotations = self.point_template.format(id=0, x=bbox['p0_x'] + 1, y=bbox['p0_y'] + 1) + \
+                                self.point_template.format(id=1, x=bbox['p1_x'] + 1, y=bbox['p1_y'] + 1)  # coordinates are 1-based
+            for key, val in bbox.iteritems():
+                if key in ['xmin', 'xmax', 'ymin', 'ymax']:
+                    bbox[key] = val + 1  # coordinates are 1-based
             bboxes_str.append(self.bbox_template.format(points=point_annotations, **bbox))
         xml_str = self.template.format(annotation=''.join(bboxes_str),
                                         filename=self.image_filename_template.format(idx=self.next_idx),
@@ -121,6 +128,13 @@ class DataIOVot(IO):
         annotation = open(self.filename_template.format(idx=self.next_idx), 'w').read()
         # parse xml
         assert False
+
+    def write_imageset(self, out_filename, idx_range=None):
+        if idx_range is None:
+            idx_range = range(self.next_idx)
+        imageset_str = '\n'.join([splitext(basename(self.filename_template.format(idx=i)))[0] for i in idx_range])
+        open(out_filename, 'w').write(imageset_str)
+
 
 
 class Dataset(object):
