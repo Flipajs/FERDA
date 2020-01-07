@@ -68,6 +68,10 @@ def run_tracking(project, force_recompute=False, reid_model_weights_path=None, g
     if project.next_processing_stage == 'cardinality_classification':
         logger.info('run_tracking: cardinality classification')
         fill_tracklet_cardinalites(project)
+        # # cardinality oracle (use cardinality information from ground truth)    
+        # ground_truth = MotProject(filename=gt)
+        # ground_truth.set_project_offsets(project)
+        # ground_truth.fill_tracklet_cardinalites(project)
         project.next_processing_stage = 'fix_regions_orientation'
         project.save()
     if project.next_processing_stage == 'fix_regions_orientation':
@@ -511,4 +515,3 @@ if __name__ == '__main__':
 
     # if args.run_benchmarks:
     #     run_benchmarks()
-
