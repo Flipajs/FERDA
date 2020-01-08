@@ -43,8 +43,8 @@ class GraphManager(object):
         graph_manager.__dict__.update(
             jsonpickle.decode(open(join(directory, 'graph.json'), 'r').read(), keys=True).__dict__)
         graph_manager.g = graph_tool.load_graph(join(directory, 'graph.xml.gz'))
-        if not graph_manager.g.vp:  # TODO: remove, fixes old projects
-            graph_manager.graph_add_properties()
+        # if not graph_manager.g.vp:  # TODO: remove, fixes old projects
+        #     graph_manager.graph_add_properties()
         if chm is not None:
             graph_manager.chm = chm
         if rm is not None:
