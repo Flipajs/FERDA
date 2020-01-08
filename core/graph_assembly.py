@@ -45,19 +45,19 @@ def graph_assembly(project):
     # learn isolation forests for appearance and movement of consecutive regions in all tracklets
     movement, appearance = learn_assignments(project, max_examples=50000, display=False)
 
-    print("\n\tlearn assignment t: {:.2f}s".format(time.time() - learn_assignment_t))
+    print(("\n\tlearn assignment t: {:.2f}s".format(time.time() - learn_assignment_t)))
     learn_assignment_t = time.time()
 
     p.gm.g.ep['movement_score'] = p.gm.g.new_edge_property("float")
     add_score_to_edges(p.gm, movement, appearance)
 
-    print("\tscore edges t: {:.2f}s".format(time.time() - learn_assignment_t))
+    print(("\tscore edges t: {:.2f}s".format(time.time() - learn_assignment_t)))
 
     update_t = time.time()
     # TODO: is this needed?
     p.gm.update_nodes_in_t_refs()
     p.chm.reset_itree()
-    print("\tupdate t: {:.2f}s".format(time.time() - update_t))
+    print(("\tupdate t: {:.2f}s".format(time.time() - update_t)))
 
     print_tracklet_stats(p)
     _, conflicts = p.chm.get_conflicts(len(p.animals), verbose=True)
@@ -70,18 +70,18 @@ def graph_assembly(project):
         strongly_better_t = time.time()
         strongly_better_e = p.gm.strongly_better_eps2(eps=eps, score_type=score_type)
         if len(strongly_better_e) == 0:
-            print "\nBREAK"
+            print("\nBREAK")
             break
 
         strongly_better_e = sorted(strongly_better_e, key=lambda x: -x[0])
 
-        print "\nITERATION: {}, #decisions: {}, t: {:.2f}s".format(i, len(strongly_better_e), time.time()-strongly_better_t)
+        print(("\nITERATION: {}, #decisions: {}, t: {:.2f}s".format(i, len(strongly_better_e), time.time()-strongly_better_t)))
         confirm_t = time.time()
         for _, e in tqdm(strongly_better_e, leave=False):
             if p.gm.g.edge(e.source(), e.target()) is not None:
                 p.solver.confirm_edges([(e.source(), e.target())])
 
-        print "\tconfirm_t: {:.2f}".format(time.time() - confirm_t)
+        print(("\tconfirm_t: {:.2f}".format(time.time() - confirm_t)))
 
         # tracklet_stats(p)
 
@@ -99,16 +99,16 @@ def graph_assembly(project):
             # test start
             v = ch.start_node()
             if not p.gm.g.vp['chunk_start_id'][v] or p.gm.g.vp['chunk_end_id'][v]:
-                print v, ch, p.gm.g.vp['chunk_start_id'][v], p.gm.g.vp['chunk_end_id'][v]
+                print(v, ch, p.gm.g.vp['chunk_start_id'][v], p.gm.g.vp['chunk_end_id'][v])
                 sanity_check = False
 
             v = ch.end_node()
             if p.gm.g.vp['chunk_start_id'][v] or not p.gm.g.vp['chunk_end_id'][v]:
-                print v, ch, p.gm.g.vp['chunk_start_id'][v], p.gm.g.vp['chunk_end_id'][v]
+                print(v, ch, p.gm.g.vp['chunk_start_id'][v], p.gm.g.vp['chunk_end_id'][v])
                 sanity_check = False
 
-    print "SANITY CHECK SUCCEEDED: {}".format(sanity_check)
-    print "ONE 2 ONE optimization"
+    print("SANITY CHECK SUCCEEDED: {}".format(sanity_check))
+    print("ONE 2 ONE optimization")
 
     project.gm.project = project  # workaround, to be refactored
     project.solver.create_tracklets()

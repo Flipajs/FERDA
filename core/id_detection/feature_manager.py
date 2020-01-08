@@ -1,5 +1,5 @@
 import sqlite3 as sql
-import cPickle
+import pickle
 import random
 
 DEBUG = False
@@ -32,7 +32,7 @@ class FeatureManager:
         else:
             self.use_db = True
             self.db_path = db_wd + "/" + db_name
-            print "Initializing db at %s " % self.db_path
+            print(("Initializing db at %s " % self.db_path))
             self.con = sql.connect(self.db_path)
             self.cur = self.con.cursor()
             # DEBUG, do not use!
@@ -81,7 +81,7 @@ class FeatureManager:
                     self.add_to_cache_(i, f)
                 return
 
-        if not isinstance(f_id, (long, int)):
+        if not isinstance(f_id, int):
             raise TypeError("IDs can be given as list of ints or int/long, not %s" % type(f_id))
 
         if self.use_db:
@@ -180,7 +180,7 @@ class FeatureManager:
                 raise ValueError("Invalid slice parameters (%s:%s:%s)" % (start, stop, step))
 
             # go through slice
-            count = len(range(start, stop, step))
+            count = len(list(range(start, stop, step)))
             result_ = [None] * count
             pos = {}
             k = 0
@@ -211,7 +211,7 @@ class FeatureManager:
                 pos[id_] = k
                 k += 1
                 if not isinstance(id_, int):
-                    print "TypeError: int expected, %s given! Skipping key '%s'." % (type(id_), id_)
+                    print(("TypeError: int expected, %s given! Skipping key '%s'." % (type(id_), id_)))
                     continue
                 if id_ in self.features_cache_:
                     # print "%s was found in cache" % id
@@ -266,7 +266,7 @@ class FeatureManager:
             # add it to result
             id_ = sql_ids[0]
             try:
-                data = cPickle.loads(str(row[0]))
+                data = pickle.loads(str(row[0]))
                 result[pos[id_]] = data
                 # add it to cache
                 self.add_to_cache_(id_, data)
@@ -285,7 +285,7 @@ class FeatureManager:
                 if row[0] in tmp_ids:
                     continue
                 tmp_ids.append(row[0])
-                data = cPickle.loads(str(row[1]))
+                data = pickle.loads(str(row[1]))
                 self.add_to_cache_(row[0], data)
                 result[pos[row[0]]] = data
                 i += 1
@@ -305,12 +305,12 @@ class FeatureManager:
                 if row[0] in ids:
                     continue
                 ids.append(row[0])
-                data = cPickle.loads(str(row[1]))
+                data = pickle.loads(str(row[1]))
                 self.add_to_cache_(row[0], data)
                 result.append(data)
                 i += 1
         else:
-            (ids, result) = zip(*self.features_cache_.iteritems())
+            (ids, result) = list(zip(*iter(self.features_cache_.items())))
         return ids, result
 
     def removemany_(self, features):
@@ -318,7 +318,7 @@ class FeatureManager:
             sql_ids = []
             if isinstance(features, list):
                 for f in features:
-                    if isinstance(f, (int, long)):
+                    if isinstance(f, int):
                         sql_ids.append(f)
                     else:
                         raise TypeError("Remove method can only work with tuple objects, not %s" % type(f))
@@ -344,7 +344,7 @@ class FeatureManager:
         if isinstance(ids, list):
             self.removemany_(ids)
             return
-        elif isinstance(ids, (int, long)):
+        elif isinstance(ids, int):
             id_ = ids
             if self.use_db:
                 cmd = "DELETE FROM features WHERE id = %s;" % id_
@@ -361,7 +361,7 @@ class FeatureManager:
 
 def pickle_data(data):
     """ Convert data object to sql Binary object using pickle."""
-    return sql.Binary(cPickle.dumps(data, -1))
+    return sql.Binary(pickle.dumps(data, -1))
 
 
 def pretty_list(data):
@@ -411,25 +411,25 @@ if __name__ == "__main__":
     rm = FeatureManager(db_wd="/home/dita", cache_size_limit=30)
     rm.add(test_ids, test_data)
 
-    print "\nINDIVIDUAL ID GET TEST"
-    print "3 (present): ", rm[3]
-    print "DELETING INDIVIDUAL ID (3)"
+    print("\nINDIVIDUAL ID GET TEST")
+    print(("3 (present): ", rm[3]))
+    print("DELETING INDIVIDUAL ID (3)")
     rm.remove(3)
-    print "3 (missing): ", rm[3]
+    print(("3 (missing): ", rm[3]))
 
-    print "\nLIST IDS GET TEST"
-    print "[16, 17]:                  ", rm[[16, 17]]
-    print "[3] (missing):             ", rm[[3]]
-    print "[1, 2, 3, 7, 38, 14, -77]: ", rm[[1, 2, 3, 7, 38, 14, -77]]
+    print("\nLIST IDS GET TEST")
+    print(("[16, 17]:                  ", rm[[16, 17]]))
+    print(("[3] (missing):             ", rm[[3]]))
+    print(("[1, 2, 3, 7, 38, 14, -77]: ", rm[[1, 2, 3, 7, 38, 14, -77]]))
 
-    print "DELITING LIST OF IDS (7, 38, 14)"
+    print("DELITING LIST OF IDS (7, 38, 14)")
     rm.remove([7, 38, 14])
-    print "[1, 2, 3, 7, 38, 14, -77]: ", rm[[1, 2, 3, 7, 38, 14, -77]]
+    print(("[1, 2, 3, 7, 38, 14, -77]: ", rm[[1, 2, 3, 7, 38, 14, -77]]))
 
-    print "\nSLICE GET TEST"
+    print("\nSLICE GET TEST")
 
-    print "(1:5) ", rm[1:5]
-    print "(8:20) ", rm[8:20]
+    print(("(1:5) ", rm[1:5]))
+    print(("(8:20) ", rm[8:20]))
 
-    print "\nGET ALL TEST"
-    print rm.get_all()
+    print("\nGET ALL TEST")
+    print((rm.get_all()))

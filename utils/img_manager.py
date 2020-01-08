@@ -51,7 +51,7 @@ class ImgManager:
         props = Properties(frame, False)
 
         # check if these properties are already saved
-        for p, img in self.crop_cache.items():
+        for p, img in list(self.crop_cache.items()):
             # if so:
             if p.__eq__(props):
                 # re-append it to the end of self.crop_properties list (used recently)
@@ -260,7 +260,7 @@ class ImgManager:
                 scaley = max_height / (cr_height + 0.0)
             if cr_width > max_width and max_width > 0:
                 scalex = max_width / (cr_width + 0.0)
-            print "scalex: %s, scaley: %s" % (scalex, scaley)
+            print("scalex: %s, scaley: %s" % (scalex, scaley))
 
             if not constant_propotions:
                 # scale exactly to [max_height, or max_width]
@@ -317,7 +317,7 @@ class ImgManager:
 
     def get_cache_size_bytes(self):
         size = 0
-        for props, image in self.crop_cache.items():
+        for props, image in list(self.crop_cache.items()):
             size += image.nbytes
         return size
 
@@ -406,7 +406,7 @@ if __name__ == "__main__":
     import random
     image = get_image(im_manager)
     cv2.imshow("im", image)
-    print "Press SPACE to show another image"
+    print("Press SPACE to show another image")
     key = cv2.waitKey(0)
     while key == 32:
         rnd = random.randint(0, 10)
@@ -418,4 +418,4 @@ if __name__ == "__main__":
         # print "Time taken: %s" % (time.time() - t)
         cv2.imshow("im", image)
         key = cv2.waitKey(0)
-    print "done"
+    print("done")

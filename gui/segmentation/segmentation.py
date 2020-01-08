@@ -1,7 +1,7 @@
 import sys
 from PyQt4 import QtGui, QtCore
-import painter
-from utils import *
+from . import painter
+from .utils import *
 
 from sklearn.ensemble import RandomForestClassifier
 
@@ -138,7 +138,7 @@ class SegmentationPicker(QtGui.QWidget):
             self.color_buttons["eraser"].setChecked(True)
         else:
             self.view.set_pen_color(self.cur_color)
-            for color, btn in self.color_buttons.iteritems():
+            for color, btn in list(self.color_buttons.items()):
                 if color == self.cur_color.lower():
                     btn.setChecked(True) 
                 else:

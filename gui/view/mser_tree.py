@@ -75,7 +75,7 @@ class MSERTree(QtGui.QWidget):
             text_item.setPos(pos_x, pos_y + image_width)
 
             if r.id_ in find_ids:
-                print "match found, id: %s [%d, %d]" % (r.id_, pos_x, pos_y)
+                print("match found, id: %s [%d, %d]" % (r.id_, pos_x, pos_y))
                 focus = QtCore.QPointF(pos_x, pos_y)
                 qt_points.append(it)
 
@@ -103,7 +103,7 @@ class MSERTree(QtGui.QWidget):
         regions = get_regions_in_img(self.img, self.project)
 
         for r in regions:
-            print r.area(), r.label()
+            print((r.area(), r.label()))
 
         return regions
 
@@ -121,7 +121,7 @@ class MSERTree(QtGui.QWidget):
             text = QtCore.QString("x")
             text_item = QtGui.QGraphicsSimpleTextItem(text, scene=self.scene)
             text_item.setPos(point)
-            print "focusing on rectangle [%s, %s]" % (point.x(), point.y())
+            print("focusing on rectangle [%s, %s]" % (point.x(), point.y()))
             self.view.centerOn(point)
         # if it doesn't, center on the first point
         else:
@@ -135,7 +135,7 @@ class MSERTree(QtGui.QWidget):
             sum_y /= len(items)
             center_pt = QtCore.QPointF(sum_x, sum_y)
 
-            print "rectangle is too big, centering on point [%s, %s]" % (sum_x, sum_y)
+            print("rectangle is too big, centering on point [%s, %s]" % (sum_x, sum_y))
             # point with highest priority
             item = items[0]
 
@@ -154,7 +154,7 @@ class MSERTree(QtGui.QWidget):
             text_item = QtGui.QGraphicsSimpleTextItem(text, scene=self.scene)
             new = QtCore.QPointF(new_x, new_y)
             text_item.setPos(new)
-            print "focusing on point [%s, %s]" % (new_x, new_y)
+            print("focusing on point [%s, %s]" % (new_x, new_y))
             self.view.centerOn(new)
 
     def find_rect(self, items):

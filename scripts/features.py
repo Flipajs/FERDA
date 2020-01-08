@@ -11,7 +11,7 @@ from core.graph.region_chunk import RegionChunk
 
 
 def dataset1():
-    frames = range(100, 150)
+    frames = list(range(100, 150))
 
     return frames
 

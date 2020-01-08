@@ -492,7 +492,7 @@ class NodeGraphVisualizer(QtGui.QWidget):
         self.positions = {}
         self.used_rows = {}
 
-        k = np.array(self.regions.keys())
+        k = np.array(list(self.regions.keys()))
         self.frames = np.sort(k).tolist()
 
         nodes_queue = []
@@ -759,7 +759,7 @@ class NodeGraphVisualizer(QtGui.QWidget):
         self.update_view(n1)
 
     def onpick(self, event):
-        print self.lines.index(event.artist)
+        print(self.lines.index(event.artist))
 
     def toggle_n(self, n):
         from utils.video_manager import get_auto_video_manager

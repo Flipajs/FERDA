@@ -81,7 +81,7 @@ def id_correlation():
         try:
             d = shape_description(r, 18)
         except:
-            print "ROI PROBLEM", i
+            print(("ROI PROBLEM {}".format(i)))
             continue
 
         d = gaussian_filter1d(d, 1)

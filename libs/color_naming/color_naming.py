@@ -1,6 +1,6 @@
 import numpy as np
 from pkg_resources import resource_filename, Requirement
-import cPickle as pickle
+import pickle as pickle
 import math
 
 class ColorNaming:
@@ -64,7 +64,7 @@ class ColorNaming:
 
 def __mat2pkl(path, name):
     from scipy.io import loadmat
-    import cPickle as pickle
+    import pickle as pickle
 
     w2c = loadmat(path+'/'+name+'.mat')['w2c']
     with open(path+'/'+name+'.pkl', 'w') as f:
@@ -75,7 +75,7 @@ def im2colors(im, out_type='color_names'):
     return ColorNaming.im2colors(im, out_type)
 
 if __name__ == '__main__':
-    import cPickle as pickle
+    import pickle as pickle
     from scipy.misc import imread
 
     # __mat2pkl('data', 'w2c')
@@ -168,7 +168,7 @@ if __name__ == '__main__':
     cs = []
     step = 7
     for r in range(0, 255, step):
-        print r
+        print(r)
         for g in range(0, 255, step):
             for b in range(0, 255, step):
                 id_ = int(np.floor(r / 8) + 32 * np.floor(g / 8) + 32 * 32 * np.floor(b / 8))
@@ -193,12 +193,12 @@ if __name__ == '__main__':
 
     time1 = time.time()
     ColorNaming.im2c(im, out_type='probability_vector')
-    print time.time() - time1
+    print(time.time() - time1)
 
     time1 = time.time()
     ColorNaming.im2c(im, out_type='probability_vector')
-    print time.time() - time1
+    print(time.time() - time1)
 
     time1 = time.time()
     ColorNaming.im2c(im, out_type='probability_vector')
-    print time.time() - time1
+    print(time.time() - time1)

@@ -94,7 +94,7 @@ class GraphWidgetLoader(QtGui.QWidget):
             self.region_manager = self.project.rm
             self.graph = self.graph_manager.g
         else:
-            print "No project set!"
+            print("No project set!")
 
     def prepare_vertices(self, frames):
         if frames is None:
@@ -225,7 +225,7 @@ class GraphWidgetLoader(QtGui.QWidget):
         return "Type = {}\nAppearance score = {}\nMovement score={}\nScore product={}\nTracklet id: {}".format(edge.type, edge.appearance_score, edge.movement_score, edge.appearance_score * edge.movement_score, edge.id)
 
     def draw_graph(self):
-        frames = range(self.ui.spinBoxFrom.value(), self.ui.spinBoxTo.value())
+        frames = list(range(self.ui.spinBoxFrom.value(), self.ui.spinBoxTo.value()))
         self.prepare_vertices(frames)
         # print("Preparing nodes...")
         self.prepare_nodes()
@@ -259,7 +259,7 @@ if __name__ == '__main__':
     # l1.set_width(60)
     # l1.set_height(60)
 
-    g = l1.get_widget(range(300, 400))
+    g = l1.get_widget(list(range(300, 400)))
     # g = l1.get_widget()
     g.redraw()
     g.show()

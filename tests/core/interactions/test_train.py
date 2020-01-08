@@ -52,25 +52,25 @@ class LossFunctionsTestCase(unittest.TestCase):
         # xy, angle, indices = self.ti.match_pred_to_gt(pred[:5], y_test[:5])
         errors, errors_xy, indices = self.ti.match_pred_to_gt(pred, y_test)
 
-        print(K.eval(errors))
-        print(K.eval(errors_xy))
+        print((K.eval(errors)))
+        print((K.eval(errors_xy)))
 
         # pred['0_angle_deg'] = 1. / np.tan(np.radians(5.))
         # pred['1_angle_deg'] = 1. / np.tan(np.radians(45.))
-        print(train_interactions.K.eval(self.ti.loss(y_test[:3], pred[:3])))
+        print((train_interactions.K.eval(self.ti.loss(y_test[:3], pred[:3]))))
 
     def test_match_pred_to_gt(self):
         self.ti.set_num_objects(2)
         errors, errors_xy, indices = self.ti.match_pred_to_gt(self.y_a, self.y_b)
-        print(K.eval(errors))
-        print(K.eval(errors_xy))
-        print(K.eval(indices))
+        print((K.eval(errors)))
+        print((K.eval(errors_xy)))
+        print((K.eval(indices)))
 
         self.ti.set_num_objects(1)
         errors, errors_xy, indices = self.ti.match_pred_to_gt(self.y_a1, self.y_b1)
-        print(K.eval(errors))
-        print(K.eval(errors_xy))
-        print(K.eval(indices))
+        print((K.eval(errors)))
+        print((K.eval(errors_xy)))
+        print((K.eval(indices)))
 
         # test tf.gather_nd (used in match_pred_to_gt)
         err1 = K.variable(np.array([[1, 2, 3, 4], [5, 6, 7, 8]]))  # shape=(n, n_objects * len(PREDICTED_PROPERTIES))

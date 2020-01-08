@@ -1,4 +1,4 @@
-from __future__ import print_function
+
 
 import glob
 import itertools
@@ -143,7 +143,7 @@ def plot_interaction(num_objects, pred=None, gt=None, ax=None, color='r', length
     if ax is None:
         ax = plt.gca()
     colors = itertools.cycle(['red', 'blue', 'green', 'yellow', 'white'])
-    for i, c in zip(range(num_objects), colors):
+    for i, c in zip(list(range(num_objects)), colors):
         if gt is not None:
             angled_arrow(gt['%d_x' % i], gt['%d_y' % i], gt['%d_angle_deg_cw' % i], length_px*1.5, ax, color=color,
                          label='object %d gt' % i, alpha=0.5)

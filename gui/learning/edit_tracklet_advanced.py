@@ -90,7 +90,7 @@ class FakeTracklet:
 
 
 def confirmed(tracklet, P, N, method='fix_tracklet_only'):
-    print P, N, method
+    print(P, N, method)
 
 
 if __name__ == '__main__':

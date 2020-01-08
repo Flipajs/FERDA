@@ -4,7 +4,7 @@ HASH_PRIME = 100663319
 
 
 class LineType:
-    TRACKLET, LINE, PARTIAL_TRACKLET = range(3) # line cannot be partial (takes only two frames)
+    TRACKLET, LINE, PARTIAL_TRACKLET = list(range(3)) # line cannot be partial (takes only two frames)
 
     @staticmethod
     def valid_type(type):

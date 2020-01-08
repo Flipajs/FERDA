@@ -223,7 +223,7 @@ class Column:
         self.scene.addItem(edge_obj.graphical_object)
 
     def delete_scene(self):
-        for key, object in self.edges.items():
+        for key, object in list(self.edges.items()):
             for o in object:
                 self.scene.removeItem(o.graphical_object)
             del self.edges[key]

@@ -123,7 +123,7 @@ class IdentitiesWidget(QtGui.QWidget):
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
     from core.project.project import Project
-    import cPickle as pickle
+    import pickle as pickle
 
     project = Project()
     name = 'Cam1_orig'

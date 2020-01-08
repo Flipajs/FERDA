@@ -343,7 +343,7 @@ class LearningWidget(QtGui.QWidget):
         self.lp.save_learning()
         self.project.save()
 
-        print "SAVED"
+        print("SAVED")
 
     def reset_learning(self):
         self.lp.reset_learning(use_xgboost=self.use_xgboost_ch.isChecked())
@@ -395,7 +395,7 @@ class LearningWidget(QtGui.QWidget):
         print_progress(num, num, "deciding {} most certain tracklets".format(num), "DONE")
 
         self.update_callback()
-        print i, "steps finished"
+        print((i, "steps finished"))
 
     def update_callback(self):
         self.info_table.setItem(0, 0, QCustomTableWidgetItem('#tracklets'))
@@ -561,7 +561,7 @@ class LearningWidget(QtGui.QWidget):
 
     def decide_tracklet_question(self, tracklet, id_=None):
         if id_ is None:
-            items = map(str, self.lp.all_ids - tracklet.N)
+            items = list(map(str, self.lp.all_ids - tracklet.N))
             items = sorted(items)
 
             item, ok = QtGui.QInputDialog.getItem(self, "select animal ID for tracklet ID: "+str(tracklet.id()),
@@ -574,7 +574,7 @@ class LearningWidget(QtGui.QWidget):
             self.lp.assign_identity(int(item), tracklet, user=True)
             self.update_callback()
         else:
-            print "..."
+            print("...")
 
     def clear_user_decisions(self):
         msg = "Do you really want to delete all USERs decisions?"
@@ -587,7 +587,7 @@ class LearningWidget(QtGui.QWidget):
         self.update_callback()
 
     def update_undecided_tracklets(self):
-        print "UPDATING UNDECIDED"
+        print("UPDATING UNDECIDED")
         self.lp.update_undecided_tracklets()
 
     def auto_init(self):
@@ -625,13 +625,13 @@ class LearningWidget(QtGui.QWidget):
         # print id_representants
         id_representants = self.get_id_representants()
 
-        print "EXAMPLES: "
+        print("EXAMPLES: ")
         for i in range(len(self.project.animals)):
             s = 0
             for tid in id_representants[i]:
                 s += len(self.project.chm[tid])
 
-            print "\tA_ID: {}, len sum: {}, tids: {}".format(i, s, id_representants[i])
+            print(("\tA_ID: {}, len sum: {}, tids: {}".format(i, s, id_representants[i])))
 
         region_representants = {}
         img_representants = {}

@@ -79,16 +79,16 @@ ctrax = sio.loadmat(ctrax_path, struct_as_record=False)
 c_trx = ctrax['trx']
 
 for i in range(8):
-    print i, x(f_trx, i)[0], x(g_trx, gt_mapping[i])[0], x(c_trx, gt_mapping[i])[0]
+    print(i, x(f_trx, i)[0], x(g_trx, gt_mapping[i])[0], x(c_trx, gt_mapping[i])[0])
 
-print " "
+print(" ")
 
 a_num = len(f_trx[0])
 frames = len(x(f_trx, 0))
 
 vid = video_manager.VideoManager(video_file_name)
 
-print a(g_trx, 0)[0]
+print(a(g_trx, 0)[0])
 
 
 speed = get_ants_speed(g_trx)
@@ -103,10 +103,10 @@ for i in range(a_num):
     avg_speed100[i] = sum(speed[i][0:100]) / float(100)
     avg_speed200[i] = sum(speed[i][100:200]) / float(100)
 
-print avg_speed
-print med_speed
-print avg_speed100
-print avg_speed200
+print(avg_speed)
+print(med_speed)
+print(avg_speed100)
+print(avg_speed200)
 
 plt.plot(speed[6])
 plt.plot(speed[7])

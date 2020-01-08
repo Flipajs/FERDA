@@ -1,6 +1,6 @@
 # from __future__ import print_function
-import cPickle as pickle
-from itertools import izip
+import pickle as pickle
+
 
 import cv2
 import numpy as np
@@ -65,7 +65,7 @@ def display_pairs(p, pairs, file_name, cols=7, item_height=100, item_width=200, 
     data = []
     for r1, r2 in pairs:
         if r1.frame() + 1 != r2.frame():
-            print("FRAMES? ", r1.frame(), r2.frame())
+            print(("FRAMES? ", r1.frame(), r2.frame()))
 
         im1 = vm.get_frame(r1.frame()).copy()
         im2 = vm.get_frame(r2.frame()).copy()
@@ -99,9 +99,9 @@ def display_pairs(p, pairs, file_name, cols=7, item_height=100, item_width=200, 
 def display_head_pairs(project):
     import hickle
     import matplotlib.pyplot as plt
-    print ("displaying pairs...")
+    print("displaying pairs...")
     pairs = hickle.load('/Users/flipajs/Desktop/temp/pairs/pairs.pkl')
-    print ("loaded..")
+    print("loaded..")
     from utils.video_manager import get_auto_video_manager
 
     BORDER = 150
@@ -116,19 +116,19 @@ def display_head_pairs(project):
     major_axes = [project.gm.region(x[0][0]).ellipse_major_axis_length() for x in pairs]
     major_axes_mean = np.mean(major_axes)
 
-    print ("major axes mean", major_axes_mean)
+    print(("major axes mean", major_axes_mean))
 
     # sort by d2
     pairs = sorted(pairs, key=lambda x: -x[2])
     # d1 > 0.5major_axes_mean
-    pairs = filter(lambda x: project.gm.region(x[0][0]).vector_on_major_axis_projection_head_unknown(project.gm.region(x[0][1])) > major_axes_mean, pairs)
+    pairs = [x for x in pairs if project.gm.region(x[0][0]).vector_on_major_axis_projection_head_unknown(project.gm.region(x[0][1])) > major_axes_mean]
     d2s = [x[2] for x in pairs]
 
     plt.hist(d2s, bins=20)
     plt.ion()
     plt.show()
 
-    pairs = filter(lambda x: x[2] > D2_COEF*major_axes_mean, pairs)
+    pairs = [x for x in pairs if x[2] > D2_COEF*major_axes_mean]
 
     hickle.dump(pairs, '/Users/flipajs/Desktop/temp/pairs/head_pairs.pkl')
 
@@ -139,7 +139,7 @@ def display_head_pairs(project):
     #     if d1 > 20 and d2 > 200:
     #         new_pairs.append(((v1, v2), d1, d2))
 
-    print ("NEW LEN", len(pairs))
+    print(("NEW LEN", len(pairs)))
 
     i = 0
     part = 0
@@ -198,8 +198,8 @@ def display_clustering_results(project, vertices=None, labels=None, cols=15, it_
         cv2.imwrite(project.working_directory+'/temp/clustering_' + str(class_) + '_' + str(part) + '.jpg', collage)
 
 def prepare_pairs(project):
-    print ("__________________________")
-    print ("preparing pairs...")
+    print("__________________________")
+    print("preparing pairs...")
     with open(project.working_directory+'/temp/region_cardinality_samples.pkl') as f:
         up = pickle.Unpickler(f)
         _ = up.load()
@@ -239,10 +239,10 @@ def prepare_pairs(project):
 
         i += 1
 
-    print ("saving...")
+    print("saving...")
     with open(project.working_directory+'/temp/pairs.pkl', 'wb') as f:
         pickle.dump(pairs, f, -1)
-    print ("---------------------------------")
+    print("---------------------------------")
 
 
 def __get_mu_moments_pick(img):
@@ -382,7 +382,7 @@ def head_detector_classify(p):
 
     return
 
-    print (rfc.feature_importances_)
+    print((rfc.feature_importances_))
 
     d = hickle.load('/Users/flipajs/Desktop/temp/prepare_region_cardinality_samples/labels.pkl')
     labels = d['labels']
@@ -495,7 +495,7 @@ def filter_edges(project, max_dist):
     to_remove = []
 
     g = project.gm.g
-    print ("avg degree before {}".format(np.mean([v.out_degree() for v in g.vertices()])))
+    print(("avg degree before {}".format(np.mean([v.out_degree() for v in g.vertices()]))))
 
     for (v1, v2) in g.edges():
         r1 = project.gm.region(v1)
@@ -504,12 +504,12 @@ def filter_edges(project, max_dist):
         if r1.is_ignorable(r2, max_dist):
             to_remove.append((v1, v2))
 
-    print ("#edges: {}, will be removed: {}".format(g.num_edges(), len(to_remove)))
+    print(("#edges: {}, will be removed: {}".format(g.num_edges(), len(to_remove))))
     for (v1, v2) in to_remove:
         g.remove_edge(g.edge(v1, v2))
 
     degrees = [v.out_degree() for v in g.vertices()]
-    print ("avg degree after {}".format(np.mean(degrees)))
+    print(("avg degree after {}".format(np.mean(degrees))))
 
     # plt.hist(degrees)
     # plt.show()
@@ -520,8 +520,8 @@ def filter_edges(project, max_dist):
 
 
 def get_max_dist(project):
-    print ("____________________________")
-    print ("Estimating max distance")
+    print("____________________________")
+    print("Estimating max distance")
     with open(project.working_directory+'/temp/pairs.pkl') as f:
         pairs = pickle.load(f)
 
@@ -537,12 +537,12 @@ def get_max_dist(project):
             max_v1 = v1
             max_v2 = v2
 
-    print ()
+    print()
     r1 = project.gm.region(max_v1)
     r2 = project.gm.region(max_v2)
 
     if r1.frame() + 1 != r2.frame():
-        print ("FRAMES? ", r1.frame(), r2.frame())
+        print(("FRAMES? ", r1.frame(), r2.frame()))
 
     vm = get_auto_video_manager(project)
 
@@ -552,17 +552,17 @@ def get_max_dist(project):
     draw_points(im2, r2.pts())
     draw_points(im2, r1.pts(), color=(0, 255, 255, 40))
 
-    print ("MAX DIST: {:.1f}".format(max_dist))
+    print(("MAX DIST: {:.1f}".format(max_dist)))
     cv2.imshow('max distance visualisation', im2)
     cv2.imshow('im1', im1)
     cv2.waitKey(5)
 
-    print ("-----------------------------")
+    print("-----------------------------")
     return max_dist
 
 def get_max_dist2(project):
-    print ("____________________________")
-    print ("Estimating max distance")
+    print("____________________________")
+    print("Estimating max distance")
 
     reg = project.gm.region
 
@@ -585,7 +585,7 @@ def get_max_dist2(project):
             safe_dists.append(distances[0])
             pairs.append((best_e[0].source(), best_e[0].target()))
 
-    print ()
+    print()
     id_ = np.argmax(safe_dists)
     max_dist = safe_dists[id_]
     max_v1, max_v2 = pairs[id_]
@@ -594,7 +594,7 @@ def get_max_dist2(project):
     r2 = project.gm.region(max_v2)
 
     if r1.frame() + 1 != r2.frame():
-        print ("FRAMES? ", r1.frame(), r2.frame())
+        print(("FRAMES? ", r1.frame(), r2.frame()))
 
     vm = get_auto_video_manager(project)
 
@@ -604,12 +604,12 @@ def get_max_dist2(project):
     draw_points(im2, r2.pts())
     draw_points(im2, r1.pts(), color=(0, 255, 255, 40))
 
-    print ("MAX DIST: {:.1f}".format(max_dist))
+    print(("MAX DIST: {:.1f}".format(max_dist)))
     cv2.imshow('max distance visualisation', im2)
     cv2.imshow('im1', im1)
     cv2.waitKey(5)
 
-    print ("-----------------------------")
+    print("-----------------------------")
     return max_dist
 
 def hist_query(h, edges, it):
@@ -679,12 +679,12 @@ def get_movement_histogram(p):
     ax.scatter(data[:, 1], data[:, 2], data[:, 0], c=data[:, 0]/data[:, 0].max())
 
     data2 = np.array(data2)
-    from itertools import izip
+    
 
     cases_p = []
     cases_n = []
 
-    for it, case in izip(data2, cases):
+    for it, case in zip(data2, cases):
         it = np.array(it)
 
         # if np.linalg.norm(it[0, :] - it[1, :]) > 60:
@@ -726,7 +726,7 @@ def observe_cases(project, type='case_p'):
     from utils.video_manager import get_auto_video_manager
     import cv2
     from utils.drawing.points import draw_points
-    from itertools import izip
+    
 
     BORDER = 150
     COLS = 1
@@ -739,7 +739,7 @@ def observe_cases(project, type='case_p'):
     part = 0
     data = []
     for vals, case in cases:
-        for val, (v, x, w) in izip(vals, case):
+        for val, (v, x, w) in zip(vals, case):
             c = (0, 255, 0, 70)
             if val <= 1e-10:
                 c = (255, 0, 0, 70)
@@ -790,7 +790,7 @@ def expand_based_on_movement_model(p):
     THRESH = 100.0
 
     # when merge... it will change size
-    ch_keys = p.chm.chunks_.keys()
+    ch_keys = list(p.chm.chunks_.keys())
     for t_id in ch_keys:
         if t_id not in p.chm.chunks_:
             continue
@@ -871,8 +871,8 @@ def simple_tracklets(p):
 
     singles_ids = list(vertices_ids[labels==0])
 
-    print ("BEFORE:")
-    print ("#vertices: {} #edges: {}".format(p.gm.g.num_vertices(), p.gm.g.num_edges()))
+    print("BEFORE:")
+    print(("#vertices: {} #edges: {}".format(p.gm.g.num_vertices(), p.gm.g.num_edges())))
 
     singles_set = set(singles_ids)
 
@@ -920,7 +920,7 @@ def simple_tracklets(p):
             else:
                 break
 
-        new_t_vertices_ = map(int, new_t_vertices_)
+        new_t_vertices_ = list(map(int, new_t_vertices_))
 
         if len(new_t_vertices_) > 1:
             for v in new_t_vertices_:
@@ -928,15 +928,15 @@ def simple_tracklets(p):
 
             ch, _ = p.chm.new_chunk(new_t_vertices_, p.gm)
             if ch.length() == 1:
-                print "WTF"
+                print("WTF")
 
-    print ("BEFORE:")
-    print ("#vertices: {} #edges: {}".format(p.gm.g.num_vertices(), p.gm.g.num_edges()))
-    print ("#chunks: {}".format(len(p.chm)))
+    print("BEFORE:")
+    print(("#vertices: {} #edges: {}".format(p.gm.g.num_vertices(), p.gm.g.num_edges())))
+    print(("#chunks: {}".format(len(p.chm))))
 
     for ch in p.chm.chunk_gen():
         if ch.length() == 1:
-            print ch
+            print(ch)
 
     with open('/Users/flipajs/Documents/wd/FERDA/Cam1_playground/temp/part0_tracklets.pkl', 'wb') as f:
         pic = pickle.Pickler(f)
@@ -946,7 +946,7 @@ def simple_tracklets(p):
 
 
 def display_classification(project, ids, labels):
-    print ("display regions")
+    print("display regions")
     F_NAME = 'singles_classif'
 
     COLS = 15
@@ -964,7 +964,7 @@ def display_classification(project, ids, labels):
         part = 0
         for i, v1 in enumerate(ids_):
             if i % 1000 == 0:
-                print (i)
+                print(i)
 
             if v1 is None:
                 continue
@@ -985,7 +985,7 @@ def display_classification(project, ids, labels):
                 part += 1
                 data = []
 
-                print ("TEST")
+                print("TEST")
 
         collage = create_collage_rows(data, COLS, IT_H, IT_W)
         cv2.imwrite('/Users/flipajs/Documents/wd/FERDA/Cam1_playground/temp/' + F_NAME + str(class_) + '_' + str(part) + '.jpg', collage)
@@ -1023,7 +1023,7 @@ def singles_classifier(p):
     X = np.array(X)
     y = np.array(y)
 
-    print ("NUM #singles: {} #not singles: {}".format(np.sum(y), len(y) - np.sum(y)))
+    print(("NUM #singles: {} #not singles: {}".format(np.sum(y), len(y) - np.sum(y))))
 
     scaler = preprocessing.StandardScaler().fit(X)
     X = scaler.transform(X)
@@ -1039,7 +1039,7 @@ def singles_classifier(p):
     probs = clf.predict_proba(X2)
 
     labels = probs[:, 1] > 0.99
-    print (len(labels), np.sum(labels))
+    print((len(labels), np.sum(labels)))
 
     display_classification(p, region_ids, labels)
 
@@ -1058,7 +1058,7 @@ def solve_nearby_passings(p):
     cases_p = []
     cases_n = []
 
-    for it, case in izip(data, cases):
+    for it, case in zip(data, cases):
         it = np.array(it)
 
         # if np.linalg.norm(it[0, :] - it[1, :]) > 60:
@@ -1191,7 +1191,7 @@ def load_p_checkpoint(p, name=''):
         try:
             p.gm.vertices_in_t = up.load()
         except:
-            print "vertices_in_t not loaded..."
+            print("vertices_in_t not loaded...")
 
 
 def save_p_checkpoint(p, name=''):
@@ -1275,7 +1275,7 @@ def learn_assignments(p, max_examples=np.inf, display=False):
 
         rch = RegionChunk(t, p.gm, p.rm)
         gen = rch.regions_gen()
-        r1 = gen.next()
+        r1 = next(gen)
 
         for r2 in gen:
             j += 1
@@ -1297,13 +1297,13 @@ def learn_assignments(p, max_examples=np.inf, display=False):
 
     if display:
         y = IF_appearance.predict(X_appearance)
-        print len(y), np.sum(y == -1)
+        print(len(y), np.sum(y == -1))
         pairs = np.array(pairs)
 
         display_pairs(p, pairs[y == -1], 'anomaly_parts_appearance', cols=3, item_height=250, item_width=500, border=70)
 
         y = IF_movement.predict(X_movement)
-        print len(y), np.sum(y == -1)
+        print(len(y), np.sum(y == -1))
         pairs = np.array(pairs)
 
         display_pairs(p, pairs[y == -1], 'anomaly_parts_movement', cols=3, item_height=250, item_width=500, border=70)
@@ -1312,7 +1312,7 @@ def learn_assignments(p, max_examples=np.inf, display=False):
 
 
 def add_score_to_edges(gm, IF_movement, IF_appearance):
-    print "#edges: {}".format(gm.g.num_edges())
+    print("#edges: {}".format(gm.g.num_edges()))
     i = 0
 
     use_for_learning = 0.1
@@ -1334,7 +1334,7 @@ def add_score_to_edges(gm, IF_movement, IF_appearance):
         
         edges.append(e)
 
-    print "computing isolation score..."
+    print("computing isolation score...")
     vals_appearance = IF_appearance.decision_function(features_appearance)
     vals_movement = IF_movement.decision_function(features_movement)
 
@@ -1360,14 +1360,14 @@ def add_score_to_edges(gm, IF_movement, IF_appearance):
         lr.fit(X, y)
         probs = lr.predict_proba(np.array(vals).reshape((len(vals), 1)))
 
-        print "assigning score to edges.."
-        for val, e in izip(probs[:, 0], edges):
+        print("assigning score to edges..")
+        for val, e in zip(probs[:, 0], edges):
             if type == 'appearance':
                 gm.g.ep['score'][e] = val
             else:
                 gm.g.ep['movement_score'][e] = val
 
-        print "saving..."
+        print("saving...")
 
     # save_p_checkpoint(p, 'isolation_score')
 
@@ -1420,14 +1420,14 @@ def process_project(p):
         eps = 0.3
 
         strongly_better_e = p.gm.strongly_better_eps(eps=eps, score_type=score_type)
-        print "strongly better: {}".format(len(strongly_better_e))
+        print("strongly better: {}".format(len(strongly_better_e)))
         for e in strongly_better_e:
             solver.confirm_edges([(e.source(), e.target())])
 
         print_tracklet_stats(p)
 
         strongly_better_e = p.gm.strongly_better_eps(eps=eps, score_type=score_type)
-        print "strongly better: {}".format(len(strongly_better_e))
+        print("strongly better: {}".format(len(strongly_better_e)))
         for e in strongly_better_e:
             solver.confirm_edges([(e.source(), e.target())])
 
@@ -1487,7 +1487,7 @@ if __name__ == '__main__':
 
         max_dist = 94.59
         # max_dist = get_max_dist(p)
-        print "MAX DIST: {}".format(max_dist)
+        print("MAX DIST: {}".format(max_dist))
 
         if False:
             if FILTER_EDGES:
@@ -1558,20 +1558,20 @@ if __name__ == '__main__':
             better_n_times = 50
 
             strongly_better_e = p.gm.strongly_better(min_prob=min_prob, better_n_times=better_n_times, score_type=score_type)
-            print("strongly better: {}".format(len(strongly_better_e)))
+            print(("strongly better: {}".format(len(strongly_better_e))))
             for e in strongly_better_e:
                 solver.confirm_edges([(e.source(), e.target())])
 
             tracklet_stats(p)
 
             strongly_better_e = p.gm.strongly_better(min_prob=min_prob, better_n_times=better_n_times, score_type=score_type)
-            print("strongly better: {}".format(len(strongly_better_e)))
+            print(("strongly better: {}".format(len(strongly_better_e))))
             for e in strongly_better_e:
                 solver.confirm_edges([(e.source(), e.target())])
 
             tracklet_stats(p)
             strongly_better_e = p.gm.strongly_better(min_prob=min_prob, better_n_times=better_n_times, score_type=score_type)
-            print("strongly better: {}".format(len(strongly_better_e)))
+            print(("strongly better: {}".format(len(strongly_better_e))))
             for e in strongly_better_e:
                 solver.confirm_edges([(e.source(), e.target())])
 

@@ -5,9 +5,7 @@ from abc import ABCMeta, abstractmethod
 from os.path import basename, splitext
 
 
-class IO:
-    __metaclass__ = ABCMeta
-
+class IO(metaclass=ABCMeta):
     @abstractmethod
     def add_item(self, image): pass
 
@@ -114,7 +112,7 @@ class DataIOVot(IO):
         for bbox in data:
             point_annotations = self.point_template.format(id=0, x=bbox['p0_x'] + 1, y=bbox['p0_y'] + 1) + \
                                 self.point_template.format(id=1, x=bbox['p1_x'] + 1, y=bbox['p1_y'] + 1)  # coordinates are 1-based
-            for key, val in bbox.iteritems():
+            for key, val in list(bbox.items()):
                 if key in ['xmin', 'xmax', 'ymin', 'ymax']:
                     bbox[key] = val + 1  # coordinates are 1-based
             bboxes_str.append(self.bbox_template.format(points=point_annotations, **bbox))
@@ -131,7 +129,7 @@ class DataIOVot(IO):
 
     def write_imageset(self, out_filename, idx_range=None):
         if idx_range is None:
-            idx_range = range(self.next_idx)
+            idx_range = list(range(self.next_idx))
         imageset_str = '\n'.join([splitext(basename(self.filename_template.format(idx=i)))[0] for i in idx_range])
         open(out_filename, 'w').write(imageset_str)
 

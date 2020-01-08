@@ -6,7 +6,7 @@ from gui.img_controls import gui_utils
 from gui.init.background import settingsdialog
 import copy
 import math
-import thread
+import _thread
 import numpy as np
 
 class BgFixWidget(QtGui.QWidget):
@@ -124,12 +124,12 @@ class BgFixWidget(QtGui.QWidget):
     def fix_image(self):
         if self.image is not None:
             if self.pos_marker is None:
-                print "No area selected. Please select area to fix first."
+                print("No area selected. Please select area to fix first.")
                 # self.statusBar().showMessage("No area selected. Please select area to fix first.")
             elif self.copy_marker is not None:
                 successed = self.correct_background()
                 if not successed:
-                    print "One or both of the rectangles is not entirely in the image."
+                    print("One or both of the rectangles is not entirely in the image.")
                     # self.statusBar().showMessage("One or both of the rectangles is not entirely in the image.")
                 else:
                     self.remove_copy_marker()
@@ -143,7 +143,7 @@ class BgFixWidget(QtGui.QWidget):
     def open_image(self):
         filename = QtGui.QFileDialog.getOpenFileName(self, "Open image", "", "Images(*.*)")
         if filename != "":
-            filename = unicode(filename)
+            filename = str(filename)
             self.load_image(filename)
             # self.statusBar().showMessage("Select an area you want to fix.")
 

@@ -70,8 +70,7 @@ class Item:
 #     img_manager_size_MB = Item('cache/img_manager_size_MB', 500, '')
 #     region_manager_num_of_instances = Item('cache/region_manager_num_of_instances', 0, '')
 
-class Visualization:
-    __metaclass__ = SettingsType
+class Visualization(metaclass=SettingsType):
     default_region_color = Item('visualization/default_region_color', QtGui.QColor(0, 255, 255, 50), '')
     basic_marker_opacity = Item('visualization/basic_marker_opacity', 0.8, '...')
     segmentation_alpha = Item('visualization/segmentation_alpha', 230, '...')
@@ -83,16 +82,13 @@ class Visualization:
     tracklet_len_per_px = Item('visualization/tracklet_len_per_px_sb', 1, '...')
 
 
-class Temp:
-    __metaclass__ = SettingsType
+class Temp(metaclass=SettingsType):
     last_vid_path = Item('temp/last_vid_path', '')
     last_wd_path = Item('temp/last_wd_path', '')
     last_gt_path = Item('temp/last_gt_path', '')
 
 
-class Controls:
-    __metaclass__ = SettingsType
-    # general
+class Controls(metaclass=SettingsType):
     show_settings = Item('controls/show_settings', QtGui.QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.Key_Comma), 'Show settings tab')
 
     # step by step results

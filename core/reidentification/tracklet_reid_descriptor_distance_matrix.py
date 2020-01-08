@@ -23,9 +23,9 @@ def prototype_distances(tracklets, prototypes):
     tp = tracklet_prototypes_sorted_with_id
     num = len(tp)
     prob_ij = Parallel(n_jobs=-1, verbose=10)(delayed(get_probability_that_prototypes_are_same_tracks)(tp[i][1], tp[j][1]) for i, j in
-                                              list(itertools.product(range(num), range(num))))
+                                              list(itertools.product(list(range(num)), list(range(num)))))
     m = np.zeros((num, num))
-    for prob, (i, j) in zip(prob_ij, itertools.product(range(num), range(num))):
+    for prob, (i, j) in zip(prob_ij, itertools.product(list(range(num)), list(range(num)))):
         m[i, j] = prob
     return m, tp
 

@@ -82,7 +82,7 @@ class BlobWidget(QtGui.QWidget):
 
         self.last_id.setText("Last ID: {0}".format(self.r.id() if self.r is not None else '-'))
         try:
-            self.r = self.region_generator.next()
+            self.r = next(self.region_generator)
         except StopIteration:
             self.exit_callback()
             self.close()
@@ -482,7 +482,7 @@ if __name__ == "__main__":
 
     chunks_with_clusters = [6, 10, 12, 13, 17, 18, 26, 28, 29, 32, 37, 39, 40, 41, 43, 47, 51, 54, 57, 58, 60, 61, 65,
                             67, 69, 73, 75, 78, 81, 84, 87, 90, 93, 94, 96, 99, 102, 105]
-    chunks_with_clusters = map(lambda x: chunks[x], chunks_with_clusters)
+    chunks_with_clusters = [chunks[x] for x in chunks_with_clusters]
 
     app = QtGui.QApplication(sys.argv)
 

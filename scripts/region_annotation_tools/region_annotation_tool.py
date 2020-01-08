@@ -10,10 +10,10 @@ import tqdm
 import os
 
 from core.project.project import Project
-from ant_blobs import AntBlobs
-from tracklet_types import TrackletTypes
-from util.blob_widget import BlobWidget
-from util.tracklet_viewer import TrackletViewer
+from .ant_blobs import AntBlobs
+from .tracklet_types import TrackletTypes
+from .util.blob_widget import BlobWidget
+from .util.tracklet_viewer import TrackletViewer
 import utils.roi
 import core.region.region
 from skimage.measure import regionprops

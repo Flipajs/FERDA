@@ -3,9 +3,9 @@ import os
 baseDir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(baseDir)
 
-from fitting import Fitting
+from .fitting import Fitting
 from core.region.region import Region
-import cPickle as pickle
+import pickle as pickle
 from PyQt4 import QtCore
 
 s_id = sys.argv[1]

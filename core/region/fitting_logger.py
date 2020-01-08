@@ -5,9 +5,9 @@ class FittingLogger:
         self.log_ = {}
 
     def add(self, new_vertices, model_vertices, merged_vertices):
-        new_vertices = map(int, new_vertices)
-        model_vertices = map(int, model_vertices)
-        merged_vertices = map(int, merged_vertices)
+        new_vertices = list(map(int, new_vertices))
+        model_vertices = list(map(int, model_vertices))
+        merged_vertices = list(map(int, merged_vertices))
 
         for v in new_vertices:
             self.log_[v] = {'new_vertices': new_vertices,

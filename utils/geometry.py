@@ -96,11 +96,11 @@ def _rotate_back_projection(pts, th, center, roi):
 
 
 def roi_x_range(roi):
-    return range(roi[0][0], roi[1][0] + 1)
+    return list(range(roi[0][0], roi[1][0] + 1))
 
 
 def roi_y_range(roi):
-    return range(roi[0][1], roi[1][1] + 1)
+    return list(range(roi[0][1], roi[1][1] + 1))
 
 
 def roi_corners(roi):
@@ -132,8 +132,8 @@ def pts_roi(pts):
 
     returns None if something goes wrong
     """
-    min_x = sys.maxint
-    min_y = sys.maxint
+    min_x = sys.maxsize
+    min_y = sys.maxsize
     max_x = 0
     max_y = 0
     for pt in pts:
@@ -156,8 +156,8 @@ def rle_roi(rle, rle_ordered=True):
     ROI - Region Of Interest in format [[min_x, min_y], [max_x, max_y]]
     returns None if something goes wrong
     """
-    min_x = sys.maxint
-    min_y = sys.maxint
+    min_x = sys.maxsize
+    min_y = sys.maxsize
     max_x = 0
     max_y = 0
 
@@ -202,7 +202,7 @@ def get_region_group_overlaps(rt1, rt2):
     for r in rt1 + rt2:
         roi_union = roi_union.union(r.roi())
 
-    print roi_union
+    print(roi_union)
 
     h = roi_union.y_ + roi_union.height_
     w = roi_union.x_ + roi_union.width_

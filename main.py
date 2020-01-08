@@ -31,6 +31,6 @@ if args.project is not None:
     main_window.update_project(project)
 
 
-print "FERDA is READY, loaded in {:.3}s".format(time.time()-t_)
+print("FERDA is READY, loaded in {:.3}s".format(time.time()-t_))
 
 sys.exit(app.exec_())

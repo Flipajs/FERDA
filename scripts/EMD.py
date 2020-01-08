@@ -45,7 +45,7 @@ def build_EMD_lp(regions_P, regions_Q):
 
     prob = LpProblem('EMD', LpMinimize)
 
-    flows = [tuple2str(element) for element in itertools.product(range(len(regions_P)), range(len(regions_Q)))]
+    flows = [tuple2str(element) for element in itertools.product(list(range(len(regions_P))), list(range(len(regions_Q))))]
 
     costs = get_costs(flows, regions_P, regions_Q)
 
@@ -85,7 +85,7 @@ def check_nodes_stability(regions_P, regions_Q, flows, threshold, area_med, area
     preferences = {}
 
     stability_p = np.ones((len(regions_P), 1), dtype=np.bool)
-    for r, r2_i, m, i in zip(regions_P, i_out_max, out_max, range(len(out_max))):
+    for r, r2_i, m, i in zip(regions_P, i_out_max, out_max, list(range(len(out_max)))):
         area = r[0]
 
         a1 = min(m, area)
@@ -96,7 +96,7 @@ def check_nodes_stability(regions_P, regions_Q, flows, threshold, area_med, area
         preferences[r[2]] = regions_Q[r2_i][2]
 
     stability_q = np.ones((len(regions_Q), 1), dtype=np.bool)
-    for r, r1_i, m, i in zip(regions_Q, i_in_max, in_max, range(len(in_max))):
+    for r, r1_i, m, i in zip(regions_Q, i_in_max, in_max, list(range(len(in_max)))):
         area = r[0]
 
         a1 = min(m, area)
@@ -116,8 +116,7 @@ def get_flows(regions_P, regions_Q):
     prob.solve()
 
     if LpStatus[prob.status] != 'Optimal':
-        print "WARNING: there was not optimal solution computed in EMD split/merge predicate"
-
+        print("WARNING: there was not optimal solution computed in EMD split/merge predicate")
     flows = np.zeros((len(regions_P), len(regions_Q)), dtype=np.int)
     for v in prob.variables():
         # print(v.name, "=", v.varValue)

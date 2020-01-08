@@ -3,12 +3,12 @@ import sys
 __author__ = 'filip@naiser.cz'
 
 from PyQt4 import QtGui, QtCore
-from collision_view import CollisionView
+from .collision_view import CollisionView
 import cv2
 import os
 from gui.img_controls import gui_utils
 import pickle
-import settings_dialog
+from . import settings_dialog
 from PIL import ImageQt
 from utils import visualization_utils
 
@@ -112,7 +112,7 @@ class CollisionEditor(QtGui.QMainWindow):
         self.add_markers()
 
     def marker_changed(self, id):
-        print self.identity_markers[id][0].pos().x()
+        print(self.identity_markers[id][0].pos().x())
 
     def update_avg_ant(self):
         if self.pix_map_avg_ant is not None:

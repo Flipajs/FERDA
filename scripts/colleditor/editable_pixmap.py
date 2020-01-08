@@ -64,7 +64,7 @@ class EditablePixmap:
         return img_q
 
     def translate(self, x, y):
-        self.pts = map(lambda el: [el[0]+x, el[1]+y], self.pts)
+        self.pts = [[el[0]+x, el[1]+y] for el in self.pts]
         self.centroid[0] += x
         self.centroid[1] += y
         self.update_pixmap()

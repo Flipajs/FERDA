@@ -1,5 +1,5 @@
 import cv2
-import cPickle as pickle
+import pickle as pickle
 from core.graph.region_chunk import RegionChunk
 from utils.img import get_safe_selection
 from math import ceil
@@ -108,7 +108,7 @@ def draw_keypoints(ft, keypoints):
     scales = ft.getImageScales()
     scs_ = []
     strokes = []
-    for kp, i in zip(keypoints, range(len(keypoints))):
+    for kp, i in zip(keypoints, list(range(len(keypoints)))):
         s_ = ft.getKeypointStrokes(i) * (1.0 / scales[kp[2]])
         scs_.append(kp[2])
         strokes.append(s_)
@@ -170,14 +170,14 @@ def detect_head(keypoints, centroid, ep1, ep2, x_bw, x_fw, y_):
         if kpx < ep1[1]-x_fw:
             continue
         elif kpx < ep1[1] + x_bw:
-            print "+"
+            print("+")
             score += 1
             continue
 
         if kpx < ep2[1]-x_bw:
             continue
         elif kpx < ep2[1]+x_fw:
-            print "-"
+            print("-")
             score -= 1
 
     if score > 0:
@@ -280,7 +280,7 @@ if __name__ == "__main__":
         ch_id = p.gm.g.vp['chunk_start_id'][p.gm.g.vertex(v_id)]
         # 12, 19, 579
         if ch_id > 0:
-            print ch_id
+            print(ch_id)
             ch = p.chm[ch_id]
             r_ch = RegionChunk(ch, p.gm, p.rm)
 

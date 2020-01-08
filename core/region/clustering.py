@@ -1,5 +1,5 @@
-from __future__ import print_function
-import cPickle as pickle
+
+import pickle as pickle
 import os.path
 import numpy as np
 from sklearn.neighbors import KNeighborsClassifier
@@ -45,7 +45,7 @@ class RegionSample(object):
 
     @staticmethod
     def compute_features(region):
-        return [fun(region) for fun in region_features.values()]
+        return [fun(region) for fun in list(region_features.values())]
 
     def _draw_region(self, frame_img):
         img_copy = frame_img.copy()

@@ -8,7 +8,7 @@ from core.region import cyMser
 from core.region.mser_operations import children_filter
 from core.region.region import Region
 from core.config import config
-from mser_operations import get_region_groups_dict_, margin_filter_dict_, min_intensity_filter_dict_
+from .mser_operations import get_region_groups_dict_, margin_filter_dict_, min_intensity_filter_dict_
 from utils.video_manager import get_auto_video_manager
 
 
@@ -42,7 +42,7 @@ class Mser():
             if use_margin_filter:
                 ids = margin_filter_dict_(mser_regions, groups)
             else:
-                ids = range(len(mser_regions))
+                ids = list(range(len(mser_regions)))
 
             if region_min_intensity is not None and region_min_intensity < 256:
 
@@ -74,7 +74,7 @@ class Mser():
             regions = [Region(dr, frame) for i, dr in enumerate(mser_regions)]
 
         if use_children_filter:
-            ids = children_filter(regions, range(len(regions)))
+            ids = children_filter(regions, list(range(len(regions))))
             return [regions[i] for i in ids]
         else:
             return regions
@@ -197,7 +197,6 @@ def get_filtered_regions(img, project, frame=-1):
 
     ratio_th = project.mser_parameters.area_roi_ratio_threshold
     if project.mser_parameters.area_roi_ratio_threshold > ratio_th:
-        regions = filter(lambda r: r.area() / float(r.roi().width() * r.roi().height()) > ratio_th,
-                         regions)
+        regions = [r for r in regions if r.area() / float(r.roi().width() * r.roi().height()) > ratio_th]
     return regions
 

@@ -20,7 +20,7 @@ class AntBlobs:
         self.blobs = {}
 
     def feed_blobs(self):
-        for k in sorted(self.blobs.iterkeys()):
+        for k in sorted(self.blobs.keys()):
             yield k, self.blobs[k]
 
     def __len__(self):
@@ -32,7 +32,7 @@ class AntBlobs:
 
         :return: list of AntBlobs()
         """
-        return self.blobs.items()
+        return list(self.blobs.items())
 
     def contains(self, region_id, frame, tracklet_id):
         return BlobInfo(region_id, frame, tracklet_id) in self.blobs
@@ -42,6 +42,6 @@ class AntBlobs:
 
     def filter_labeled_tracklets(self, tracklets):
         labeled_tracklets = set()
-        for k in self.blobs.keys():
+        for k in list(self.blobs.keys()):
             labeled_tracklets.add(k.tracklet_id)
-        return list(filter(lambda x: x.id() not in labeled_tracklets, tracklets))
+        return list([x for x in tracklets if x.id() not in labeled_tracklets])

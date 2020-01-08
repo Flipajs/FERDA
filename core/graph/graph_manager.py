@@ -112,7 +112,7 @@ class GraphManager(object):
         affected = []
 
         if region is None:
-            print "remove node n is None"
+            print("remove node n is None")
             return
 
         if disassembly:
@@ -204,7 +204,7 @@ class GraphManager(object):
         self.update_time_boundaries()
 
     def update_time_boundaries(self):
-        keys = [self.vertices_in_t.keys()]
+        keys = [list(self.vertices_in_t.keys())]
 
         self.end_t = np.max(keys)
         self.start_t = np.min(keys)
@@ -284,9 +284,9 @@ class GraphManager(object):
 
         if source_vertex is None or target_vertex is None:
             if source_vertex is None:
-                print "ERROR in (graph_manager.py) remove_edge source_vertex is None, target_vertex: ", target_vertex
+                print("ERROR in (graph_manager.py) remove_edge source_vertex is None, target_vertex: ", target_vertex)
             else:
-                print "ERROR in (graph_manager.py) remove_edge target_vertex is None, source_vertex: ", source_vertex
+                print("ERROR in (graph_manager.py) remove_edge target_vertex is None, source_vertex: ", source_vertex)
             return
 
         out_edges = [e for e in source_vertex.out_edges()]
@@ -310,7 +310,7 @@ class GraphManager(object):
 
     def get_all_relevant_vertices(self):
         vertices = []
-        for _, vs_ in self.vertices_in_t.iteritems():
+        for _, vs_ in self.vertices_in_t.items():
             vertices.extend(vs_)
 
         return vertices
@@ -445,7 +445,7 @@ class GraphManager(object):
 
     def all_vertices_and_regions(self, start_frame=-1, end_frame=np.inf):
         l = []
-        for t, v_ids in self.vertices_in_t.iteritems():
+        for t, v_ids in self.vertices_in_t.items():
             if start_frame <= t <= end_frame:
                 for v_id in v_ids:
                     l.append((v_id, self.region(v_id)))
@@ -481,7 +481,7 @@ class GraphManager(object):
         node_groups = {}
         self.get_cc_rec(vertex, 0, node_groups)
 
-        keys = node_groups.keys()
+        keys = list(node_groups.keys())
         keys = sorted(keys)
 
         g = []
@@ -491,14 +491,14 @@ class GraphManager(object):
         return g
 
     def next_frame_after(self, frame):
-        for t in xrange(frame + 1, self.end_t):
+        for t in range(frame + 1, self.end_t):
             if t in self.vertices_in_t:
                 return t
 
         return None
 
     def prev_frame_before(self, frame):
-        for t in xrange(frame - 1, -1, -1):
+        for t in range(frame - 1, -1, -1):
             if t in self.vertices_in_t:
                 return t
 
@@ -513,7 +513,7 @@ class GraphManager(object):
 
     def out_e(self, v):
         assert v.out_degree() == 1
-        return v.out_edges().next()
+        return next(v.out_edges())
 
     def is_vertex_in_path_subgraph(self, v):  # TODO: depends on chunkmanager
         """
@@ -605,7 +605,7 @@ class GraphManager(object):
         return self.get_2_best_out_edges_appearance_motion_mix(v, func=v.in_edges)
 
     def strongly_better(self, min_prob=0.9, better_n_times=10, score_type='appearance_motion_mix'):
-        from itertools import izip
+        
 
         strongly_better_e = []
 

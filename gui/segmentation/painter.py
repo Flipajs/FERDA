@@ -1,6 +1,6 @@
 import sys
-from my_view import MyView
-from my_scene import MyScene
+from .my_view import MyView
+from .my_scene import MyScene
 from PyQt4 import QtGui, QtCore
 import numpy as np
 import cv2
@@ -69,7 +69,7 @@ class Painter(QtGui.QWidget):
         self.overlay_pixmap = self.scene.addPixmap(QtGui.QPixmap.fromImage(overlay_image))
         self.overlay2_pixmap = self.scene.addPixmap(QtGui.QPixmap.fromImage(overlay_image))
 
-        for color in self.colors.itervalues():
+        for color in self.colors.values():
             if color[0] is None:
                 color[0] = np.zeros((self.h, self.w))
 
@@ -108,7 +108,7 @@ class Painter(QtGui.QWidget):
         :param visibility: new visibility (True/False)
         :return: None
         """
-        for color, data in self.colors.iteritems():
+        for color, data in self.colors.items():
             if data[2]:
                 data[2].setVisible(visibility)
 
@@ -118,7 +118,7 @@ class Painter(QtGui.QWidget):
         :param img: a new image to use, None to delete overlay completely.
         :return: None
         """
-        if self.overlay_pixmap and self.overlay_pixmap in self.scene.items():
+        if self.overlay_pixmap and self.overlay_pixmap in list(self.scene.items()):
             self.scene.removeItem(self.overlay_pixmap)
         if img:
             self.overlay_pixmap = self.scene.addPixmap(QtGui.QPixmap.fromImage(img))
@@ -130,7 +130,7 @@ class Painter(QtGui.QWidget):
         :param img: a new image to use, None to delete overlay completely.
         :return: None
         """
-        if self.overlay2_pixmap and self.overlay2_pixmap in self.scene.items():
+        if self.overlay2_pixmap and self.overlay2_pixmap in list(self.scene.items()):
             self.scene.removeItem(self.overlay2_pixmap)
         if img:
             self.overlay2_pixmap = self.scene.addPixmap(QtGui.QPixmap.fromImage(img))
@@ -148,7 +148,7 @@ class Painter(QtGui.QWidget):
         self.colors[name][2].setZValue(20)
 
     def reset_masks(self):
-        for name, data in self.colors.iteritems():
+        for name, data in self.colors.items():
 
             # reset mask
             mask = np.zeros((self.h, self.w))
@@ -244,7 +244,7 @@ class Painter(QtGui.QWidget):
         # get number of elements in backup
         length = len(self.backup)
         if self.DEBUG:
-            print "Length is %s" % length
+            print("Length is %s" % length)
 
         # proceed to undo if there is something to undo
         if length > 0:
@@ -295,7 +295,7 @@ class Painter(QtGui.QWidget):
             return map_pos
         else:
             if self.DEBUG:
-                print "Out of bounds [%s, %s]" % (map_pos.x(), map_pos.y())
+                print("Out of bounds [%s, %s]" % (map_pos.x(), map_pos.y()))
             return False
 
     def is_in_scene(self, point):

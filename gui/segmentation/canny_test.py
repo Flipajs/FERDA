@@ -1,7 +1,7 @@
 from PyQt4 import QtGui, QtCore
 import cv2, sys
 import numpy as np
-import painter
+from . import painter
 
 class CannyTest(QtGui.QWidget):
     def __init__(self, image):

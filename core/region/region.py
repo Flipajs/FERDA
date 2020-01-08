@@ -92,7 +92,7 @@ class Region(object):
             roi = self.roi()
             if roi is None:
                 roi = ROI()
-            state.update({'roi_' + k: v for k, v in roi.as_dict().items()})
+            state.update({'roi_' + k: v for k, v in list(roi.as_dict().items())})
             del state['roi_']
         return state
 
@@ -109,7 +109,7 @@ class Region(object):
             del state['roi_x']
             del state['roi_height']
             del state['roi_width']
-            for k, v in state.items():
+            for k, v in list(state.items()):
                 if isinstance(v, (numbers.Number, np.number)) and np.isnan(v):
                     state[k] = None
         self.__dict__.update(state)
@@ -159,7 +159,7 @@ class Region(object):
                 d = row['col2'] + 1 - row['col1']
 
                 pts[i:i+d, 0] = row['line']
-                pts[i:i+d, 1] = range(row['col1'], row['col2'] + 1)
+                pts[i:i+d, 1] = list(range(row['col1'], row['col2'] + 1))
                 i += d
 
                 # for c in xrange(row['col1'], row['col2'] + 1):
@@ -167,11 +167,11 @@ class Region(object):
                     # pts[i, 1] = c
                     # i += 1
         except (IndexError, AttributeError) as e:
-            print e
+            print(e)
             pts = []
 
             for row in data:
-                for c in xrange(row['col1'], row['col2'] + 1):
+                for c in range(row['col1'], row['col2'] + 1):
                     pts.append([row['line'], c])
                     i += 1
 
@@ -668,7 +668,7 @@ def get_orientation(sxx, syy, sxy):
 
 
 if __name__ == '__main__':
-    import cPickle as pickle
+    import pickle as pickle
     import numpy as np
     f = open('/home/dita/PycharmProjects/c5regions.pkl', 'r+b')
     up = pickle.Unpickler(f)

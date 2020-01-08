@@ -65,7 +65,7 @@ class InteractionDetectorTestCase(unittest.TestCase):
     def test_solve(self):
         # t = np.random.choice(self.tracklets_two)
         t = self.tracklets_two[13]
-        print t.solve_interaction(self.detector, self.rm, self.im)
+        print(t.solve_interaction(self.detector, self.rm, self.im))
 
 
 if __name__ == '__main__':

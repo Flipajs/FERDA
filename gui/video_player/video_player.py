@@ -50,7 +50,7 @@ class VideoPlayer(QtGui.QWidget):
         self._video_controls()
         self._add_actions()
 
-        self.next()
+        next(self)
         self.updateGeometry()
 
     def set_frame_change_callback(self, frame_change_callback):
@@ -60,7 +60,7 @@ class VideoPlayer(QtGui.QWidget):
         self._image_processor_callback = image_processor_callback
 
     def _video_controls(self):
-        from video_slider import VideoSlider
+        from .video_slider import VideoSlider
 
         self.video_control_widget = QtGui.QWidget()
         self.video_control_layout = QtGui.QVBoxLayout()
@@ -169,12 +169,12 @@ class VideoPlayer(QtGui.QWidget):
 
     def connect_GUI(self):
         """Connects GUI elements to appropriate methods"""
-        self.forward.clicked.connect(self.next)
+        self.forward.clicked.connect(self.__next__)
         self.backward.clicked.connect(self.prev)
         self.playPause.clicked.connect(self.play_pause)
         self.speedSlider.valueChanged.connect(self.speed_slider_changed)
         self.video_slider.valueChanged.connect(self.video_slider_changed)
-        self.timer.timeout.connect(self.next)
+        self.timer.timeout.connect(self.__next__)
 
     def play_pause(self):
         if self.timer.isActive():
@@ -269,7 +269,7 @@ class VideoPlayer(QtGui.QWidget):
         pixmap = cvimg2qtpixmap(img)
         self.visualise_temp(QtGui.QGraphicsPixmapItem(pixmap), 'bg')
 
-    def next(self):
+    def __next__(self):
         self._change_frame(self._get_next_operator())
 
     def prev(self):
@@ -317,7 +317,7 @@ class VideoPlayer(QtGui.QWidget):
 
     def clear_all_temp_visualisations(self, except_for=[]):
         delete_ = []
-        for key, arr in self._scene_items['temp'].iteritems():
+        for key, arr in self._scene_items['temp'].items():
             if key in except_for:
                 continue
 
@@ -364,4 +364,4 @@ class VideoPlayer(QtGui.QWidget):
 if __name__ == '__main__':
     vp = VideoPlayer(None)
     vp.play_reversed()
-    print "TEST"
+    print("TEST")

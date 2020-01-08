@@ -93,7 +93,7 @@ class ImgGridWidget(QtGui.QWidget):
 
     def redraw(self):
         # remove all widgets
-        for i in reversed(range(self.grid.count())):
+        for i in reversed(list(range(self.grid.count()))):
             widget_to_remove = self.grid.itemAt(i).widget()
             # remove it from the layout list
             self.grid.removeWidget(widget_to_remove)

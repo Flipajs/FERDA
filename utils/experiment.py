@@ -33,7 +33,7 @@ class Parameters(dict):
         :return: list of keys with multiple values
         """
         multiple_value_keys = []
-        for key, value in self.items():
+        for key, value in list(self.items()):
             if (isinstance(value, list) or isinstance(value, tuple)) and len(value) > 1:
                 multiple_value_keys.append(key)
         return multiple_value_keys
@@ -140,7 +140,7 @@ class Experiment(object):
             yield self
         else:
             for batch_values in self.params.get_batches():
-                parameters = dict(zip(self.params.keys(), batch_values))
+                parameters = dict(list(zip(list(self.params.keys()), batch_values)))
                 name_parts = []
                 for key in changing_keys:
                     value = parameters[key]

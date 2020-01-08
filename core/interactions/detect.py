@@ -34,6 +34,7 @@ from utils.gt.io import load_mot, results_to_mot, eval_mot, mot_in_roi
 from shapes.ellipse import Ellipse
 from utils.roi import ROI
 from utils.misc import makedirs
+from functools import reduce
 
 memory = Memory('out/cache', verbose=0)
 
@@ -401,7 +402,7 @@ class InteractionDetector:
             tracks_items = [t for _, t in tracks.iterrows()]
         elif isinstance(tracks, list):
             tracks_items = tracks
-        for img, props in tqdm(zip(images, tracks_items), desc='interaction movie'):
+        for img, props in tqdm(list(zip(images, tracks_items)), desc='interaction movie'):
     #         for obj_i in range(2):
     #             predictions['{}_major'.format(obj_i)] = 60
     #             predictions['{}_minor'.format(obj_i)] = 15
@@ -447,7 +448,7 @@ class InteractionDetector:
         roi_union = reduce(lambda x, y: x.union(y), rois)
         start_frame = regions[0].frame
         end_frame = regions[-1].frame
-        imgs = [vm.get_frame(frame) for frame in tqdm(range(start_frame, end_frame + 1), desc='gathering images')]
+        imgs = [vm.get_frame(frame) for frame in tqdm(list(range(start_frame, end_frame + 1)), desc='gathering images')]
         Parallel(n_jobs=-1, verbose=10)(delayed(plot_frame)(frame, i, imgs[i], out_dir,
                                                            paths=[{'regions': regions}], roi=roi_union, gt=gt)
                                        for i, frame in enumerate(range(start_frame, end_frame + 1)))
@@ -458,9 +459,9 @@ class InteractionDetector:
         incoming, outcoming, _ = self.get_tracklets_from_dense(graph)
 
         makedirs(out_dir)
-        imgs = [vm.get_frame(frame) for frame in tqdm(range(start_frame, end_frame + 1), desc='gathering images')]
+        imgs = [vm.get_frame(frame) for frame in tqdm(list(range(start_frame, end_frame + 1)), desc='gathering images')]
         regions = []
-        for frame in tqdm(range(start_frame, end_frame + 1), desc='gathering regions'):
+        for frame in tqdm(list(range(start_frame, end_frame + 1)), desc='gathering regions'):
             regions_in_frame = []
             for t in self.project.chm.tracklets_in_frame(frame):
                 if t.is_origin_interaction():
@@ -490,7 +491,7 @@ class InteractionDetector:
         def min_dist(p1, p2):
             p1 = {el.frame: el for el in p1}
             p2 = {el.frame: el for el in p2}
-            frames = sorted(list(set(p1.keys()).intersection(p2.keys())))
+            frames = sorted(list(set(p1.keys()).intersection(list(p2.keys()))))
             if not frames:
                 return 99999, -1
             else:
@@ -730,13 +731,13 @@ def track_frame_range(initial_tracklets, frame_start, frame_end, detector, out_d
     #     head_fix(regions)
     ellipses = [Ellipse.from_region(next(r for r in regions if r.frame() == frame_start)) for regions in regions_tracklets]
     predictions = [el.to_dict() for el in ellipses]
-    track_ids = range(len(initial_tracklets))
+    track_ids = list(range(len(initial_tracklets)))
     tracks = [[el] for el in ellipses]
     colors = list(itertools.islice(itertools.cycle(['red', 'blue', 'green', 'yellow', 'white', 'cyan']),
                                    len(initial_tracklets)))
     img_shape = detector.project.img_manager.get_whole_img(0).shape
     templates = [None] * len(initial_tracklets)
-    for frame in tqdm(range(frame_start + step, frame_end, step)):
+    for frame in tqdm(list(range(frame_start + step, frame_end, step))):
         cur_predictions = []
         for i, (pred, template_img) in enumerate(zip(predictions, templates)):
             current_prediction, _, _, img_crop = detector.detect_single_frame(frame, pred, template_img)
@@ -862,7 +863,7 @@ def track_single_tracklets(tracker_dir, project_dir, out_dir):
     :return:
     """
     detector, gt = _load(tracker_dir, project_dir)
-    from generate_data import DataGenerator
+    from .generate_data import DataGenerator
     dg = DataGenerator()
     dg._load_project(project_dir)
     _, tracklet_regions = dg._collect_regions(single=True, multi=False)

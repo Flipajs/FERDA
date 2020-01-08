@@ -1,7 +1,7 @@
 
 
 class TrackletTypes:
-    BLOB, SINGLE, OTHER = range(3)
+    BLOB, SINGLE, OTHER = list(range(3))
 
     def __init__(self):
         self.tracklet_types = {}

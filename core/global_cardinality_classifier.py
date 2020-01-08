@@ -21,7 +21,7 @@ def get_tracklet_cardinalities(project):
     t = time.time()
     areas = get_median_areas(tracklets, project)
     # TODO: medain_area should probably be median from all areas...
-    median_area = np.median(areas.values())
+    median_area = np.median(list(areas.values()))
     print("area median extraction time: {}".format(time.time() - t))
     area_relaxation_coef = 0
 
@@ -37,7 +37,7 @@ def get_tracklet_cardinalities(project):
 
 def fill_tracklet_cardinalites(project):
     tracklet_cardinalities = get_tracklet_cardinalities(project)
-    for t_id, cardinality in tracklet_cardinalities.iteritems():
+    for t_id, cardinality in list(tracklet_cardinalities.items()):
         project.chm[t_id].cardinality = cardinality
         if cardinality == 1:
             project.chm[t_id].segmentation_class = 0  # single
@@ -89,9 +89,9 @@ def get_median_areas(tracklets, project):
 def remap_instances_to_ids(tracklets, collateral_sets, predecessors, successors, areas):
     new_tracklets = [t.id() for t in tracklets]
     new_collateral_sets = [[t.id() for t in tracklets] for tracklets in collateral_sets]
-    new_predecessors = {t.id(): [t_p.id() for t_p in pred] for t, pred in predecessors.items()}
-    new_successors = {t.id(): [t_p.id() for t_p in succ] for t, succ in successors.items()}
-    new_areas = {t.id(): area for t, area in areas.items()}
+    new_predecessors = {t.id(): [t_p.id() for t_p in pred] for t, pred in list(predecessors.items())}
+    new_successors = {t.id(): [t_p.id() for t_p in succ] for t, succ in list(successors.items())}
+    new_areas = {t.id(): area for t, area in list(areas.items())}
 
     return new_tracklets, new_collateral_sets, new_predecessors, new_successors, new_areas
 
@@ -115,8 +115,8 @@ def build_ilp(tracklets, collateral_sets, predecessors, successors, K, median_ar
                                                                                              successors,
                                                                                              areas)
     t_start = time.time()
-    full_KK = range(0, K + 1)
-    KK = range(1, K + 1)
+    full_KK = list(range(0, K + 1))
+    KK = list(range(1, K + 1))
     x = {}
     for t in tracklets:
         for k in full_KK:
@@ -143,11 +143,11 @@ def build_ilp(tracklets, collateral_sets, predecessors, successors, K, median_ar
             cs_i)
 
     # flow rule
-    for t, pred in predecessors.items():
+    for t, pred in list(predecessors.items()):
         prob += sum([k * x[(t_, k)] for t_ in pred for k in KK]) >= \
                 sum([k * x[(t, k)] for k in KK])
 
-    for t, succ in successors.items():
+    for t, succ in list(successors.items()):
         prob += sum([k * x[(t_, k)] for t_ in succ for k in KK]) >= \
                 sum([k * x[(t, k)] for k in KK])
 
@@ -200,7 +200,7 @@ def solve(prob, x, print_ilp):
     print(status)
 
     cardinalities = {}
-    for (id, card), var in x.items():
+    for (id, card), var in list(x.items()):
         # id, card = str(xx)[1:-1].split(',')
         # id = int(id)
         # card = int(card[1:])
@@ -260,7 +260,7 @@ def eval(tracklets, cardinalities, cardinalities_gt):
 
         tracklets_len_sum = 0
 
-        for id in cardinalities_gt.keys():
+        for id in list(cardinalities_gt.keys()):
             if cardinalities_gt[id] != cardinalities[id]:
                 print("mistake, id: {}, correct cardinality: {}, estimated: {}".format(id, cardinalities_gt[id],
                                                                                        cardinalities[id]))

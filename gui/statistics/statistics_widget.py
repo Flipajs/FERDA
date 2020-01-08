@@ -4,8 +4,8 @@ from PyQt4 import QtGui
 import csv
 import scipy.io as sio
 import numpy as np
-from region_reconstruction import RegionReconstruction
-from fix_area import FixArea
+from .region_reconstruction import RegionReconstruction
+from .fix_area import FixArea
 import sys
 from core.graph.region_chunk import RegionChunk
 from pympler import asizeof
@@ -111,7 +111,7 @@ class StatisticsWidget(QtGui.QWidget):
         #     self.fix_area.vbox.addWidget(QtGui.QLabel('AREA WAS ALREADY UPDATED!'))
 
     def export(self):
-        print "exporting..."
+        print("exporting...")
 
 
         ex = Exporter(self.project.chm, self.project.gm, self.project.rm,
@@ -129,7 +129,7 @@ class StatisticsWidget(QtGui.QWidget):
         # elif ftype == '.mat':
         #     self.export_mat()
 
-        print "done"
+        print("done")
 
     def write_line_csv(self, f, r):
         a, b = self.centroid_in_right_order(r)
@@ -163,7 +163,7 @@ class StatisticsWidget(QtGui.QWidget):
 
     def obj_arr_append_(self, obj_arr, d):
         new_d = {}
-        for key, val in d.iteritems():
+        for key, val in d.items():
             if key != 'frame' and key != 'region_id':
                 val = np.array(val)
 
@@ -192,7 +192,7 @@ class StatisticsWidget(QtGui.QWidget):
         t = time.time()
 
         approx_reg_size = self.get_approx_region_size()
-        print "APPROX REG SIZE", approx_reg_size
+        print("APPROX REG SIZE", approx_reg_size)
 
         obj_arr = []
 
@@ -202,7 +202,7 @@ class StatisticsWidget(QtGui.QWidget):
 
         t1 = time.time()
         if not self.export_chunks_only.isChecked():
-            for _, vs in self.project.gm.vertices_in_t.iteritems():
+            for _, vs in self.project.gm.vertices_in_t.items():
                 for v in vs:
                     ch, _ = self.project.gm.is_chunk(v)
 
@@ -215,12 +215,12 @@ class StatisticsWidget(QtGui.QWidget):
 
                         self.obj_arr_append_(obj_arr, d)
 
-        print "single regions t:", time.time() - t1
+        print("single regions t:", time.time() - t1)
 
         t2 = time.time()
         file_num = 0
         chunNum  = 0
-        for _, ch in self.project.chm.chunks_.iteritems():
+        for _, ch in self.project.chm.chunks_.items():
             chunNum += 1
 
             rch = RegionChunk(ch, self.project.gm, self.project.rm)
@@ -243,8 +243,8 @@ class StatisticsWidget(QtGui.QWidget):
             
             if (curr_size > limit):
                 with open(self.get_out_path()+str(file_num)+'.mat', 'wb') as f:
-                    print "saving ", str(file_num)
-                    print(str(chunNum)+"\n")
+                    print("saving ", str(file_num))
+                    print((str(chunNum)+"\n"))
                     sio.savemat(f, {'FERDA': obj_arr}, do_compression=True)
 
                 curr_size = 0
@@ -264,7 +264,7 @@ class StatisticsWidget(QtGui.QWidget):
         with open(self.get_out_path()+str(file_num)+'.mat', 'wb') as f:
             sio.savemat(f, {'FERDA': obj_arr}, do_compression=True)
 
-        print "chunks regions t:", time.time() - t2
+        print("chunks regions t:", time.time() - t2)
 
         t3 = time.time()
         with open(self.get_out_path()+'_arena.mat', 'wb') as f:
@@ -291,9 +291,9 @@ class StatisticsWidget(QtGui.QWidget):
 
             sio.savemat(f, {'arena': arena}, do_compression=True)
 
-        print "save t:", time.time()-t3
+        print("save t:", time.time()-t3)
 
-        print "WHOLE EXPORT t: ", time.time() - t
+        print("WHOLE EXPORT t: ", time.time() - t)
 
     def append_pts_(self, d, key, pts):
         px = []
@@ -435,7 +435,7 @@ class StatisticsWidget(QtGui.QWidget):
         import matplotlib.pyplot as plt
 
         vals = []
-        ff = range(0, frames, step)
+        ff = list(range(0, frames, step))
         for f in ff:
             vals.append(len(self.project.chm.tracklets_in_frame(f)))
 
@@ -450,7 +450,7 @@ class StatisticsWidget(QtGui.QWidget):
         labels_step = max(1, int(len(vals) / how_many_labels_do_we_want))
 
         ax.set_xticks(ind[::labels_step])
-        ax.set_xticklabels(map(str, ff[::labels_step]))
+        ax.set_xticklabels(list(map(str, ff[::labels_step])))
 
         plt.ion()
         plt.show()

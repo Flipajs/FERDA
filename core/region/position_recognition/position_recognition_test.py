@@ -14,7 +14,7 @@ def get_pca(chunks, number_of_data, chm, gm):
         for vector in get_matrix(ch, number_of_data, chm, gm):
             matrix.append(vector)
     # for a in matrix:
-    #     print (a)
+    #     print(a)
     eigenfaces = get_eigenfaces(matrix)
     return numpy.dot(transpose(eigenfaces[:PRECISION]), matrix)
 
@@ -144,7 +144,7 @@ def get_region_vector_angle(region, number_of_data):
 
         closest_angle_pos = find_closest_angle_pos(beam_angle, number_of_data)
         closest_angle = closest_angle_pos * step
-        print ("Angle: " + str(math.degrees(closest_angle)))
+        print("Angle: " + str(math.degrees(closest_angle)))
         print(distance)
         #TODO - precision
         #TODO - precision multiplier
@@ -164,9 +164,9 @@ def get_region_vector_angle(region, number_of_data):
         con_index += 1
 
     for i in range(number_of_data):
-        print (math.degrees(step * i))
-        print (results[i][0])
-        print (results[i][1])
+        print(math.degrees(step * i))
+        print(results[i][0])
+        print(results[i][1])
 
     for i in range(number_of_data):
         if results[i][0] is None:
@@ -175,12 +175,12 @@ def get_region_vector_angle(region, number_of_data):
             results[i][1] = (step * i, 0)
 
     for i in range(number_of_data):
-        print (step * i * (180 / math.pi))
-        print (results[i][0])
-        print (results[i][1])
+        print(step * i * (180 / math.pi))
+        print(results[i][0])
+        print(results[i][1])
 
     results = [interpolation(h_l[0], l_h[0], h_l[1], l_h[1]) for h_l, l_h in results]
-    plt.scatter(range(100, number_of_data + 100), [results[x] for x in range(number_of_data)], c='r')
+    plt.scatter(list(range(100, number_of_data + 100)), [results[x] for x in range(number_of_data)], c='r')
 
     plt.hold(True)
     plt.axis('equal')

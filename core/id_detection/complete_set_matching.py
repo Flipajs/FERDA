@@ -14,7 +14,7 @@ import warnings
 
 from utils.rand_cmap import rand_cmap
 from utils.video_manager import get_auto_video_manager
-from track_prototype import TrackPrototype
+from .track_prototype import TrackPrototype
 from core.graph.track import Track
 from core.graph.complete_set import CompleteSet
 from utils.visualization_utils import generate_colors
@@ -107,7 +107,7 @@ class CompleteSetMatching:
                 pass
 
         # update N sets for unassigned tracklets in relations to best_CS track ids
-        for tracklet, track_id in self.tracklets_2_tracks.iteritems():
+        for tracklet, track_id in self.tracklets_2_tracks.items():
             self.add_to_N_set(track_id, tracklet)
 
         # go through tracklets, find biggest set and do matching..
@@ -296,7 +296,7 @@ class CompleteSetMatching:
         # for id_, mean in tracks_mean_desc.iteritems():
         #     mean_ds.append(mean/float(support[obj_id]))
 
-        logger.debug("track ids order: {}, length: {}".format(list(tracks_mean_desc.iterkeys()), len(tracks)))
+        logger.debug("track ids order: {}, length: {}".format(list(tracks_mean_desc.keys()), len(tracks)))
         # from scipy.spatial.distance import pdist, squareform
         # plt.imshow(squareform(pdist(mean_ds)), interpolation='nearest')
         # plt.show()
@@ -310,24 +310,24 @@ class CompleteSetMatching:
         #     print quality
 
     def assert_consistency(self, verbose=False):
-        tracklets_in_tracks = list(itertools.chain.from_iterable(self.tracks.itervalues()))
+        tracklets_in_tracks = list(itertools.chain.from_iterable(iter(self.tracks.values())))
         assert len(tracklets_in_tracks) == len(set(tracklets_in_tracks))  # no tracklet is used twice
 
-        for track_id, tracklets in self.tracks.iteritems():
+        for track_id, tracklets in self.tracks.items():
             for t in tracklets:
                 assert t.get_track_id() == track_id
                 if verbose:
-                    print('track_id {} P {}, N {}'.format(track_id, t.P, t.N))
+                    print(('track_id {} P {}, N {}'.format(track_id, t.P, t.N)))
 
         tracklets_without_track = list(set(self.p.chm.chunk_gen()).difference(tracklets_in_tracks))
         for t in tracklets_without_track:
             assert not t.P
             if verbose:
-                print('tracklet_id {} P {}, N {}'.format(t.id(), t.P, t.N))
+                print(('tracklet_id {} P {}, N {}'.format(t.id(), t.P, t.N)))
 
     def to_complete_sets(self, complete_set_list):
         tracks_obj = {track_id: Track(tracklets, self.p.gm, track_id)
-                      for track_id, tracklets in self.tracks.iteritems()}
+                      for track_id, tracklets in self.tracks.items()}
         complete_sets = []
         for cs in complete_set_list:
             cs_tracks = [tracks_obj[track_id] for track_id in cs]
@@ -347,7 +347,7 @@ class CompleteSetMatching:
         """
         track_ids = set(itertools.chain.from_iterable([t.P.union(t.N) for t in self.p.chm.chunk_gen()]))
         support_with_all_ids = support.copy()
-        support_with_all_ids.update({track_id: -1 for track_id in track_ids.difference(support.keys())})
+        support_with_all_ids.update({track_id: -1 for track_id in track_ids.difference(list(support.keys()))})
         id_mapping = {old_id: new_id for new_id, old_id in
                       enumerate(sorted(support_with_all_ids, key=support_with_all_ids.get, reverse=True))}
         print(id_mapping)
@@ -358,7 +358,7 @@ class CompleteSetMatching:
     def find_biggest_undecided_tracklet_set(self, t):
         all_intersecting_t = list(self.p.chm.singleid_tracklets_intersecting_t_gen(t))
         # skip already decided...
-        all_intersecting_t = filter(lambda x: len(x.P) == 0, all_intersecting_t)
+        all_intersecting_t = [x for x in all_intersecting_t if len(x.P) == 0]
         t_start = t.start_frame()
         t_end = t.end_frame()
         #       for simplicity - find frame with biggest # of intersecting undecided tracklets
@@ -381,7 +381,7 @@ class CompleteSetMatching:
         best_frame = -1
         best_val = 0
         best_score = 0
-        for frame, val in important_frames.iteritems():
+        for frame, val in important_frames.items():
             if val >= best_val:
                 if important_frames_score[frame] > best_score:
                     best_frame = frame
@@ -392,7 +392,7 @@ class CompleteSetMatching:
 
     def single_track_assignment(self, best_CS, prototypes, tracklets_2_tracks):
         # update N sets for unassigned tracklets in relations to best_CS track ids
-        for tracklet, track_id in tracklets_2_tracks.iteritems():
+        for tracklet, track_id in tracklets_2_tracks.items():
             self.add_to_N_set(track_id, tracklet)
         probabilities = {}
         decisioins = {}
@@ -493,7 +493,7 @@ class CompleteSetMatching:
                 t.id_decision_info = 'sequential_matching'
             track_CSs[-1].append(track_id)
 
-        for i in tqdm(range(len(CSs) - 1), desc='sequential matching'):
+        for i in tqdm(list(range(len(CSs) - 1)), desc='sequential matching'):
             logger.debug("CS {}, CS {}".format(i, i + 1))
 
             self.update_merged_tracks(CSs, i)
@@ -558,7 +558,7 @@ class CompleteSetMatching:
                 tracks_unassigned_len += len(t)
                 tracks_unassigned_num += 1
         num_prototypes = 0
-        for prots in self.prototypes.itervalues():
+        for prots in self.prototypes.values():
             num_prototypes += len(prots)
         logger.info("sequential CS matching done...")
         logger.debug("#tracks: {}, #tracklets2tracks: {}, unassigned #{} len: {}, #prototypes: {}".format(
@@ -750,7 +750,7 @@ class CompleteSetMatching:
 
             values.append(val)
 
-        values_i = reversed(sorted(range(len(values)), key=values.__getitem__))
+        values_i = reversed(sorted(list(range(len(values))), key=values.__getitem__))
         CS_sorted = []
         for i in values_i:
             logger.debug('%s, %s', str(track_CSs[i]), str(values[i]))
@@ -792,11 +792,11 @@ class CompleteSetMatching:
                 if len(tracklets) == 0:
                     break
 
-                single_tracklets = filter(lambda x: x.is_single(), tracklets)
+                single_tracklets = [x for x in tracklets if x.is_single()]
 
                 if len(single_tracklets) == len(self.p.animals) and min([len(t) for t in single_tracklets]) >= 1:
                     # found a complete set
-                    cs_tracks = map(lambda x: self.tracklets_2_tracks[x], single_tracklets)
+                    cs_tracks = [self.tracklets_2_tracks[x] for x in single_tracklets]
                     if len(CSs) == 0 or cs_tracks != CSs[-1]:
                         CSs.append(cs_tracks)
 
@@ -1191,7 +1191,7 @@ class CompleteSetMatching:
 
         Y = []
         X = []
-        for y, x in tqdm(self.descriptors.iteritems()):
+        for y, x in tqdm(iter(self.descriptors.items())):
             Y.append(y)
             X.append(x)
 
@@ -1345,7 +1345,7 @@ class CompleteSetMatching:
 
     def solve_interactions_regression(self, dense_sections_tracklets):
         # first register new new chunks
-        for _, dense in tqdm(dense_sections_tracklets.iteritems(), desc='dense sections',
+        for _, dense in tqdm(iter(dense_sections_tracklets.items()), desc='dense sections',
                              total=len(dense_sections_tracklets)):
             for path in dense:
                 in_tracklet = path['in_tracklet']
@@ -1375,7 +1375,7 @@ class CompleteSetMatching:
                     continue
 
                 assert (in_tracklet is not None) and (out_tracklet is not None)
-                print('max_d: {}'.format(max_d))
+                print(('max_d: {}'.format(max_d)))
                 if max_d < self.p.stats.major_axis_median / 2.0:
                     print("merging")
                     self.merge_tracklets(in_tracklet, new_t)
@@ -1460,7 +1460,7 @@ class CompleteSetMatching:
                     # PRE tracklets
                     pre_tracklets = self.p.chm.tracklets_in_frame(start_frame - 1)
                     # only tracklets which end before interaction are possible options
-                    pre_tracklets = filter(lambda x: x.end_frame() == start_frame - 1 and x.is_single(), pre_tracklets)
+                    pre_tracklets = [x for x in pre_tracklets if x.end_frame() == start_frame - 1 and x.is_single()]
 
                     # TODO: do optimization instead of greedy approach
                     best_start_t = None
@@ -1475,7 +1475,7 @@ class CompleteSetMatching:
 
                     # POST tracklets
                     post_tracklets = self.p.chm.tracklets_in_frame(end_frame + 1)
-                    post_tracklets = filter(lambda x: x.start_frame() == end_frame + 1 and x.is_single(), post_tracklets)
+                    post_tracklets = [x for x in post_tracklets if x.start_frame() == end_frame + 1 and x.is_single()]
 
                     best_end_t = None
                     best_d = np.inf
@@ -1523,11 +1523,11 @@ class CompleteSetMatching:
 
 def _get_ids_from_folder(wd, n):
     # .DS_Store...
-    files = list(filter(lambda x: x[0] != '.', os.listdir(wd)))
+    files = list([x for x in os.listdir(wd) if x[0] != '.'])
     rids = random.sample(files, n)
 
-    rids = map(lambda x: x[:-4], rids)
-    return np.array(map(int, rids))
+    rids = [x[:-4] for x in rids]
+    return np.array(list(map(int, rids)))
 
 
 def _get_distances(ids1, ids2, descriptors):
@@ -1573,16 +1573,16 @@ def test_descriptors_distance(descriptors, n=2000):
     plt.imshow(dist_m, interpolation='nearest')
 
     bins = 200
-    print len(pos_distances)
-    print len(neg_distances)
+    print((len(pos_distances)))
+    print((len(neg_distances)))
     plt.figure()
-    print np.histogram(pos_distances, bins=bins, density=True)
+    print((np.histogram(pos_distances, bins=bins, density=True)))
     positive = plt.hist(pos_distances, bins=bins, alpha=0.6, color='g', density=True, label='positive')
     plt.hold(True)
     negative = plt.hist(neg_distances, bins=bins, alpha=0.6, color='r', density=True, label='negative')
 
     x = np.linspace(0., 3., 100)
-    print("lambda: {:.3f}".format(1./np.mean(pos_distances)))
+    print(("lambda: {:.3f}".format(1./np.mean(pos_distances))))
     for lam in [1./np.mean(pos_distances)]:
         y = lam * np.exp(-lam * x)
         pdf, = plt.plot(x, y)

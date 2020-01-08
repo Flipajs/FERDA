@@ -58,7 +58,7 @@ class RegionReconstruction(QtGui.QWidget):
         self.fbox.addRow('', self.export_results)
 
     def export(self):
-        print "reconstructin & exporting..."
+        print("reconstructin & exporting...")
         query = self.query.text()
         frames = self.process_input(query)
         # reconstructed = self.reconstruct(frames)
@@ -67,11 +67,11 @@ class RegionReconstruction(QtGui.QWidget):
         #     sio.savemat(f, {'FERDA_regions': reconstructed})
 
         if self.save_gt.isChecked():
-            import cPickle as pickle
+            import pickle as pickle
             with open(self.project.working_directory+'/'+self.out_name.text()+'.pkl', 'wb') as f:
                 pickle.dump(get_trajectories(self.project, frames), f, -1)
 
-        print "done"
+        print("done")
 
     def reconstruct(self, frames):
         frames = sorted(frames)
@@ -183,18 +183,18 @@ class RegionReconstruction(QtGui.QWidget):
             if len(query) == 2:
                 start_t = int(query[0])
                 end_t = int(query[1]) + 1
-                frames = range(start_t, end_t)
+                frames = list(range(start_t, end_t))
             elif len(query) == 3:
                 start_t = int(query[0])
                 step = int(query[1])
                 end_t = int(query[2]) + 1
-                frames = range(start_t, end_t, step)
+                frames = list(range(start_t, end_t, step))
         else:
             frames = s.split(',')
             if len(frames) == 1:
                 frames = s.split(' ')
 
-            frames = map(int, frames)
+            frames = list(map(int, frames))
 
         return frames
 
@@ -202,7 +202,7 @@ class RegionReconstruction(QtGui.QWidget):
 def get_trajectories(project, frames):
     trajectories = {}
 
-    chunks = map(project.chm.__getitem__, project.gm.chunk_list())
+    chunks = list(map(project.chm.__getitem__, project.gm.chunk_list()))
     chunks = sorted(chunks, key=lambda x:x.id_)
 
     mapping = {}
@@ -227,11 +227,11 @@ if __name__ == "__main__":
     p.load('/Users/flipajs/Documents/wd/eight_22/eight22.fproj')
 
     ex = RegionReconstruction(p, p.solver)
-    print ex.process_input('1 2 3 4')
-    print ex.process_input('1, 2, 3, 4')
-    print ex.process_input('1,2,3,4')
-    print ex.process_input('1:27')
-    print ex.process_input('1:3:30')
+    print(ex.process_input('1 2 3 4'))
+    print(ex.process_input('1, 2, 3, 4'))
+    print(ex.process_input('1,2,3,4'))
+    print(ex.process_input('1:27'))
+    print(ex.process_input('1:3:30'))
     # print ex.reconstruct([100, 3, 500])
     ex.show()
     ex.move(-500, -500)

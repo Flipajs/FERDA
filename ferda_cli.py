@@ -443,7 +443,7 @@ if __name__ == '__main__':
         datasets = experiments_config['datasets']
         experiment_config = experiments_config.copy()
         del experiment_config['datasets']
-        for dataset_name, dataset in datasets.iteritems():
+        for dataset_name, dataset in list(datasets.items()):
             experiment_config['dataset'] = dataset
             experiment_config['dataset_name'] = dataset_name
             print('Processing {} dataset.'.format(dataset_name))
@@ -453,7 +453,7 @@ if __name__ == '__main__':
     if args.run_visualizations_yaml:
         with open(args.run_visualizations_yaml, 'r') as fr:
             experiments_config = yaml.load(fr)
-        for dataset_name, dataset in experiments_config['datasets'].iteritems():
+        for dataset_name, dataset in list(experiments_config['datasets'].items()):
             if 'visualize_experiments' in dataset:
                 print(dataset_name)
                 experiments = load_experiments(join(experiments_config['dir'], dataset_name), trajectories_required=True)
@@ -466,7 +466,7 @@ if __name__ == '__main__':
     if args.run_evaluation_yaml:
         with open(args.run_evaluation_yaml, 'r') as fr:
             experiments_config = yaml.load(fr)
-        for dataset_name, dataset in experiments_config['datasets'].iteritems():
+        for dataset_name, dataset in list(experiments_config['datasets'].items()):
             print('\n{}\n'.format(dataset_name))
             experiments = load_experiments(join(experiments_config['dir'], dataset_name))
             for experiment in experiments:
@@ -481,8 +481,8 @@ if __name__ == '__main__':
     if args.run_benchmarking_yaml:
         with open(args.run_benchmarking_yaml, 'r') as fr:
             experiments_config = yaml.load(fr)
-        datasets_evaluations = load_evaluations(experiments_config['datasets'].keys(), experiments_config['dir'])
-        for dataset, evaluations in datasets_evaluations.items():
+        datasets_evaluations = load_evaluations(list(experiments_config['datasets'].keys()), experiments_config['dir'])
+        for dataset, evaluations in list(datasets_evaluations.items()):
             print('\n\n{} (higher is better)'.format(dataset))
             print(evaluations.diff()[['datetime'] + metrics_higher_is_better])
             print('\n{} (lower is better)'.format(dataset))

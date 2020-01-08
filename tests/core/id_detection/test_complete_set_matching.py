@@ -2,7 +2,7 @@ import unittest
 from numpy.testing import assert_array_equal
 from core.id_detection.complete_set_matching import get_csm
 from core.project.project import Project
-from mock import MagicMock
+from unittest.mock import MagicMock
 import copy
 import numpy as np
 

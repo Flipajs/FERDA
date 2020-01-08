@@ -438,7 +438,7 @@ class CaseWidget(QtGui.QWidget):
 
     def get_node_item(self, node):
         n_it = None
-        for it, key in self.it_nodes.iteritems():
+        for it, key in self.it_nodes.items():
             if key == node:
                 n_it = it
 
@@ -458,7 +458,7 @@ class CaseWidget(QtGui.QWidget):
     def get_node_item_at_pos(self, node_pos):
         n_key = None
 
-        for key, pos in self.node_positions.iteritems():
+        for key, pos in self.node_positions.items():
             if self.frame_t < key.frame_:
                 pos += len(self.vertices_groups[0])
 
@@ -468,7 +468,7 @@ class CaseWidget(QtGui.QWidget):
 
         n_it = None
 
-        for it, key in self.it_nodes.iteritems():
+        for it, key in self.it_nodes.items():
             if key == n_key:
                 n_it = it
                 break
@@ -560,7 +560,7 @@ class CaseWidget(QtGui.QWidget):
         w = len(self.vertices_groups[0])
         for g in self.vertices_groups:
             if w != len(g):
-                print "UNBALANCED configuration, ignoring confirmation"
+                print("UNBALANCED configuration, ignoring confirmation")
                 return
             w = len(g)
 
@@ -719,12 +719,12 @@ class CaseWidget(QtGui.QWidget):
                         line_.setPen(self.edge_pen)
                         self.scene.addItem(line_)
                     except:
-                        print "potential problem in case_wdiget.py in draw_scene", n, n2
+                        print("potential problem in case_wdiget.py in draw_scene", n, n2)
                         pass
 
     def process_suggested_config(self, suggested_config):
         l_ = []
-        for v1, v2 in suggested_config.iteritems():
+        for v1, v2 in suggested_config.items():
             r1 = self.project.gm.region(v1)
             l_.append([r1.frame_, v1, v2])
 

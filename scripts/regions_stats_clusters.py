@@ -9,7 +9,7 @@ from skimage.data import binary_blobs
 import skimage
 import math
 from functools import partial
-import cPickle as pickle
+import pickle as pickle
 import json
 import hickle
 from utils.video_manager import get_auto_video_manager
@@ -79,9 +79,9 @@ def plotNdto3d(data, labels, core_samples_mask, indices=[0, 1, 2], ax_labels=[''
 
 
 def display_head_pairs(project):
-    print "displaying pairs..."
+    print("displaying pairs...")
     pairs = hickle.load('/Users/flipajs/Desktop/temp/pairs/pairs.pkl')
-    print "loaded.."
+    print("loaded..")
     from utils.video_manager import get_auto_video_manager
     import cv2
     from utils.drawing.points import draw_points
@@ -98,20 +98,20 @@ def display_head_pairs(project):
     major_axes = [project.gm.region(x[0][0]).ellipse_major_axis_length() for x in pairs]
     major_axes_mean = np.mean(major_axes)
 
-    print "major axes mean", major_axes_mean
+    print(("major axes mean", major_axes_mean))
 
     # sort by d2
     pairs = sorted(pairs, key=lambda x: -x[2])
     # d1 > 0.5major_axes_mean
-    pairs = filter(lambda x: project.gm.region(x[0][0]).vector_on_major_axis_projection_head_unknown(
-        project.gm.region(x[0][1])) > major_axes_mean, pairs)
+    pairs = [x for x in pairs if project.gm.region(x[0][0]).vector_on_major_axis_projection_head_unknown(
+        project.gm.region(x[0][1])) > major_axes_mean]
     d2s = [x[2] for x in pairs]
 
     plt.hist(d2s, bins=20)
     plt.ion()
     plt.show()
 
-    pairs = filter(lambda x: x[2] > D2_COEF * major_axes_mean, pairs)
+    pairs = [x for x in pairs if x[2] > D2_COEF * major_axes_mean]
 
     hickle.dump(pairs, '/Users/flipajs/Desktop/temp/pairs/head_pairs.pkl')
 
@@ -122,7 +122,7 @@ def display_head_pairs(project):
     #     if d1 > 20 and d2 > 200:
     #         new_pairs.append(((v1, v2), d1, d2))
 
-    print "NEW LEN", len(pairs)
+    print("NEW LEN", len(pairs))
 
     i = 0
     part = 0
@@ -136,7 +136,7 @@ def display_head_pairs(project):
         r2 = project.gm.region(v2)
 
         if r1.frame() + 1 != r2.frame():
-            print "FRAMES? ", r1.frame(), r2.frame()
+            print("FRAMES? ", r1.frame(), r2.frame())
 
         im1 = vm.get_frame(r1.frame()).copy()
         im2 = vm.get_frame(r2.frame()).copy()
@@ -164,7 +164,7 @@ def display_head_pairs(project):
 
 
 def prepare_pairs(project):
-    print "preparing pairs..."
+    print("preparing pairs...")
     d = hickle.load('/Users/flipajs/Desktop/temp/prepare_region_cardinality_samples/labels.pkl')
     labels = d['labels']
     arr = d['arr']
@@ -304,7 +304,7 @@ def head_detector_classify(p):
     y = np.hstack((np.zeros((len(data_head),), dtype=np.int), np.ones((len(data_swap),), dtype=np.int)))
     rfc.fit(X, y)
 
-    print rfc.feature_importances_
+    print(rfc.feature_importances_)
 
     d = hickle.load('/Users/flipajs/Desktop/temp/prepare_region_cardinality_samples/labels.pkl')
     labels = d['labels']
@@ -377,7 +377,7 @@ def filter_edges(project, max_dist):
     to_remove = []
 
     g = project.gm.g
-    print "avg degree before {}".format(np.mean([v.out_degree() for v in g.vertices()]))
+    print("avg degree before {}".format(np.mean([v.out_degree() for v in g.vertices()])))
 
     for (v1, v2) in g.edges():
         r1 = project.gm.region(v1)
@@ -386,12 +386,12 @@ def filter_edges(project, max_dist):
         if r1.is_ignorable(r2, max_dist):
             to_remove.append((v1, v2))
 
-    print "#edges: {}, will be removed: {}".format(g.num_edges(), len(to_remove))
+    print("#edges: {}, will be removed: {}".format(g.num_edges(), len(to_remove)))
     for (v1, v2) in to_remove:
         g.remove_edge(g.edge(v1, v2))
 
     degrees = [v.out_degree() for v in g.vertices()]
-    print "avg degree after {}".format(np.mean(degrees))
+    print("avg degree after {}".format(np.mean(degrees)))
 
     # plt.hist(degrees)
     # plt.show()
@@ -455,7 +455,7 @@ def get_max_dist(project):
     r2 = project.gm.region(max_v2)
 
     if r1.frame() + 1 != r2.frame():
-        print "FRAMES? ", r1.frame(), r2.frame()
+        print("FRAMES? ", r1.frame(), r2.frame())
 
     vm = get_auto_video_manager(project)
 
@@ -514,7 +514,7 @@ def get_movement_histogram(p):
                     cases.append([])
                     for x in w.out_neighbors():
                         data2[-1].append(get_movement_descriptor(p, v, w, x))
-                        cases[-1].append(map(int, (v, w, x)))
+                        cases[-1].append(list(map(int, (v, w, x))))
 
     with open('/home/simon/FERDA/projects/Cam1_/temp/movement_data.pkl', 'wb') as f:
         pickle.dump(data, f)
@@ -531,12 +531,12 @@ def get_movement_histogram(p):
     DEFAULT_H_DENSITY = 1e-10
 
     data2 = np.array(data2)
-    from itertools import izip
+    
 
     cases_p = []
     cases_n = []
 
-    for it, case in izip(data2, cases):
+    for it, case in zip(data2, cases):
         it = np.array(it)
 
         # if np.linalg.norm(it[0, :] - it[1, :]) > 60:
@@ -578,7 +578,7 @@ def observe_cases(project, type='case_p'):
     from utils.video_manager import get_auto_video_manager
     import cv2
     from utils.drawing.points import draw_points
-    from itertools import izip
+    
 
     BORDER = 150
     COLS = 1
@@ -591,7 +591,7 @@ def observe_cases(project, type='case_p'):
     part = 0
     data = []
     for vals, case in cases:
-        for val, (v, x, w) in izip(vals, case):
+        for val, (v, x, w) in zip(vals, case):
             c = QColor(0, 255, 0, 70)
             if val <= 1e-10:
                 c = QColor(255, 0, 0, 70)
@@ -633,7 +633,7 @@ def observe_cases(project, type='case_p'):
 
 
 def display_regions(project, arr=None, labels=None):
-    print "display regions"
+    print("display regions")
 
     COLS = 15
     IT_W = 100
@@ -657,7 +657,7 @@ def display_regions(project, arr=None, labels=None):
         part = 0
         for i, v1 in enumerate(a_):
             if i % 1000 == 0:
-                print i
+                print(i)
 
             if v1 is None:
                 continue
@@ -677,7 +677,7 @@ def display_regions(project, arr=None, labels=None):
                 part += 1
                 data = []
 
-                print "TEST"
+                print("TEST")
 
         collage = create_collage_rows(data, COLS, IT_H, IT_W)
         cv2.imwrite('/home/simon/Desktop/' + str(class_) + '_' + str(part) + '.jpg', collage)
@@ -691,7 +691,7 @@ if __name__ == '__main__':
     chunks_with_clusters = [6, 10, 12, 13, 17, 18, 26, 28, 29, 32, 37, 39, 40, 41, 43, 47, 51, 54, 57, 58, 60, 61, 65,
                             67, 69, 73, 75, 78, 81, 84, 87, 90, 93, 94, 96, 99, 102, 105]
     chunks_with_clusters = chunks_with_clusters[:3]
-    chunks_with_clusters = map(lambda x: chunks[x], chunks_with_clusters)
+    chunks_with_clusters = [chunks[x] for x in chunks_with_clusters]
 
     #
     # from core.region.region_manager import RegionManager
@@ -765,7 +765,7 @@ if __name__ == '__main__':
 
         n_clusters_ = len(set(labels)) - (1 if -1 in labels else 0)
 
-        print('Estimated number of clusters: %d' % n_clusters_)
+        print(('Estimated number of clusters: %d' % n_clusters_))
 
         # plotNdto3d(data, labels, core_samples_mask, [0, 1, 2], label_names[[0, 1, 2]])
         # plotNdto3d(data, labels, core_samples_mask, [0, 2, 3], label_names[[0, 2, 3]])

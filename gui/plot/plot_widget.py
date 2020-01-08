@@ -2,7 +2,7 @@ __author__ = 'filip@naiser.cz'
 
 from PyQt4 import QtGui
 from numpy import arange, sin, pi, cos
-from my_mpl_canvas import *
+from .my_mpl_canvas import *
 import sys
 from pylab import *
 from mpl_toolkits.mplot3d import Axes3D
@@ -44,7 +44,7 @@ class PlotWidget(QtGui.QWidget):
         img[:,:,3] = 0.2
 
         self.z += 300
-        print self.z
+        print(self.z)
         x, y = ogrid[0:img.shape[0], 0:img.shape[1]]
         self.plane = self.p3.axes.plot_surface(x, y, self.z, rstride=1000, cstride=1000, facecolors=img)
 

@@ -7,7 +7,7 @@ import cv2
 import numpy as np
 from PyQt4 import QtCore
 
-from model import Model
+from .model import Model
 from core.bg_model.bg_model import BGModel
 from utils import video_manager
 
@@ -72,7 +72,7 @@ if __name__ == '__main__':
     bg.bg_model = im
     bg.model_ready = True
 
-    print isinstance(bg, Model)
+    print(isinstance(bg, Model))
 
     with open('/Users/fnaiser/Documents/test.pkl', 'wb') as f:
         pickle.dump(bg.get_model(), f)

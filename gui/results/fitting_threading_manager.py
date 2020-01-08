@@ -1,10 +1,10 @@
-from fitting_thread import FittingThread, FittingThreadChunk
+from .fitting_thread import FittingThread, FittingThreadChunk
 from copy import deepcopy
 from PyQt4.QtCore import QProcess
 import sys, os
 from functools import partial
 from PyQt4 import QtCore
-import cPickle as pickle
+import pickle as pickle
 from core.region.fitting import Fitting
 
 
@@ -35,7 +35,7 @@ class FittingSessionChunk(FittingSession):
         return self.project.working_directory+'/temp/sess_data_'+str(self.id)+'.pkl'
 
     def on_process_error_ready(self, s_id):
-        print s_id, self.fp[-1].readAllStandardError().data()
+        print((s_id, self.fp[-1].readAllStandardError().data()))
 
     def start(self):
         merged = self.ch_regions[0]
@@ -154,7 +154,7 @@ class FittingThreadingManager:
 
         fs.fp.start(ex_str)
 
-        print "STARTING ", s_id
+        print(("STARTING ", s_id))
 
     def on_finished(self, s_id, project):
         file_path = self.get_file_name(project, s_id)
@@ -167,7 +167,7 @@ class FittingThreadingManager:
         self.fitting_sessions[s_id].callback(results, pivot, s_id, None)
 
     def on_process_error_ready(self, s_id):
-        print s_id, self.fitting_sessions[s_id].fp.readAllStandardError().data()
+        print((s_id, self.fitting_sessions[s_id].fp.readAllStandardError().data()))
 
     def release_session(self, s_id):
         fs = self.fitting_sessions[s_id]
@@ -175,7 +175,7 @@ class FittingThreadingManager:
             if int(v) in self.locked_vertices:
                 self.locked_vertices.remove(int(v))
 
-        print "RELEASING: ", s_id
+        print("RELEASING: ", s_id)
         del self.fitting_sessions[s_id]
 
     def add_chunk_session(self, project, done_callback, chunk):
@@ -195,8 +195,8 @@ class FittingThreadingManager:
         s_id = self.session_id
         self.session_id += 1
 
-        regions_before_chunk = map(project.gm.region, vertices_before_chunk)
-        chunk_regions = map(project.gm.region, chunk_vertices)
+        regions_before_chunk = list(map(project.gm.region, vertices_before_chunk))
+        chunk_regions = list(map(project.gm.region, chunk_vertices))
 
         fs = FittingSessionChunk(s_id, project, done_callback, regions_before_chunk, chunk_regions, chunk_vertices, vertices_after_chunk)
         fs.locked_vertices.extend(vertices_before_chunk)
@@ -209,10 +209,10 @@ class FittingThreadingManager:
         self.fitting_sessions[s_id] = fs
         fs.start()
 
-        print "STARTING ", s_id
+        print("STARTING ", s_id)
 
     def add_lock(self, s_id, vertices):
-        vertices = map(int, vertices)
+        vertices = list(map(int, vertices))
         self.fitting_sessions[s_id].locked_vertices.extend(vertices)
         for v in vertices:
             self.locked_vertices.add(v)

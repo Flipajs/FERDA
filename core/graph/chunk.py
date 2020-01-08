@@ -94,7 +94,7 @@ class Chunk(object):
             if step is None:
                 step = 1
 
-            ids = range(start, stop, step)
+            ids = list(range(start, stop, step))
         elif isinstance(key, list):
             ids = key
 
@@ -130,7 +130,7 @@ class Chunk(object):
         vertex_id = int(vertex)
         region = self.gm.region(vertex_id)
         if region.frame() + 1 != self.start_frame():
-            # print ("DISCONTINUITY in chunk.py/append_left region_frame: %d, ch_start_frame: %d", region.frame(), self.start_frame(gm))
+            # print("DISCONTINUITY in chunk.py/append_left region_frame: %d, ch_start_frame: %d", region.frame(), self.start_frame(gm))
             # print "DISCONTINUITY in chunk.py/append_left", region.frame(), self.start_frame(gm), region, self.project.gm.region(self.start_node())
             raise Exception("DISCONTINUITY in chunk.py/append_left")
 

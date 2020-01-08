@@ -5,7 +5,7 @@ from PyQt4.QtCore import Qt
 from PyQt4.QtGui import QApplication, QLabel, QSizePolicy
 from PyQt4.QtGui import QWidget
 
-import computer as comp
+from . import computer as comp
 from gui.graph_widget.control_panel import ControlPanel
 from gui.graph_widget.graph_line import LineType
 from gui.graph_widget_loader import GAP, SPACE_BETWEEN_HOR, \
@@ -290,7 +290,7 @@ class GraphVisualizer(QtGui.QWidget):
         self.loader.update_colours(self.edges)
 
     def show_node_images(self):
-        for it in self.scene.items():
+        for it in list(self.scene.items()):
             if isinstance(it, Node):
                 it.create_pixmap()
 
@@ -414,7 +414,7 @@ class GraphVisualizer(QtGui.QWidget):
             node = edge.region_from
             direction = "right"
 
-        if not self.frames_columns.has_key(node.frame_):
+        if node.frame_ not in self.frames_columns:
             return
         column = self.frames_columns[node.frame_]
         # next_column = self.get_next_to_column(node.frame_, direction)
@@ -566,7 +566,7 @@ class GraphVisualizer(QtGui.QWidget):
     def load_columns(self):
         for column in self.columns:
             column.prepare_images()
-        print "Columns loaded"
+        print("Columns loaded")
 
     def increment_x(self, column, next_x):
         if column.empty and isinstance(column.frame, tuple) and not self.compress_axis:

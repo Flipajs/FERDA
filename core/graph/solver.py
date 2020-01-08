@@ -164,7 +164,7 @@ class Solver:
         node_groups = {}
         self.get_cc_rec(n, 0, node_groups)
 
-        keys = node_groups.keys()
+        keys = list(node_groups.keys())
         keys = sorted(keys)
 
         g = []
@@ -413,7 +413,7 @@ class Solver:
             elif v2_ch and not v1_ch:
                 v2_ch.append_left(v1)
             else:
-                self.project.chm.new_chunk(map(int, [v1, v2]), self.project.gm)
+                self.project.chm.new_chunk(list(map(int, [v1, v2])), self.project.gm)
 
     def merged(self, new_regions, replace, t_reversed=False):
         """

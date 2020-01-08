@@ -159,7 +159,7 @@ class MainTabWidget(QtGui.QWidget):
 
     def reload_tabs(self):
         self.tabs.clear()
-        for i, (name, widget) in enumerate(self.widgets.iteritems()):
+        for i, (name, widget) in enumerate(self.widgets.items()):
             if widget is not None:
                 self.tabs.addTab(widget, self.widgets_info[name])
                 self.tabs.setTabEnabled(i, True)
@@ -168,8 +168,8 @@ class MainTabWidget(QtGui.QWidget):
                 self.tabs.setTabEnabled(i, False)
 
     def reload_ids(self):
-        print "RELOADING"
-        import cPickle as pickle
+        print("RELOADING")
+        import pickle as pickle
         try:
             with open(self.project.working_directory+'/temp/chunk_available_ids.pkl', 'rb') as f_:
                 chunk_available_ids = pickle.load(f_)
@@ -198,7 +198,7 @@ class MainTabWidget(QtGui.QWidget):
         self.results_tab.highlight_area(data, radius=100)
 
     def background_computer_finished(self, solver):
-        print "GRAPH LOADED"
+        print("GRAPH LOADED")
         self.solver = solver
         self.results_tab.solver = solver
 

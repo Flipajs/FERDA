@@ -1,7 +1,7 @@
 __author__ = 'filip@naiser.cz'
 
 import cv2
-import cv_compatibility
+from . import cv_compatibility
 from random import randint
 import errno
 import warnings

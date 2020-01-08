@@ -121,20 +121,20 @@ if __name__ == '__main__':
 
     orientation_data = np.array(np.abs(thetas.reshape(-1)))
     avg_main_axis_len = 2*np.mean(a_.reshape(-1))
-    print avg_main_axis_len
+    print(avg_main_axis_len)
     distance_data = np.array(distances100.reshape(-1)) / avg_main_axis_len
     similarity_data = np.array(similarities.reshape(-1))
     mini_data = np.array(minI.reshape(-1))
 
-    print "O D", pearsonr(orientation_data, distance_data)
-    print "O S", pearsonr(orientation_data, similarity_data)
-    print "O M", pearsonr(orientation_data, mini_data)
-    print "D S", pearsonr(distance_data, similarity_data)
-    print "D M", pearsonr(distance_data, mini_data)
-    print "D M", pearsonr(similarity_data, mini_data)
+    print(("O D", pearsonr(orientation_data, distance_data)))
+    print(("O S", pearsonr(orientation_data, similarity_data)))
+    print(("O M", pearsonr(orientation_data, mini_data)))
+    print(("D S", pearsonr(distance_data, similarity_data)))
+    print(("D M", pearsonr(distance_data, mini_data)))
+    print(("D M", pearsonr(similarity_data, mini_data)))
 
     ##### dist orientation 2d hist
-    h, x, y, p = plt.hist2d(orientation_data, distance_data, bins = 20, normed=True)
+    h, x, y, p = plt.hist2d(orientation_data, distance_data, bins=20, normed=True)
 
     plt.imshow(h, origin = "lower")
     plt.title('2d histogram')
@@ -198,7 +198,7 @@ if __name__ == '__main__':
     plt.title('log of hist of absolute values of orientation diff')
     l_ = np.log(h_[0] + 1)
     log_hists['thetas'] = {'bins': bins, 'data': l_}
-    print np.min(l_)
+    print(np.min(l_))
     plt.plot(bins[:-1], l_)
 
 
@@ -215,7 +215,7 @@ if __name__ == '__main__':
     plt.title('log of hist of distances from predicted position')
     l_ = np.log(h_[0] + 1)
     log_hists['distances'] = {'bins': bins, 'data': l_}
-    print np.min(l_)
+    print(np.min(l_))
     plt.plot(bins[:-1], l_)
 
 
@@ -230,7 +230,7 @@ if __name__ == '__main__':
     plt.title('log of hist of overlap scores')
     l_ = np.log(h_[0] + 1)
     log_hists['similarities'] = {'bins': bins, 'data': l_}
-    print np.min(l_)
+    print(np.min(l_))
     plt.plot(bins[:-1], l_)
 
 
@@ -287,8 +287,8 @@ if __name__ == '__main__':
     thetas = np.abs(thetas)
 
     for it in [thetas, similarities, distances100, minI, maxI]:
-        print np.mean(it), np.std(it), np.median(it), np.min(it), np.max(it)
+        print(np.mean(it), np.std(it), np.median(it), np.min(it), np.max(it))
 
 
-    print "ALPHA: ", np.mean(distances100) / np.mean(thetas)
-    print "BETA: ", np.mean(distances100) / np.mean(similarities)
+    print("ALPHA: ", np.mean(distances100) / np.mean(thetas))
+    print("BETA: ", np.mean(distances100) / np.mean(similarities))

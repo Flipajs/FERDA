@@ -16,8 +16,8 @@ for mode details).
 Gets to 97.2% test accuracy after 20 epochs.
 2 seconds per epoch on a Titan X Maxwell GPU
 '''
-from __future__ import absolute_import
-from __future__ import print_function
+
+
 import numpy as np
 import yaml
 from os.path import join
@@ -518,8 +518,8 @@ class DataGenerator(object):
             if self.cur_train_index >= self.samples_per_train:
                 self.cur_train_index=0
 
-            p0, y = self.datagen_0.next()
-            p1, _ = self.datagen_1.next()
+            p0, y = next(self.datagen_0)
+            p1, _ = next(self.datagen_1)
 
             yield([p0, p1], y)
             # yield ([

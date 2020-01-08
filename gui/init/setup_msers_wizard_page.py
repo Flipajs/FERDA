@@ -1,4 +1,4 @@
-import cPickle as pickle
+import pickle as pickle
 import sys
 import time
 
@@ -335,7 +335,7 @@ class SetupMSERsWizardPage(QtGui.QWizardPage):
         groups = get_region_groups(msers)
         ids = margin_filter(msers, groups)
 
-        for r, r_id in zip(msers, range(len(msers))):
+        for r, r_id in zip(msers, list(range(len(msers)))):
             # get region contours
             cont = get_contour(r.pts())
 
@@ -467,7 +467,7 @@ class SetupMSERsWizardPage(QtGui.QWizardPage):
             self.color_buttons["eraser"].setChecked(True)
         else:
             self.painter.set_pen_color(self.cur_color)
-            for color, btn in self.color_buttons.iteritems():
+            for color, btn in self.color_buttons.items():
                 if color == self.cur_color.lower():
                     btn.setChecked(True)
                 else:
@@ -753,7 +753,7 @@ class SetupMSERsWizardPage(QtGui.QWizardPage):
         # self.left_panel.layout().addWidget(self.button_done)
 
     def reset_classifier(self):
-        print "reseting pixel classifier..."
+        print("reseting pixel classifier...")
 
         self.painter.reset_masks()
         self.helper.rfc = None

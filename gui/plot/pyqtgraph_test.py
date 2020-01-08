@@ -74,7 +74,7 @@ class MyView(QtGui.QWidget):
         self.loading_thread.proc_done.connect(self.loading_done)
         self.load_frames()
 
-        print type(self.w)
+        print((type(self.w)))
         self.w.setSizePolicy(pg.QtGui.QSizePolicy.Expanding, pg.QtGui.QSizePolicy.Expanding)
 
         self.layout().addWidget(self.w)
@@ -233,7 +233,7 @@ class MyView(QtGui.QWidget):
         self.w.addItem(l8)
 
     def remove(self):
-        print type(self.image)
+        print((type(self.image)))
         self.w.removeItem(self.image)
 
     def move_image(self):
@@ -348,7 +348,7 @@ class MyView(QtGui.QWidget):
         self.frame = value
         self.move_image()
         self.frame_scatter()
-        print "Total time taken: %s" % (time.time() - t)
+        print(("Total time taken: %s" % (time.time() - t)))
         # refresh text in QLabel
         #self.set_label_text()
 

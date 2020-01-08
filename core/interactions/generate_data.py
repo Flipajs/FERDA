@@ -1,4 +1,4 @@
-from __future__ import print_function
+
 # import matplotlib
 # matplotlib.use('qt4agg')
 """
@@ -33,7 +33,7 @@ import itertools
 import yaml
 import warnings
 from collections import defaultdict
-from itertools import izip_longest
+from itertools import zip_longest
 
 from core.project.project import Project
 from core.graph.region_chunk import RegionChunk
@@ -134,12 +134,12 @@ class TrainingDataset(Dataset):
         if hasattr(self, 'vot_imagesets'):  # for vot
             num_samples = self.next_idx
             start_idx = 0
-            for filename, frac in self.vot_imagesets.iteritems():
+            for filename, frac in list(self.vot_imagesets.items()):
                 if frac is None:  # include all samples
                     idx_range = None
                 else:
                     last_idx = min(start_idx + int(round(num_samples * frac)), num_samples)
-                    idx_range = range(start_idx, last_idx)
+                    idx_range = list(range(start_idx, last_idx))
                     start_idx = last_idx
                 self.data_io.write_imageset(join(self.vot_imageset_dir, filename), idx_range)
         super(TrainingDataset, self).close()
@@ -304,7 +304,7 @@ class DataGenerator(object):
         for r in regions:
             if frame_range[0] <= r.frame() <= frame_range[1]:
                 frame_regions[r.frame()].append(r)
-        for i, (frame, region_in_frame) in tqdm.tqdm(enumerate(frame_regions.iteritems(), start=1), total=len(frame_regions)):
+        for i, (frame, region_in_frame) in tqdm.tqdm(enumerate(iter(list(frame_regions.items())), start=1), total=len(frame_regions)):
             img = self._project.img_manager.get_whole_img(frame)
             data = []
             for r in region_in_frame:
@@ -428,8 +428,8 @@ class DataGenerator(object):
             h5_group_test = None
 
         multi_tracklets = [t for t in self._project.chm.chunk_gen() if t.is_multi()]
-        frames_with_multi = set(itertools.chain(*[range(t.start_frame(),
-                                                        t.end_frame() + 1) for t in multi_tracklets]))
+        frames_with_multi = set(itertools.chain(*[list(range(t.start_frame(),
+                                                        t.end_frame() + 1)) for t in multi_tracklets]))
         frames_without_multi = list(set(range(self._project.video_start_t,
                                               self._project.video_end_t + 1)) - frames_with_multi)
         frames_selected = random.sample(frames_without_multi, int(n * (1 + test_fraction)))
@@ -597,7 +597,7 @@ class DataGenerator(object):
                                                         'p0_x': p0.x, 'p0_y': p0.y,
                                                         'p1_x': p1.x, 'p1_y': p1.y,
                                                         'truncated': trunc})
-                                        for bbox, p0, p1, gt_id, trunc in izip_longest(bbox_models, points[0], points[1], bbox_ids, truncated)] )
+                                        for bbox, p0, p1, gt_id, trunc in zip_longest(bbox_models, points[0], points[1], bbox_ids, truncated)] )
 
         if out_dir is not None:
             dataset.close()
@@ -647,7 +647,7 @@ class DataGenerator(object):
         all_indices = []
         for i, rt in enumerate(regions_in_tracklets):
             # indices (i, j) and (i, j+1) will be used
-            all_indices.extend([(i, j) for j in xrange(0, len(rt) - 1)])
+            all_indices.extend([(i, j) for j in range(0, len(rt) - 1)])
 
         indices = random.sample(all_indices, int(count * (1 + test_fraction)))
         if augmentation:
@@ -840,5 +840,5 @@ class DataGenerator(object):
 
 if __name__ == '__main__':
     from os import umask
-    os.umask(007)  # all files created will be rw by group
+    os.umask(0o07)  # all files created will be rw by group
     fire.Fire(DataGenerator)

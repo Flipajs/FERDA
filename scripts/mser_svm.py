@@ -171,10 +171,10 @@ if __name__ == '__main__':
 
         clf = svm.SVC(kernel='linear', probability=True, class_weight='auto')
 
-        print clf.fit(X, classes)
-        print clf.support_vectors_
-        print clf.support_
-        print clf.n_support_
+        print(clf.fit(X, classes))
+        print(clf.support_vectors_)
+        print(clf.support_)
+        print(clf.n_support_)
 
         vid = get_auto_video_manager(vid_path)
         dial.img_grid.reshape(15, element_width=70)
@@ -206,7 +206,7 @@ if __name__ == '__main__':
             # cv2.imshow('test', im2)
             # cv2.imwrite(working_dir+'/'+str(f)+'.jpg', im2)
             # cv2.waitKey(0)
-            print f, detected
+            print(f, detected)
 
         dial.showMaximized()
         app.exec_()

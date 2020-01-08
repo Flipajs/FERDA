@@ -1,7 +1,7 @@
 from core.region.region import Region
 import tqdm
 import sys
-from UserList import UserList
+from collections import UserList
 # from collections import UserList
 from core.region.region import RegionExtStorage
 import pandas as pd
@@ -110,7 +110,7 @@ class RegionManager(UserList):
                                                 self.region_pts_h5_dataset, self.region_contour_h5_dataset)
 
     def init_dataframe(self):
-        self.regions_df = pd.DataFrame(columns=Region().__getstate__(flatten=True).keys()).set_index('id_', drop=False)
+        self.regions_df = pd.DataFrame(columns=list(Region().__getstate__(flatten=True).keys())).set_index('id_', drop=False)
 
     def init_h5_store(self, filename=None, num_items=1000):
         if filename is None:
@@ -148,7 +148,7 @@ class RegionManager(UserList):
 
     @staticmethod
     def regions2dataframe(regions):
-        null_region_state = {k: np.nan for k in Region().__getstate__(flatten=True).keys()}
+        null_region_state = {k: np.nan for k in list(Region().__getstate__(flatten=True).keys())}
         regions_dicts = [r.__getstate__(flatten=True) if r is not None else null_region_state for r in regions]
         return pd.DataFrame(regions_dicts).set_index('id_', drop=False)
 

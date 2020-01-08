@@ -1,1 +1,1 @@
-from color_naming import im2colors
+from .color_naming import im2colors

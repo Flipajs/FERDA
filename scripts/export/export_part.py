@@ -1,6 +1,6 @@
 from core.graph.region_chunk import RegionChunk
 import numpy as np
-import cPickle as pickle
+import pickle as pickle
 import os.path
 from core.project.project import Project
 import scipy.io as sio
@@ -63,8 +63,8 @@ class Exporter:
             pts = r.contour_without_holes()
 
             if pts is None:
-                print "WARNING> PTS is None in export_part.py"
-                print r
+                print("WARNING> PTS is None in export_part.py")
+                print(r)
                 with open('r_debug.pkl', 'wb') as f:
                     pickle.dump(r, f)
 
@@ -83,7 +83,7 @@ class Exporter:
 
     def obj_arr_append_(self, obj_arr, d):
         new_d = {}
-        for key, val in d.iteritems():
+        for key, val in d.items():
             if key != 'frame' and key != 'region_id':
                 val = np.array(val)
 
@@ -96,7 +96,7 @@ class Exporter:
 
         # it is important to go through vertices to have access to active feature...
         # When processing one part there are inactive chunks in chm...
-        for ch in tqdm(self.chm.chunks_.itervalues(), total=len(self.chm)):
+        for ch in tqdm(iter(self.chm.chunks_.values()), total=len(self.chm)):
             if ch.length() < min_tracklet_length:
                 continue
 

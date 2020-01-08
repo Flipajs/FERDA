@@ -1,6 +1,6 @@
 # prepare datasets for training a dimensionality reduction network for re-identification
-from __future__ import print_function
-from __future__ import print_function
+
+
 import numpy as np
 import tqdm
 from cachetools import LRUCache
@@ -69,7 +69,7 @@ def generate_reidentification_training_data(project, out_dir, parameters=None):
     cache = LRUCache(maxsize=5000, missing=lambda x: vm.get_frame(x))
 
     if LINEAR:
-        for i in tqdm(range(project.num_frames())):
+        for i in tqdm(list(range(project.num_frames()))):
             cache[i]
 
     imgs = []
@@ -79,7 +79,7 @@ def generate_reidentification_training_data(project, out_dir, parameters=None):
         while i < parameters['num_examples']:
             frame = random.randint(0, vm.total_frame_count())
 
-            tracklets = filter(lambda x: x.is_single(), project.chm.tracklets_in_frame(frame))
+            tracklets = [x for x in project.chm.tracklets_in_frame(frame) if x.is_single()]
             if len(tracklets) > 1:
                 trackletA, trackletB = random.sample(tracklets, 2)
                 regionA1 = trackletA.get_random_region()

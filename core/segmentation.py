@@ -1,4 +1,4 @@
-from __future__ import print_function
+
 import os
 from os.path import join
 import numpy as np
@@ -7,7 +7,7 @@ from joblib import Parallel, delayed
 import logging
 from core.region.mser import get_filtered_regions
 from core.project.project import Project, set_managers
-from config import config
+from .config import config
 from utils.img import prepare_for_segmentation
 from core.region.region_manager import RegionManager
 from utils.video_manager import get_auto_video_manager

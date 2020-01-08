@@ -17,14 +17,14 @@ def rand_cmap(nlabels, type='bright', first_color_black=True, last_color_black=F
     import numpy as np
 
     if type not in ('bright', 'soft'):
-        print ('Please choose "bright" or "soft" for type')
+        print('Please choose "bright" or "soft" for type')
         return
 
     # Generate color map for bright colors, based on hsv
     if type == 'bright':
         randHSVcolors = [(np.random.uniform(low=0.0, high=1),
                           np.random.uniform(low=0.2, high=1),
-                          np.random.uniform(low=0.9, high=1)) for i in xrange(nlabels)]
+                          np.random.uniform(low=0.9, high=1)) for i in range(nlabels)]
 
         # Convert HSV list to RGB
         randRGBcolors = []
@@ -45,7 +45,7 @@ def rand_cmap(nlabels, type='bright', first_color_black=True, last_color_black=F
         high = 0.95
         randRGBcolors = [(np.random.uniform(low=low, high=high),
                           np.random.uniform(low=low, high=high),
-                          np.random.uniform(low=low, high=high)) for i in xrange(nlabels)]
+                          np.random.uniform(low=low, high=high)) for i in range(nlabels)]
 
         if first_color_black:
             randRGBcolors[0] = [0, 0, 0]

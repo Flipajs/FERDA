@@ -3,7 +3,7 @@ from core.graph.complete_set import CompleteSet
 __author__ = 'flipajs'
 
 from os.path import join
-from chunk import Chunk
+from .chunk import Chunk
 from intervaltree import IntervalTree
 from tqdm import tqdm
 import numpy as np
@@ -100,7 +100,7 @@ class ChunkManager(object):
 
     def chunk_list(self):
         l = []
-        for _, ch in self.chunks_.iteritems():
+        for _, ch in list(self.chunks_.items()):
             l.append(ch)
 
         return l
@@ -145,7 +145,7 @@ class ChunkManager(object):
         return self.get_tracklets_from_intervals_(intervals)
 
     def undecided_singleid_tracklets_in_frame(self, frame):
-        return filter(lambda x: len(x.P) == 0 and x.is_single(), self.tracklets_in_frame(frame))
+        return [x for x in self.tracklets_in_frame(frame) if len(x.P) == 0 and x.is_single()]
 
     def get_tracklets_in_interval(self, start_frame, end_frame):
         return self.get_tracklets_from_intervals_(self.itree[start_frame-self.eps2:end_frame+self.eps2])
@@ -164,7 +164,7 @@ class ChunkManager(object):
         return self.tracklet_gen()
 
     def tracklet_gen(self):
-        for t in self.chunks_.itervalues():
+        for t in list(self.chunks_.values()):
             yield t
 
     def reset_itree(self):
@@ -225,7 +225,7 @@ class ChunkManager(object):
         affected = set(self.get_tracklets_in_interval(tracklet.start_frame(),
                                                       tracklet.end_frame()))
 
-        return filter(lambda x: (x.is_single() or x.is_multi()) and not x.is_id_decided(), affected)
+        return [x for x in affected if (x.is_single() or x.is_multi()) and not x.is_id_decided()]
 
     def get_conflicts(self, num_objects, verbose=False):
         # pn_sets_lengths = np.array([len(t.P) + len(t.N) for t in self.tracklet_gen()])
@@ -244,13 +244,13 @@ class ChunkManager(object):
             else:
                 undecided_tracklets.append(t)
         if verbose:
-            print('{} undecided tracklet(s).'.format(len(undecided_tracklets)))
+            print(('{} undecided tracklet(s).'.format(len(undecided_tracklets))))
 
         # for every frame check tracklets P sets for non unique track ids, this means that
         # a single track has multiple positions in single frame, which is obviously an error
         conflicts = {}
-        for frame in xrange(min_frame, max_frame + 1):
-            decided = filter(lambda x: x.is_id_decided(), self.tracklets_in_frame(frame))
+        for frame in range(min_frame, max_frame + 1):
+            decided = [x for x in self.tracklets_in_frame(frame) if x.is_id_decided()]
             obj_ids = [next(iter(t.P)) for t in decided]
             unique_ids, unique_ids_counts = np.unique(obj_ids, return_counts=True)
             message = ''
@@ -263,7 +263,7 @@ class ChunkManager(object):
             if message:
                 conflicts[frame] = decided
                 if verbose:
-                    print('Duplicated object ids at frame {}. {}'.format(frame, message))
+                    print(('Duplicated object ids at frame {}. {}'.format(frame, message)))
         assert not conflicts
         return undecided_tracklets, conflicts
 
@@ -276,13 +276,13 @@ class ChunkManager(object):
         :param project:
         :return: generates list of tracklets
         """
-        from sys import maxint
+        from sys import maxsize
 
         num_animals = len(project.animals)
         frame = 0
         while frame < project.num_frames():
             s = self.tracklets_in_frame(frame)
-            s = filter(lambda x: x.is_single(), s)
+            s = [x for x in s if x.is_single()]
 
             if len(s) == num_animals:
                 yield CompleteSet(s)
@@ -296,7 +296,7 @@ class ChunkManager(object):
     def get_random_regions(self, n, gm):
         import random
 
-        tracklet_ids = self.chunks_.keys()
+        tracklet_ids = list(self.chunks_.keys())
         regions = []
         vertices = []
         for _ in range(n):

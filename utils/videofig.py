@@ -111,9 +111,9 @@ Example 3: Show images together with object bounding boxes
   videofig(len(img_files), redraw_fn, play_fps=30)
 """
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+
+
+
 
 from matplotlib import pyplot as plt
 from matplotlib.animation import FuncAnimation
@@ -176,7 +176,7 @@ def videofig(num_frames, redraw_func, play_fps=25, big_scroll=30, key_func=None,
   def play(period):
     play.running ^= True  # Toggle state
     if play.running:
-      frame_idxs = range(int(scroll_handle.val), num_frames)
+      frame_idxs = list(range(int(scroll_handle.val), num_frames))
       play.anim = FuncAnimation(fig_handle, scroll, frame_idxs,
                                 interval=1000 * period, repeat=False)
       plt.draw()

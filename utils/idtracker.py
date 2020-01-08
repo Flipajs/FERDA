@@ -5,7 +5,7 @@ def load_idtracker_data(path, project, gt):
         import scipy.io as sio
         data = sio.loadmat(path)
         data = data['trajectories']
-        print len(data)
+        print(len(data))
 
         permutation_data = []
 
@@ -20,7 +20,7 @@ def load_idtracker_data(path, project, gt):
             if i == len(project.animals):
                 break
 
-        print "permutation search in frame", frame
+        print("permutation search in frame {}".format(frame))
 
         # frame = 0
         for id_, it in enumerate(data[frame]):
@@ -31,5 +31,5 @@ def load_idtracker_data(path, project, gt):
 
         return data, perm
     except IOError:
-        print "idtracker data was not loaded", path
+        print("idtracker data was not loaded: {}".format(path))
         return None, None

@@ -4,6 +4,7 @@ from core.graph.graph_manager import GraphManager
 from core.project.project import Project
 from intervals.interval import IntInterval
 from core.region.region import Region
+from functools import reduce
 
 
 class TestTrack(unittest.TestCase):

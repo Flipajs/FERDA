@@ -149,7 +149,7 @@ class CropWidget(QtGui.QWidget):
         # TODO: solve scale
         scales = ft.getImageScales()
         scs_ = []
-        for kp, i in zip(keypoints, range(len(keypoints))):
+        for kp, i in zip(keypoints, list(range(len(keypoints)))):
             s_ = ft.getKeypointStrokes(i) * (1.0 / scales[kp[2]])
             scs_.append(kp[2])
             strokes.append(s_)
