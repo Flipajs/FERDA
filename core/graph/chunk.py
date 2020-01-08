@@ -97,6 +97,8 @@ class Chunk(object):
             ids = list(range(start, stop, step))
         elif isinstance(key, list):
             ids = key
+        else:
+            assert False
 
         items = []
 
@@ -526,7 +528,7 @@ class Chunk(object):
         return next(iter(self.P))
 
     def get_interval(self):
-        return IntInterval([self.start_frame(), self.end_frame()])
+        return IntInterval([int(self.start_frame()), int(self.end_frame())])  # int() is needed to convert numpy.int64
 
     def is_overlapping(self, other):
         return self.get_interval().is_connected(other.get_interval())

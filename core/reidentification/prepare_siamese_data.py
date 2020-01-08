@@ -66,7 +66,8 @@ def generate_reidentification_training_data(project, out_dir, parameters=None):
 
     vm = project.get_video_manager()
     global cache
-    cache = LRUCache(maxsize=5000, missing=lambda x: vm.get_frame(x))
+    cache = LRUCache(maxsize=5000)
+    cache.__missing__ = lambda x: vm.get_frame(x)
 
     if LINEAR:
         for i in tqdm(list(range(project.num_frames()))):
