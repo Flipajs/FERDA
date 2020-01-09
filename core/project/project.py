@@ -18,6 +18,7 @@ from core.project.solver_parameters import SolverParameters
 from core.classes_stats import ClassesStats
 from utils.misc import makedirs
 import jsonpickle
+import utils.load_jsonpickle  # do not remove, this sets up jsonpickle
 import logging
 
 logger = logging.getLogger(__name__)

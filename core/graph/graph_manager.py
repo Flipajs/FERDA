@@ -4,7 +4,7 @@ import numpy as np
 from core.region.fitting_logger import FittingLogger
 from os.path import join
 import jsonpickle
-import utils.load_jsonpickle
+import utils.load_jsonpickle  # do not remove, this sets up jsonpickle
 import numbers
 
 
