@@ -1,6 +1,7 @@
 import sqlite3 as sql
 import pickle
 import random
+import numbers
 
 DEBUG = False
 __author__ = 'dita'
@@ -81,7 +82,7 @@ class FeatureManager:
                     self.add_to_cache_(i, f)
                 return
 
-        if not isinstance(f_id, int):
+        if not isinstance(f_id, numbers.Integral):
             raise TypeError("IDs can be given as list of ints or int/long, not %s" % type(f_id))
 
         if self.use_db:
@@ -210,7 +211,7 @@ class FeatureManager:
             for id_ in key:
                 pos[id_] = k
                 k += 1
-                if not isinstance(id_, int):
+                if not isinstance(id_, numbers.Integral):
                     print(("TypeError: int expected, %s given! Skipping key '%s'." % (type(id_), id_)))
                     continue
                 if id_ in self.features_cache_:
@@ -225,7 +226,7 @@ class FeatureManager:
             if self.use_db:
                 self.db_search_(result_, sql_ids, pos)
 
-        elif isinstance(key, int):
+        elif isinstance(key, numbers.Integral):
             result_ = [None] * 1
             ids.append(key)
 
@@ -318,7 +319,7 @@ class FeatureManager:
             sql_ids = []
             if isinstance(features, list):
                 for f in features:
-                    if isinstance(f, int):
+                    if isinstance(f, numbers.Integral):
                         sql_ids.append(f)
                     else:
                         raise TypeError("Remove method can only work with tuple objects, not %s" % type(f))
@@ -344,7 +345,7 @@ class FeatureManager:
         if isinstance(ids, list):
             self.removemany_(ids)
             return
-        elif isinstance(ids, int):
+        elif isinstance(ids, numbers.Integral):
             id_ = ids
             if self.use_db:
                 cmd = "DELETE FROM features WHERE id = %s;" % id_

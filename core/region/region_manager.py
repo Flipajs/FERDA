@@ -33,11 +33,12 @@ class RegionManager(UserList):
     def from_dir(cls, directory):
         rm = cls()
         rm.regions_df = pd.read_csv(join(directory, 'regions.csv')).set_index('id_', drop=False)
+        regions_h5_path = join(directory, 'regions.h5')
         try:
-            rm.open_h5_store(join(directory, 'regions.h5'))
+            rm.open_h5_store(regions_h5_path)
         except Exception as e:
-            warnings.warn(e.message)
-            warnings.warn('Initializing a new region manager h5 store in temporary location.')
+            warnings.warn(f'Can\'t open or load {regions_h5_path}. '
+                           'Initializing a new region manager h5 store in temporary location.')
             rm.init_h5_store()
         if not rm.regions_df.empty:
             n = rm.regions_df.index.max() + 1

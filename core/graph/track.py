@@ -5,6 +5,7 @@ from .ghost_tracklet import GhostTracklet
 from warnings import warn
 from intervals import IntInterval
 import itertools
+import numbers
 
 
 def unfold(tracklets):
@@ -39,7 +40,7 @@ class Track(Chunk):
         return s
 
     def __getitem__(self, key):
-        if isinstance(key, int):
+        if isinstance(key, numbers.Integral):
             if key < 0:  # Handle negative indices
                 key += len(self)
 

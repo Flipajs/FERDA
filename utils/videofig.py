@@ -118,6 +118,7 @@ Example 3: Show images together with object bounding boxes
 from matplotlib import pyplot as plt
 from matplotlib.animation import FuncAnimation
 from matplotlib.widgets import Slider
+import numbers
 
 def videofig(num_frames, redraw_func, play_fps=25, big_scroll=30, key_func=None, *args):
   """Figure with horizontal scrollbar and play capabilities
@@ -225,7 +226,7 @@ def videofig(num_frames, redraw_func, play_fps=25, big_scroll=30, key_func=None,
 
 
 def check_int_scalar(a, name):
-  assert isinstance(a, int), '{} must be a int scalar, instead of {}'.format(name, type(name))
+  assert isinstance(a, numbers.Integral), '{} must be a int scalar, instead of {}'.format(name, type(name))
 
 
 def check_callback(a, name):

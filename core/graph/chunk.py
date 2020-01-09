@@ -3,6 +3,7 @@ from core.region.region import Region
 from random import randint
 import warnings
 from intervals import IntInterval
+import numbers
 
 
 class Chunk(object):
@@ -75,7 +76,7 @@ class Chunk(object):
         return len(self.nodes_)
 
     def __getitem__(self, key):
-        if isinstance(key, int):
+        if isinstance(key, numbers.Integral):
             if key < 0:  # Handle negative indices
                 key += len(self.nodes_)
             return self.nodes_[key]

@@ -21,6 +21,7 @@ import math
 from utils.img import rotate_img, centered_crop, get_bounding_box, endpoint_rot
 
 from utils.misc import print_progress
+import numbers
 
 CNN_SOFTMAX = 1
 RFC = 2
@@ -1688,7 +1689,7 @@ class LearningProcess:
         if tracklet.is_track():
             print("Track")
 
-        if not isinstance(id_, int):
+        if not isinstance(id_, numbers.Integral):
             print("FAIL in learning_process.py assign_identity, id is not a number")
 
         if user:

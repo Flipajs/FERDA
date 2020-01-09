@@ -1,5 +1,6 @@
 __author__ = 'flipajs'
 import numpy as np
+import numbers
 
 
 class RegionChunk(object):
@@ -25,7 +26,7 @@ class RegionChunk(object):
         if ids is None:
             return None
 
-        if isinstance(ids, int):
+        if isinstance(ids, numbers.Integral):
             return self.get_region_(ids)
 
         new_ids = []

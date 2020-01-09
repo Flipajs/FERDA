@@ -9,6 +9,7 @@ from gui.graph_widget.graph_line import LineType, GraphLine
 from gui.graph_widget.node import Node
 from gui.graph_widget_loader import FROM_TOP, SPACE_BETWEEN_HOR, SPACE_BETWEEN_VER, GAP
 from gui.img_controls.gui_utils import cvimg2qtpixmap
+import numbers
 
 __author__ = 'Simon Mandlik'
 
@@ -129,7 +130,7 @@ class Column:
                 if region in self.items_nodes:
                     continue
 
-                if not isinstance(region, int):
+                if not isinstance(region, numbers.Integral):
                     img = self.def_img
                     # img = self.im_manager.get_crop(self.frame, region,  width=self.width, height=self.height, relative_margin=self.relative_margin)
                     self.regions_images[region] = img

@@ -8,6 +8,7 @@ from intervaltree import IntervalTree
 from tqdm import tqdm
 import numpy as np
 import jsonpickle
+import numbers
 
 
 class ChunkManager(object):
@@ -123,14 +124,14 @@ class ChunkManager(object):
         self._try_ch_itree_delete(ch)
 
     def remove_tracklet(self, t):
-        if isinstance(t, int):
+        if isinstance(t, numbers.Integral):
             t = self.chunks_[t]
 
         self._try_ch_itree_delete(t)
         del self.chunks_[t.id_]
 
     def update_chunk(self, t):
-        if isinstance(t, int):
+        if isinstance(t, numbers.Integral):
             t = self.chunks_[t]
 
         self._try_ch_itree_delete(t)

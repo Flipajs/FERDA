@@ -1,5 +1,4 @@
 __author__ = 'fnaiser'
-
 import pickle as pickle
 from functools import partial
 
@@ -18,6 +17,7 @@ from gui.video_player.video_player import VideoPlayer
 from utils.idtracker import load_idtracker_data
 from utils.img import img_saturation_coef
 from utils.gt.mot_project import MotProject
+import numbers
 
 MARKER_SIZE = 15
 
@@ -1883,7 +1883,7 @@ class ResultsWidget(QtGui.QWidget):
             t = self.project.chm[self.active_tracklet_id]
             sf = t.start_frame()
             vertex = t[frame - sf]
-            if isinstance(vertex, int):
+            if isinstance(vertex, numbers.Integral):
                 vertex = self.project.gm.g.vertex(vertex)
 
             v1 = None

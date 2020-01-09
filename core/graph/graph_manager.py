@@ -5,6 +5,7 @@ from core.region.fitting_logger import FittingLogger
 from os.path import join
 import jsonpickle
 import utils.load_jsonpickle
+import numbers
 
 
 class GraphManager(object):
@@ -156,7 +157,7 @@ class GraphManager(object):
         :param n: ref to vertex in g
         :return: (chunk_ref (ref or None), is_chunk_end (True if it is chunk_end))
         """
-        if isinstance(vertex, int):
+        if isinstance(vertex, numbers.Integral):
             vertex = self.g.vertex(vertex)
 
         chunk_start = self.g.vp['chunk_start_id'][vertex]
