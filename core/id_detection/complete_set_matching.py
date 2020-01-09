@@ -7,7 +7,7 @@ import pickle
 import logging
 import itertools
 from sklearn.cluster import AgglomerativeClustering
-from scipy.misc import imread
+from matplotlib.pyplot import imread
 from scipy.optimize import linear_sum_assignment
 from scipy.spatial.distance import cdist, pdist, squareform
 import warnings
