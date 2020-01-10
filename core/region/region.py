@@ -400,7 +400,7 @@ class Region(object):
                             return True
         except Exception as e:
             import warnings
-            warnings.warn("Region.is_inside failed on region id {}, {}.".format(self.id_, e.message))
+            warnings.warn("Region.is_inside failed on region id {}, {}.".format(self.id_, str(e)))
 
         return False
 

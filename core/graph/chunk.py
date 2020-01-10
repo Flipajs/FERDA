@@ -387,7 +387,7 @@ class Chunk(object):
             return self.get_region(frame - sf)
         except Exception as e:
             import warnings
-            warnings.warn(e.message)
+            warnings.warn(str(e))
             return None
 
     def r_gen(self, rm):

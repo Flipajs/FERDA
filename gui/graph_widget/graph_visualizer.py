@@ -253,7 +253,7 @@ class GraphVisualizer(QtGui.QWidget):
             except AttributeError as e:
                 dialog = QtGui.QDialog(self)
                 dialog.setLayout(QtGui.QVBoxLayout())
-                dialog.layout().addWidget(QtGui.QLabel(e.message))
+                dialog.layout().addWidget(QtGui.QLabel(str(e)))
                 dialog.show()
             else:
                 pass
