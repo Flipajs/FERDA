@@ -21,7 +21,7 @@ import shutil
 from collections import defaultdict
 import webbrowser
 from utils.experiment import Experiment
-from utils.gt.io import results_to_mot, metrics_higher_is_better, metrics_lower_is_better
+from utils.gt.io import results_to_mot, metrics_higher_is_better, metrics_lower_is_better, eval_and_save
 import sys
 from core.config import config
 from warnings import warn
@@ -110,28 +110,6 @@ def run_tracking(project, force_recompute=False, reid_model_weights_path=None, g
         # project.save()
 
 
-def run_evaluation(mot_file, gt_file, out_evaluation_file, load_python3_env_cmd=None):
-    """
-    Evaluate tracking results against ground truth.
-
-    Needs to run external python 3 process (evaluation depends on motmetrics module available only for python 3).
-
-    :param gt_file:
-    :param mot_file:
-    :param out_evaluation_file:
-    :param load_python3_env_cmd: command to start python 3 environment
-    """
-    if load_python3_env_cmd is not None:
-        prefix = load_python3_env_cmd + '; '
-    else:
-        prefix = 'source ~/.virtualenvs/ferda3/bin/activate; '
-
-    cmd = 'python -m utils.gt.mot --load-gt {} --load-mot {}  --eval --write-eval {}'.format(
-        gt_file, mot_file, out_evaluation_file)
-    subprocess.check_call(prefix + cmd, shell=True, executable='/bin/bash')  # throws an exception when evaluation goes wrong
-                                                     # (e.g. python3 is not available)
-
-
 def run_experiment(config, force_prefix=None):
     """
     Run and evaluate an experiment.
@@ -146,7 +124,7 @@ def run_experiment(config, force_prefix=None):
 
     single_object_tracking experiments:
         - run single object trackers on a video
-        - save trajectories to results.txt
+        - save trajectories to results.csv
     """
     params = config.copy()  # all multiple valued parameters will create experiment batches
     del params['dir']
@@ -157,7 +135,7 @@ def run_experiment(config, force_prefix=None):
     for experiment in root_experiment:
         print(experiment.basename)
         experiment.save_params()
-        mot_results_file = join(experiment.dir, 'results.txt')
+        mot_results_file = join(experiment.dir, 'results.csv')
         if config['run'] == 'ferda_tracking':
             if os.path.exists(mot_results_file):
                 print('{} already exists, skipping.'.format(mot_results_file))
@@ -186,7 +164,7 @@ def run_experiment(config, force_prefix=None):
             if os.path.exists(evaluation_file):
                 print('{} already exists, skipping.'.format(evaluation_file))
             else:
-                run_evaluation(mot_results_file, experiment.params['dataset']['gt'], evaluation_file)
+                eval_and_save(experiment.params['dataset']['gt'], mot_results_file, evaluation_file)
 
 
 def run_benchmarks(notebook_path='experiments/tracking/benchmarking.ipynb',
@@ -277,7 +255,7 @@ def load_experiments(experiments_dir, evaluation_required=False, trajectories_re
 
     - metadata is loaded from experiment.yaml or parameters.yaml
     - evaluation from evaluation.csv
-    - trajectories from results.txt
+    - trajectories from results.csv
     - if experiment_name is not present in metadata directory basename is used
 
     An experiment is stored in a dictionary. Fixed keys: experiment_name, dir,
@@ -315,8 +293,8 @@ def load_experiments(experiments_dir, evaluation_required=False, trajectories_re
 
         if 'trajectories.txt' in filenames:
             metadata['mot_trajectories_filename'] = join(directory, 'trajectories.txt')
-        elif 'results.txt' in filenames:
-            metadata['mot_trajectories_filename'] = join(directory, 'results.txt')
+        elif 'results.csv' in filenames:
+            metadata['mot_trajectories_filename'] = join(directory, 'results.csv')
         elif trajectories_required:
             continue
 
@@ -371,7 +349,7 @@ def load_evaluations(datasets, experiments_dir):
 def save_results_mot(project, out_filename):
     results = project.get_results_trajectories()
     df = results_to_mot(results)
-    df.to_csv(out_filename, header=False, index=False)
+    df.to_csv(out_filename)
 
 
 def fix_randomness():
@@ -474,8 +452,9 @@ if __name__ == '__main__':
                 if 'mot_trajectories_filename' not in experiment:
                     warn('trajectories not present in {}, experiment can\'t be evaluated'.format(experiment['dir']))
                 else:
-                    run_evaluation(experiment['mot_trajectories_filename'], experiment['dataset']['gt'],
-                                   join(experiment['dir'], 'evaluation.csv'))
+                    eval_and_save(experiment.params['dataset']['gt'],
+                                  experiment['mot_trajectories_filename'],
+                                  join(experiment['dir'], 'evaluation.csv'))
         sys.exit(0)
 
     if args.run_benchmarking_yaml:
