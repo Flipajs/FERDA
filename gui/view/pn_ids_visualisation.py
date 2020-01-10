@@ -154,8 +154,8 @@ def draw_N(img, w, id_, params):
 
 def draw_U(img, w, id_, params):
     new_w = w + params['U_width']
-    y1 = (params['P_height'] - params['U_height']) / 2
-    y2 = params['U_height'] + y1
+    y1 = int((params['P_height'] - params['U_height']) / 2)
+    y2 = int(params['U_height'] + y1)
     img[y1:y2, w:new_w, :] = params['colors'][id_]
 
     return new_w

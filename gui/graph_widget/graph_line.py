@@ -33,9 +33,12 @@ class GraphLine:
 
     def __hash__(self):
         if self.type == LineType.TRACKLET:
-            return self.id
+            return int(self.id)
         else:
-            return self.region_from.id() * HASH_PRIME + self.region_to.id()
+            return int(self.region_from.id() * HASH_PRIME + self.region_to.id())
+
+    def __lt__(self, other):
+        return hash(self) < hash(other)  # arbitrary results
 
     def set_type(self, type):
         if LineType.valid_type(type):
