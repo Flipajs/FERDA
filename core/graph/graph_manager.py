@@ -526,7 +526,7 @@ class GraphManager(object):
         :return: True if 1 to 1, False if not
         """
         return (v.out_degree() == 1 and  # single outcoming edge
-               v.out_neighbors().next().in_degree() == 1 and  # connected to vertex with single incoming edge
+               next(v.out_neighbors()).in_degree() == 1 and  # connected to vertex with single incoming edge
                not (self.g.vp['chunk_start_id'][v] and len(self.chm[self.g.vp['chunk_start_id'][v]]) > 1))  # not already part of tracklet longer than 1 node
 
     def edge_is_chunk(self, e):
