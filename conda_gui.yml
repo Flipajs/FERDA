@@ -19,10 +19,11 @@ dependencies:
   - mock
   - numpy
   - opencv=3.3  # opencv 3.4.1 has issue "OpenCV Error: Assertion failed (chunk.m_size <= 0xFFFF)" https://github.com/opencv/opencv/issues/11126
-  - pandas
+  - pandas  
   - pillow
+  - pip
   - pyqt=4
-  - python=2.7
+  - python=3.6
   - pyyaml
   - scikit-image
   - scikit-learn
@@ -31,11 +32,13 @@ dependencies:
     # - https://storage.googleapis.com/tensorflow/linux/cpu/tensorflow-1.5.0-cp27-none-linux_x86_64.whl
     - bottleneck
     - cachetools
+    - imageio
     - imutils
     - intervals
     - intervaltree
     - joblib
     - jsonpickle
+    - keras=2.2.5
     - lazyme
 #    - matplotlib  # this was once a solution to the pyqt4 conflict
     - motmetrics
@@ -43,7 +46,12 @@ dependencies:
     - pulp
     - pympler
     - pyqtgraph
+#    - tensorflow-gpu
     - qimage2ndarray
     - xarray
+#  # results analysis in jupyter lab
+#    - jupyterlab
+#    - plotly
+#    - cufflinks
 
 

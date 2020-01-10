@@ -22,7 +22,7 @@ Setup Conda environment for batch processing (without pyqt4):
 
 **This section is outdated.**
 
-* python 2.7.\*
+* python 3.6
 * [opencv](http://opencv.org) for python (pycv) builded with FFMPEG support (2.4.12)
 * [PyQt4](https://www.riverbankcomputing.com/software/pyqt/download)
 * [graph-tool](https://pypi.python.org/pypi/graph-tool) (2.26)
