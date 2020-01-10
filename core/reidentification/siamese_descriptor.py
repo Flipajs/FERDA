@@ -1,12 +1,10 @@
 # compute re-identification descriptors for all regions in single tracklets
-
-
 import numpy as np
 import pickle
 from os.path import join
-from keras.models import Model
-from keras.layers import Lambda
-from keras.layers import Input
+from tensorflow.keras.models import Model
+from tensorflow.keras.layers import Lambda
+from tensorflow.keras.layers import Input
 from tqdm import tqdm
 import argparse
 import logging

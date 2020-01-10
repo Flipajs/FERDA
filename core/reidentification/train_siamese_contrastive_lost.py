@@ -23,14 +23,14 @@ import yaml
 from os.path import join
 
 import random
-from keras.datasets import mnist
-from keras.models import Model
-from keras.layers import Input, Flatten, Dense, Dropout, Lambda
-from keras.optimizers import RMSprop
-from keras import backend as K
-from keras.layers import Conv2D, MaxPooling2D, Input, Dense, Flatten, BatchNormalization, Activation
-from keras.preprocessing.image import ImageDataGenerator
-from keras.callbacks import ModelCheckpoint
+from tensorflow.keras.datasets import mnist
+from tensorflow.keras.models import Model
+from tensorflow.keras.layers import Input, Flatten, Dense, Dropout, Lambda
+from tensorflow.keras.optimizers import RMSprop
+from tensorflow.keras import backend as K
+from tensorflow.keras.layers import Conv2D, MaxPooling2D, Input, Dense, Flatten, BatchNormalization, Activation
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras.callbacks import ModelCheckpoint
 
 
 def euclidean_distance(vects):
