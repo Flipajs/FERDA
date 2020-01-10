@@ -393,7 +393,7 @@ def fix_randomness():
 
     # 4. Set `tensorflow` pseudo-random generator at a fixed value
     import tensorflow as tf
-    tf.set_random_seed(seed_value)
+    tf.random.set_seed(seed_value)
 
     # # 5. Configure a new global `tensorflow` session
     # from keras import backend as K
