@@ -6,6 +6,8 @@ import numpy as np
 from PyQt4 import QtGui, QtCore
 from pyqtgraph import makeQImage
 from tqdm import tqdm
+import warnings
+import os
 
 from core.graph.region_chunk import RegionChunk
 from core.region.region import get_region_endpoints
@@ -123,6 +125,14 @@ class ResultsWidget(QtGui.QWidget):
         self.load_gt_b.clicked.connect(self.load_gt_file_dialog)
         self.gt_box.layout().addWidget(self.load_gt_b)
 
+        self.save_gt_b = QtGui.QPushButton('save GT')
+        self.save_gt_b.clicked.connect(self.save_gt_file_dialog)
+        self.gt_box.layout().addWidget(self.save_gt_b)
+        self.save_gt_a = QtGui.QAction('save GT', self)
+        self.save_gt_a.triggered.connect(self.save_gt_file_dialog)
+        self.save_gt_a.setShortcut(QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.Key_G))
+        self.addAction(self.save_gt_a)
+
         self.eval_gt_draw_ch = QtGui.QCheckBox('draw coverage image')
         self.gt_box.layout().addWidget(self.eval_gt_draw_ch)
 
@@ -133,14 +143,6 @@ class ResultsWidget(QtGui.QWidget):
         self.evolve_gt_id_b = QtGui.QPushButton('ID assignment STATS')
         self.evolve_gt_id_b.clicked.connect(self._evolve_gt_id)
         self.gt_box.layout().addWidget(self.evolve_gt_id_b)
-
-        self.save_gt_b = QtGui.QPushButton('save gt')
-        self.save_gt_b.clicked.connect(self.__save_gt)
-        self.gt_box.layout().addWidget(self.save_gt_b)
-        self.save_gt_a = QtGui.QAction('save gt', self)
-        self.save_gt_a.triggered.connect(self.__save_gt)
-        self.save_gt_a.setShortcut(QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.Key_G))
-        self.addAction(self.save_gt_a)
 
         self.gt_find_permutation_b = QtGui.QPushButton('find permutation')
         self.gt_find_permutation_b.clicked.connect(self._gt_find_permutation)
@@ -167,6 +169,11 @@ class ResultsWidget(QtGui.QWidget):
         self.gt_interpolate_current_frame.triggered.connect(self.interpolate_gt)
         self.gt_interpolate_current_frame.setShortcut(QtGui.QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.Key_I))
         self.addAction(self.gt_interpolate_current_frame)
+
+        self.action_delete_gt = QtGui.QAction('delete selected object from GT in current frame', self)
+        self.action_delete_gt.triggered.connect(self.delete_gt)
+        self.action_delete_gt.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Delete))
+        self.addAction(self.action_delete_gt)
 
 
         # self.add_gt_markers_action = QtGui.QAction('add gt markers', self)
@@ -674,25 +681,23 @@ class ResultsWidget(QtGui.QWidget):
         else:
             print("update N sets callback not present in results_widget")
 
+    def save_gt_file_dialog(self):
+        path = ''
+        if os.path.isdir(S_.temp.last_gt_path):
+            path = S_.temp.last_gt_path
+
+        gt_file_path = str(QtGui.QFileDialog.getSaveFileName(self, 'Save GT File', path,
+                                                             "Text files (*.txt *.csv);; All files (*)"))
+
+        if gt_file_path:
+            self.project.GT_file = gt_file_path
+            S_.temp.last_gt_path = os.path.dirname(self.project.GT_file)
+            self.__save_gt()
 
     def __save_gt(self):
-        self._gt.save(self.project.GT_file)
-        print("GT saved...")
-
-        # if self._gt is None:
-        #     print "No GT file opened"
-        #     return
-        #
-        # frame = self.video_player.current_frame()
-        # self._gt.setdefault(frame, [None]*len(self.project.animals))
-        #
-        # for it in self._gt_markers.itervalues():
-        #     self._gt[frame][it.id] = (it.centerPos().y(), it.centerPos().x())
-        #
-        # with open(self.project.GT_file, 'wb') as f:
-        #     pickle.dump(self._gt, f)
-        #
-        # print self._gt[frame]
+        self._gt.undo_project_offsets(self.project)
+        self._gt.save(self.project.GT_file, make_backup=True)
+        self._gt.set_project_offsets(self.project)
 
     def __auto_gt_assignment(self):
         frame = self.video_player.current_frame()
@@ -975,21 +980,20 @@ class ResultsWidget(QtGui.QWidget):
         if self._gt is None:
             return
 
-        for a in self.project.animals:
-            c_ = QtGui.QColor(a.color_[2], a.color_[1], a.color_[0])
+        frame = self.video_player.current_frame()
+        positions = self._gt.get_positions(frame)
+        for obj_id in positions.id.values:
+            animal = self.project.animals[obj_id - 1]
+            color = QtGui.QColor(animal.color_[2], animal.color_[1], animal.color_[0])
+            pos_obj = positions.sel(dict(id=obj_id))
+            if not (pos_obj.x.isnull() or pos_obj.y.isnull()):
+                x = pos_obj.x
+                y = pos_obj.y
+            else:
+                y = 0
+                x = 10 * obj_id
 
-            frame = self.video_player.current_frame()
-
-            positions = self._gt.get_clear_positions(frame)
-            if a.id < len(positions):
-                data = positions[a.id]
-                if data is None:
-                    y = 10
-                    x = 10 * a.id
-                else:
-                    y = data[0]
-                    x = data[1]
-                self.__add_marker(x, y, c_, a.id, 0.7, type_='GT')
+            self.__add_marker(x, y, color, obj_id, 0.7, type_='GT')
 
     def _show_id_markers(self, animal_ids2centroids):
         for a in self.project.animals:
@@ -1414,7 +1418,7 @@ class ResultsWidget(QtGui.QWidget):
         # try:
         frame = self.video_player.current_frame()
         y, x = self._gt_markers[id_].centerPos().y(), self._gt_markers[id_].centerPos().x()
-        self._gt.set_position(frame, id_, y, x)
+        self._gt.set_position(frame, id_, x, y)
         # except:
         #     pass
 
@@ -1622,8 +1626,7 @@ class ResultsWidget(QtGui.QWidget):
         self.video_player.redraw_visualisations()
 
     def _load_gt(self):
-        from utils.gt.gt import GT
-        self._gt = GT(self.project.GT_file)
+        self._gt = MotProject(filename=self.project.GT_file)
         self._gt.set_project_offsets(self.project)
 
     def print_conflicts(self):
@@ -1862,9 +1865,19 @@ class ResultsWidget(QtGui.QWidget):
         ds = self._gt.interpolate_positions(frames=[frame])
         for obj_id in ds.id:
             pos = ds.sel({'id': obj_id})
-            self._gt.set_position(frame, obj_id, pos.x, pos.y)
+            self._gt.set_position([frame], obj_id, pos.x, pos.y)
 
         self.video_player.redraw_visualisations()
+
+    def delete_gt(self):
+        frame = self.video_player.current_frame()
+        match = self._gt.get_matched_tracklets(self.project)
+        ids = self._gt.GtProject__get_ids_from_match(match[frame], self.active_tracklet_id)
+        assert len(ids) == 1  # selected object should match only single gt position
+        self._gt.set_position([frame], ids.pop(), np.nan, np.nan)
+
+        self.video_player.redraw_visualisations()
+
 
     def show_movement_model(self):
         from scripts.regions_stats import hist_query, get_movement_descriptor_
