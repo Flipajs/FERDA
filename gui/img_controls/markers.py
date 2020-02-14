@@ -70,7 +70,7 @@ class CenterMarker(BaseMarker):
     """Marker that indicates center of the ant. When it is clicked and ctrl is pressed, it moves head and tail marker of
     the same ant."""
 
-    def __init__(self, x, y, size, color, id=-1, changeHandler = None):
+    def __init__(self, x, y, size, color, id=-1, changeHandler=None):
         super(CenterMarker, self).__init__(x, y, size, color, id, changeHandler)
 
         self.head_marker = None

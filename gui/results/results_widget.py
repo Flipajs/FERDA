@@ -1424,7 +1424,7 @@ class ResultsWidget(QtGui.QWidget):
 
         # self._highlight_tracklet(id_)
 
-        self.video_player.redraw_visualisations()
+        # self.video_player.redraw_visualisations()  # probably not needed, overpaints marker selection
 
     def _highlight_tracklet(self, id_):
         try:
@@ -1621,9 +1621,9 @@ class ResultsWidget(QtGui.QWidget):
 
         if self.project.GT_file:
             S_.temp.last_gt_path = os.path.dirname(self.project.GT_file)
-
-        self._load_gt()
-        self.video_player.redraw_visualisations()
+            self._load_gt()
+            self.show_markers.setChecked(True)
+            self.video_player.redraw_visualisations()
 
     def _load_gt(self):
         self._gt = MotProject(filename=self.project.GT_file)
@@ -1877,7 +1877,6 @@ class ResultsWidget(QtGui.QWidget):
         self._gt.set_position([frame], ids.pop(), np.nan, np.nan)
 
         self.video_player.redraw_visualisations()
-
 
     def show_movement_model(self):
         from scripts.regions_stats import hist_query, get_movement_descriptor_
