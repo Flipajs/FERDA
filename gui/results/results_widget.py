@@ -677,7 +677,7 @@ class ResultsWidget(QtGui.QWidget):
 
     def __save_gt(self):
         self._gt.undo_project_offsets(self.project)
-        self._gt.save(self.project.GT_file, make_backup=True)
+        self._gt.save(self.project.GT_file)
         self._gt.set_project_offsets(self.project)
 
     def __auto_gt_assignment(self):
