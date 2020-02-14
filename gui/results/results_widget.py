@@ -1,7 +1,6 @@
 __author__ = 'fnaiser'
 import pickle as pickle
 from functools import partial
-
 import numpy as np
 from PyQt4 import QtGui, QtCore
 from pyqtgraph import makeQImage
@@ -974,7 +973,7 @@ class ResultsWidget(QtGui.QWidget):
                 y = 0
                 x = 10 * obj_id
 
-            self.__add_marker(x, y, color, obj_id, 0.7, type_='GT')
+            self.__add_marker(x, y, color, obj_id, 0.7, type_='GT', alpha=1 if pos_obj.confidence == 1 else 0.5)
 
     def _show_id_markers(self, animal_ids2centroids):
         for a in self.project.animals:
@@ -1399,7 +1398,8 @@ class ResultsWidget(QtGui.QWidget):
         # try:
         frame = self.video_player.current_frame()
         y, x = self._gt_markers[id_].centerPos().y(), self._gt_markers[id_].centerPos().x()
-        self._gt.set_position(frame, id_, x, y)
+        self._gt.set_position(frame, id_, x, y, confidence=1)
+        self._gt.reinterpolate()  # TODO interpolate affected id only
         # except:
         #     pass
 
@@ -1608,6 +1608,10 @@ class ResultsWidget(QtGui.QWidget):
     def _load_gt(self):
         self._gt = MotProject(filename=self.project.GT_file)
         self._gt.set_project_offsets(self.project)
+        self._gt.interpolate_na()
+
+    def interpolate_gt(self):
+        self._interpolated_gt.ds = self._gt.interpolate_positions()
 
     def print_conflicts(self):
         from tqdm import tqdm
