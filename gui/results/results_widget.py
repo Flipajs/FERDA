@@ -136,14 +136,6 @@ class ResultsWidget(QtGui.QWidget):
         self.eval_gt_draw_ch = QtGui.QCheckBox('draw coverage image')
         self.gt_box.layout().addWidget(self.eval_gt_draw_ch)
 
-        self.evolve_gt_b = QtGui.QPushButton('evaluate GT')
-        self.evolve_gt_b.clicked.connect(self._evaluate_gt)
-        self.gt_box.layout().addWidget(self.evolve_gt_b)
-
-        self.evolve_gt_id_b = QtGui.QPushButton('ID assignment STATS')
-        self.evolve_gt_id_b.clicked.connect(self._evolve_gt_id)
-        self.gt_box.layout().addWidget(self.evolve_gt_id_b)
-
         self.gt_find_permutation_b = QtGui.QPushButton('find permutation')
         self.gt_find_permutation_b.clicked.connect(self._gt_find_permutation)
         self.gt_box.layout().addWidget(self.gt_find_permutation_b)
@@ -644,17 +636,6 @@ class ResultsWidget(QtGui.QWidget):
         # self.timer.stop()
         self.video_player.play()
         self.video_player.setFocus()
-
-    def _evaluate_gt(self):
-        from utils.gt.evaluator import compare_trackers
-        compare_trackers(self.project, skip_idtracker=True, gt_ferda_perm=self._gt.get_permutation_reversed(),
-                         gt=self._gt, draw=self.eval_gt_draw_ch.isChecked())
-
-    def _evolve_gt_id(self):
-        from utils.gt.evaluator import Evaluator
-        if self._gt is not None:
-            ev = Evaluator(None, self._gt)
-            ev.eval_ids(self.project)
 
     def __prepare_gt(self):
         new_ = {}
