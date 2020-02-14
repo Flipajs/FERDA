@@ -1417,7 +1417,6 @@ class ResultsWidget(QtGui.QWidget):
         except:
             pass
 
-
     def add_data(self, solver, just_around_frame=-1, margin=1000):
         self.solver = solver
 
@@ -1852,11 +1851,9 @@ class ResultsWidget(QtGui.QWidget):
 
     def delete_gt(self):
         frame = self.video_player.current_frame()
-        match = self._gt.get_matched_tracklets(self.project)
-        ids = self._gt.GtProject__get_ids_from_match(match[frame], self.active_tracklet_id)
-        assert len(ids) == 1  # selected object should match only single gt position
-        self._gt.set_position([frame], ids.pop(), np.nan, np.nan)
-
+        for i, m in self._gt_markers.items():
+            if m.isSelected():
+                self._gt.set_position([frame], i, np.nan, np.nan)
         self.video_player.redraw_visualisations()
 
     def show_movement_model(self):
