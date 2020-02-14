@@ -18,7 +18,8 @@ main_window.show()
 t_ = time.time()
 config['general']['print_log'] = False
 if args.project is not None:
-    project = Project(args.project)
+    project = Project()
+    project.load(args.project, regions_optional=True, graph_optional=True, tracklets_optional=True)
 
     try:
         # old projects WORKAROUND:
