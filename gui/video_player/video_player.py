@@ -35,9 +35,8 @@ class VideoPlayer(QtGui.QWidget):
         self._frame_change_callback = frame_change_callback
         self._image_processor_callback = image_processor_callback
 
-        self._scene = QtGui.QGraphicsScene()
-
         self._view = MyView()
+        self._scene = QtGui.QGraphicsScene(self._view)
         self._view.setScene(self._scene)
         self.layout().addWidget(self._view)
 
