@@ -4,6 +4,7 @@ import time
 from itertools import product
 from os.path import join
 import yaml
+from pathlib import Path
 
 
 class Parameters(dict):
@@ -56,41 +57,53 @@ class Experiment(object):
         return self.basename
 
     @classmethod
-    def create(cls, name=None, prefix=True, params=None, config=None, tensorboard=False):
+    def create(cls, prefix='', timestamp=True, name='', params=None, config=None, tensorboard=False):
         """
+        Create a directory with a unique filename for for an experiment output.
 
-        :param name: experiment name
+        The directory will be stored in config['root_experiment_dir'] or current directory when not set.
+        The directory name format is {prefix}{timestamp}_{name}. When run without parameters, a directory ./{timestamp}
+        will be used.
+
         :param prefix: if True prefix experiment dir with current datetime, if str use specified prefix, else no prefix
-        :param params: experimental parameters (loss_alpha, epochs, batch_size)
+        :param name: experiment name
+        :param timestamp: add timestamp to the directory name
+        :param params: experimental parameters, dict
         :param config: experiment configuration (root_experiment_dir, root_tensor_board_dir)
         :param tensorboard: if True, initialize tensor_board_dir
         """
         experiment = cls()
-        if prefix is True:
-            experiment.basename = time.strftime("%y%m%d_%H%M", time.localtime())
-        elif isinstance(prefix, str):
-            experiment.basename = prefix
-        if name is not None:
-            if len(experiment.basename) != 0:
-                experiment.basename += '_'
-            experiment.basename += name
-        assert len(experiment.basename)
         if config is not None:
             experiment.config = config
-        experiment.dir = join(experiment.config.get('root_experiment_dir', '.'), experiment.basename)
+        basename = Experiment._basename(prefix, timestamp, '', name)
+        root = experiment.config.get('root_experiment_dir', '.')
+        if (Path(root) / basename).exists():
+            basename = Experiment._basename(prefix, timestamp, 'i', name)
+            assert not (Path(root) / basename).exists()
+        experiment.dir = Path(root) / basename
+        experiment.basename = basename
         experiment.tensorboard = tensorboard
         if tensorboard:
-            experiment.tensor_board_dir = join(experiment.config.get('root_tensor_board_dir', '.'), experiment.basename)
-        experiment._create_dir()
+            experiment.tensor_board_dir = Path(experiment.config.get('root_tensor_board_dir', '.')) / \
+                                          experiment.basename
+        experiment.dir.mkdir(parents=True)
         if params is not None:
             experiment.params.update(params)
         return experiment
 
-    def _create_dir(self):
-        try:
-            os.makedirs(self.dir)
-        except OSError:
-            pass
+    @staticmethod
+    def _basename(prefix='', timestamp=None, prefix2='', name='', time_format="%y%m%d_%H%M"):
+        if timestamp is None:
+            timestamp = ''
+        else:
+            timestamp = time.strftime(time_format, time.localtime())
+        if prefix == '' and timestamp == '' and prefix2 == '':
+            underscore = ''
+        else:
+            underscore = '_'
+        basename = f'{prefix}{timestamp}{prefix2}{underscore}{name}'
+        assert len(basename)
+        return basename
 
     @classmethod
     def from_dir(cls, experiment_dir, *load_filenames):
@@ -141,7 +154,7 @@ class Experiment(object):
                 name_parts = []
                 for key in changing_keys:
                     value = parameters[key]
-                    if '/' in value:
+                    if isinstance(value, str) and '/' in value:
                         # it's a path, transform it
                         value = os.path.basename(value)
                         # value = value.replace('/', '-')
