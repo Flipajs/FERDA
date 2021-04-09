@@ -13,6 +13,9 @@ class Parameters(dict):
     def save(self, filename):
         yaml.dump(dict(self), open(filename, 'w'))
 
+    def n_batches(self):
+        return len(list(self.get_batches()))
+
     def get_batches(self):
         """
         Get batch iterator as a cartesian product of all parameters values.
@@ -128,6 +131,9 @@ class Experiment(object):
 
     def save_params(self):
         self.params.save(join(self.dir, 'parameters.yaml'))
+
+    def __len__(self):
+        return len(self.params.n_batches())
 
     def __iter__(self):
         """
