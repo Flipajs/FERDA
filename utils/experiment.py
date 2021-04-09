@@ -114,16 +114,7 @@ class Experiment(object):
         return experiment
 
     def load_experiments_recursive(self, *load_filenames):
-        experiments = []
-        for directory, dirnames, files in \
-                sorted(os.walk(self.dir), key=lambda x: os.path.basename(x[0])):
-            if directory == self.dir:
-                continue
-            if 'parameters.yaml' in files:
-                experiments.append(Experiment.from_dir(directory, *load_filenames))
-            else:
-                pass
-        return experiments
+        return load_experiments_recursive(self.dir, *load_filenames)
 
     def save_argv(self):
         with open(join(self.dir, 'arguments.txt'), 'w') as fw:
@@ -161,6 +152,19 @@ class Experiment(object):
                 config['root_tensor_board_dir'] = self.tensor_board_dir
                 yield Experiment().create('_'.join(name_parts), prefix=False, params=parameters, config=config,
                                           tensorboard=self.tensorboard)
+
+
+def load_experiments_recursive(root_dir, *load_filenames):
+    experiments = []
+    for directory, dirnames, files in \
+            sorted(os.walk(root_dir), key=lambda x: os.path.basename(x[0])):
+        if directory == root_dir:
+            continue
+        if 'parameters.yaml' in files:
+            experiments.append(Experiment.from_dir(directory, *load_filenames))
+        else:
+            pass
+    return experiments
 
 
 if __name__ == '__main__':
@@ -210,7 +214,4 @@ if __name__ == '__main__':
     # ...
     # 7  1.745380   1.957427         0.7
     # 8  1.978683   1.976512         0.8
-
-
-
 
