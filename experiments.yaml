@@ -1,5 +1,5 @@
-# dir: 'experiments/tracking'
-dir: ../experiments_tracking
+dir: 'experiments/tracking/0_other_trackers'
+# dir: ../experiments_tracking
 projects_dir: ../projects/2_temp
 run: ferda_tracking
 datasets:
@@ -27,6 +27,12 @@ datasets:
         reidentification_weights: /datagrid/ferda/models/180421_reidentification/Ants3/best_model_980_weights.h5
         initial_project: /datagrid/ferda/projects/1_initial_projects_180810_diverse/Camera3-5min
         visualize_experiments: [-1, gt, idtracker_nogaps] # toxtrac
+#    100fish_1min:
+#        video: /datagrid/ferda/data/idtracker.ai/video_example_100fish_1min_h264.mp4
+#        reidentification_weights: /datagrid/ferda/models/reidentification_idtrackerai_fish/weights.h5
+#        initial_project: /datagrid/ferda/projects/1_initial_projects_180810_diverse/100fish_1min
+#        visualize_experiments: [-1]  # , gt, idtracker_nogaps] # toxtrac
+
 #    camera_1_ss45:
 #        video: /datagrid/ferda/data/ants_ist/camera_1/camera_1_ss00:45:00_t00:05:00.mp4
 #        reidentification_weights: /datagrid/ferda/models/180421_reidentification/Cam1_clip/best_model_996_weights.h5
