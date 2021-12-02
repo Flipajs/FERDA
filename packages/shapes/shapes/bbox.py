@@ -36,7 +36,7 @@ class BBox(Shape):
         return cls(x_center - width / 2, y_center - height / 2, x_center + width / 2, y_center + height / 2, frame)
 
     def __init__(self, xmin=None, ymin=None, xmax=None, ymax=None, frame=None):
-        super(BBox, self).__init__(frame)
+        super().__init__(frame)
         self.xmin = xmin
         self.ymin = ymin
         self.xmax = xmax
@@ -97,7 +97,7 @@ class BBox(Shape):
         if ymin >= ymax or xmin >= xmax:
             return None
         else:
-            assert self.frame == other.frame
+            # assert self.frame == other.frame
             return BBox(xmin, ymin, xmax, ymax, self.frame)
 
     def to_array(self):
