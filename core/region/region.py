@@ -261,7 +261,14 @@ class Region(object):
         return self.pts_
 
     def draw_mask(self, img):
+        """
+        Draw mask on img on real region position.
+
+        :param img:
+        :return: img with drawn mask
+        """
         yx = self.pts()
+        yx = yx[np.all((yx[:, 0] < img.shape[0], yx[:, 1] < img.shape[1]), axis=0)]  # crop points
         if issubclass(img.dtype.type, bool) or issubclass(img.dtype.type, np.bool_):
             img[yx[:, 0], yx[:, 1]] = True
         elif issubclass(img.dtype.type, numbers.Integral):
@@ -271,6 +278,21 @@ class Region(object):
         else:
             assert False, 'Not supported dtype.'
         return img
+
+    # def mask(self):
+    #     """
+    #     Return tight mask with no border points.
+    #
+    #     :return: array, 0 background pixels, 1 foreground pixels
+    #     """
+    #     mask = np.zeros((self.roi().height(), self.roi().width()), dtype=np.uint8)
+    #     yx = self.pts() - self.pts().min(axis=0)
+    #     mask[yx[:, 0], yx[:, 1]] = 1
+    #     return mask
+
+    def mask(self, shape):
+        mask = np.zeros(shape, dtype=np.bool)
+        return self.draw_mask(mask)
 
     def pts_copy(self):
         return np.copy(self.pts())
