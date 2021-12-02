@@ -45,7 +45,7 @@ from shapes.point import Point
 from core.interactions.visualization import save_prediction_img, save_img_with_objects
 from core.interactions.io import read_gt
 from utils.img import safe_crop
-from utils.dataset_io import ImageIOFile, ImageIOHdf5, DataIOCSV, DataIOVot, Dataset
+from utils.dataset_io import ImageIOFile, ImageIOHdf5, DataIOCSV, DataIOVot, DataIOCoco, Dataset
 from utils.gt.mot import Mot
 from utils.gt.mot_project import MotProjectMixin
 from utils.misc import makedirs
@@ -84,7 +84,10 @@ class TrainingDataset(Dataset):
                 else:
                     image_io = [ImageIOHdf5(h5_file.create_dataset(name, (count,) + img_shape, np.uint8))]
             elif image_format == 'file':
-                out_dir_imgs = join(out_dir, 'JPEGImages')  # JPEGImages - pascal voc directory naming
+                if data_format == 'vot':
+                    out_dir_imgs = join(out_dir, 'JPEGImages')  # JPEGImages - pascal voc directory naming
+                else:  # if data_format == 'coco':
+                    out_dir_imgs = join(out_dir, 'images')
                 makedirs(out_dir_imgs)
                 if two_images:
                     image_io = [
@@ -119,6 +122,8 @@ class TrainingDataset(Dataset):
                 data_io = DataIOVot(join(out_dir_annotations, '{idx' + padding + '}.xml'),
                                     image_filename_template='{idx' + padding + '}.jpg',
                                     image_shape=img_shape)
+            elif data_format == 'coco':
+                data_io = DataIOCoco(join(out_dir, 'annotations.json'), image_io[0].next_filename, img_shape[:2][::-1])
             elif data_format is None:
                 data_io = None
             else:
@@ -454,7 +459,7 @@ class DataGenerator(object):
                     cv2.imwrite(join(sample_dir, 'validation_%02d.png' % i), h5_group_valid['img'][i])
             h5_file.close()
 
-    def write_detection_data(self, project_dir, count, out_dir=None, augmentation=True, overwrite=False,
+    def write_detection_data(self, project_dir, count, out_dir=None, augmentation=False, overwrite=False,
                              foreground_layer=False, data_format='csv', image_format='hdf5', gt_filename=None):
         """
         Write detection training data with optional augmentation.
@@ -480,13 +485,6 @@ class DataGenerator(object):
         else:
             gt = None
 
-        img_shape = (self.params['detection_image_size_px'],
-                     self.params['detection_image_size_px'],
-                     3 if not foreground_layer else 4)
-        dataset = TrainingDataset(out_dir, count, image_format, data_format, img_shape, overwrite, name='')
-        self._write_params(out_dir)
-        padding = ':0{}d'.format(len(str(count)))
-
         regions, _ = self._collect_regions(single=True, multi=True, gt=gt) # , limit=500)
         regions_by_frame = defaultdict(list)
         regions_by_cardinality = defaultdict(list)
@@ -500,6 +498,17 @@ class DataGenerator(object):
         if augmentation:
             random_regions_augmentation = random.sample(regions_by_cardinality['single'], count)
 
+        self.regions2dataset(augmentation, count, data_format, foreground_layer, image_format, out_dir, overwrite,
+                             random_regions, None, regions_by_frame)  # random_regions_augmentation
+
+    def regions2dataset(self, augmentation, count, data_format, foreground_layer, image_format, out_dir, overwrite,
+                        random_regions, random_regions_augmentation, regions_by_frame):
+        img_shape = (self.params['detection_image_size_px'],
+                     self.params['detection_image_size_px'],
+                     3 if not foreground_layer else 4)
+        dataset = TrainingDataset(out_dir, count, image_format, data_format, img_shape, overwrite, name='')
+        self._write_params(out_dir)
+        padding = ':0{}d'.format(len(str(count)))
         for i, region in enumerate(tqdm.tqdm(random_regions)):
             if augmentation:
                 aug_region = random_regions_augmentation[i]
@@ -529,8 +538,8 @@ class DataGenerator(object):
                 if foreground_layer:
                     aug_img = np.dstack((aug_img, self._project.img_manager.get_foreground(aug_region.frame())))
                 img, timg_aug = self._augment(timg.get_img(), timg.get_model_copy(),
-                                    aug_img, Ellipse.from_region(aug_region),
-                                    theta_deg, phi_deg, aug_shift_px)
+                                              aug_img, Ellipse.from_region(aug_region),
+                                              theta_deg, phi_deg, aug_shift_px)
             else:
                 img = timg.get_img()
 
@@ -551,6 +560,12 @@ class DataGenerator(object):
             bbox_ids = [region.gt_id]
             points = [[Point(x, y, region.frame()).move(-delta_xy)] for y, x in region.get_head_tail()]
             truncated = [0 if not bbox_models[-1].is_partially_outside_bbox(viewport) else 1]
+            mask = np.zeros((self.params['detection_image_size_px'], self.params['detection_image_size_px']),
+                            dtype=np.bool)
+            yx = region.pts() - delta_xy[::-1]
+            yx = yx[np.all((yx[:, 0] < mask.shape[0], yx[:, 1] < mask.shape[1]), axis=0)]  # crop points
+            mask[yx[:, 0], yx[:, 1]] = True
+            masks = [mask]
             if augmentation:
                 model_aug = timg_aug.get_model_copy().move(-delta_xy)
                 # model_dict.update(model_aug.to_dict(1))
@@ -560,6 +575,7 @@ class DataGenerator(object):
                     x, y = timg_aug.get_transformed_coords(yx[::-1])
                     pointlist.append(Point(x, y, aug_region.frame()).move(-delta_xy))
                 truncated.append(0 if not bbox_models[-1].is_partially_outside_bbox(viewport) else 1)
+                # masks.append() = [region.mask()]
 
             # bboxes for other present objects
             discard = False
@@ -575,13 +591,17 @@ class DataGenerator(object):
                         for pointlist, (y, x) in zip(points, r.get_head_tail()):
                             pointlist.append(Point(x, y, r.frame()).move(-delta_xy))
                         truncated.append(0 if not bbox_models[-1].is_partially_outside_bbox(viewport) else 1)
-
+                        yx = r.pts() - delta_xy[::-1]
+                        yx = yx[np.all((yx[:, 0] < mask.shape[0], yx[:, 1] < mask.shape[1]), axis=0)]  # crop points
+                        mask.fill(False)
+                        mask[yx[:, 0], yx[:, 1]] = True
+                        masks.append(mask)
             if discard:
                 continue
 
             if True:  # isinstance(dataset, DummyDataset):
                 makedirs(join(out_dir, 'examples'))
-                filename_template = join(out_dir, 'examples', '{idx' + padding + '}.jpg')
+                filename_template = join(out_dir, 'examples', '{idx' + padding + '}.png')
                 save_img_with_objects(filename_template.format(idx=dataset.next_idx), img_crop[:, :, ::-1],
                                       bbox_models + points[0] + points[1],
                                       bbox_ids + ['head'] * len(points[0]) + ['tail'] * len(points[1]))
@@ -591,14 +611,15 @@ class DataGenerator(object):
                 z.update(y)  # modifies z with y's keys and values & returns None
                 return z
 
-            # [{**bbox.to_dict(), **{'name': 'ant'}} for bbox in bbox_models]  # works in python 3.5
+            # [{**bbox.to_dict(), **{'name': 'ant'}} for bbox in bbox_models]  # works in python 3.5  TODO
             dataset.add_item(img_crop, [merge_two_dicts(bbox.to_dict(),
-                                                       {'name': gt_id if gt_id is not None else 'ant',
-                                                        'p0_x': p0.x, 'p0_y': p0.y,
-                                                        'p1_x': p1.x, 'p1_y': p1.y,
-                                                        'truncated': trunc})
-                                        for bbox, p0, p1, gt_id, trunc in zip_longest(bbox_models, points[0], points[1], bbox_ids, truncated)] )
-
+                                                        {'name': gt_id if gt_id is not None else 'ant',
+                                                         'p0_x': p0.x, 'p0_y': p0.y,
+                                                         'p1_x': p1.x, 'p1_y': p1.y,
+                                                         'truncated': trunc,
+                                                         'mask': mask})
+                                        for bbox, p0, p1, gt_id, trunc, mask in \
+                                        zip_longest(bbox_models, points[0], points[1], bbox_ids, truncated, masks)])
         if out_dir is not None:
             dataset.close()
 

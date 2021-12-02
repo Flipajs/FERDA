@@ -3,6 +3,9 @@ import cv2
 import numpy as np
 from abc import ABCMeta, abstractmethod
 from os.path import basename, splitext
+import datetime
+from pycococreatortools import pycococreatortools
+import json
 
 
 class IO(metaclass=ABCMeta):
@@ -21,12 +24,15 @@ class ImageIOFile(IO):
         self.filename_template = filename_template
         self.next_idx = 0
 
+    def next_filename(self):
+        return self.filename_template.format(idx=self.next_idx)
+
     def add_item(self, image):
-        cv2.imwrite(self.filename_template.format(idx=self.next_idx), image)
+        cv2.imwrite(self.next_filename(), image)
         self.next_idx += 1
 
     def read_item(self):
-        return cv2.imread(self.filename_template.format(idx=self.next_idx))
+        return cv2.imread(self.next_filename())
         self.next_idx += 1
 
 
@@ -134,6 +140,90 @@ class DataIOVot(IO):
         open(out_filename, 'w').write(imageset_str)
 
 
+class DataIOCoco(IO):
+    def __init__(self, json_filename, img_filename_func, image_size):
+        self.INFO = {
+            "description": "Example Dataset",
+            "url": "https://github.com/waspinator/pycococreator",
+            "version": "0.1.0",
+            "year": 2018,
+            "contributor": "waspinator",
+            "date_created": datetime.datetime.utcnow().isoformat(' ')
+        }
+        self.LICENSES = [
+            {
+                "id": 1,
+                "name": "Attribution-NonCommercial-ShareAlike License",
+                "url": "http://creativecommons.org/licenses/by-nc-sa/2.0/"
+            }
+        ]
+        self.CATEGORIES = [
+            {
+                'id': 1,
+                'name': 'ant',
+                'supercategory': 'animal',
+                'keypoints': ['head', 'tail'],
+                'skeleton': [[2, 1]]
+            },
+            {
+                'id': 2,
+                'name': 'zebrafish',
+                'supercategory': 'animal',
+            },
+            {
+                'id': 3,
+                'name': 'sowbug',
+                'supercategory': 'animal',
+            },
+        ]
+        self.coco_output = {
+            "info": self.INFO,
+            "licenses": self.LICENSES,
+            "categories": self.CATEGORIES,
+            "images": [],
+            "annotations": []
+        }
+        class_id = [x['id'] for x in self.CATEGORIES if x['name'] == 'ant'][0]
+        self.category_info = {'id': class_id, 'is_crowd': False}
+        self.next_idx = 0
+        self.json_filename = json_filename
+        self.img_filename_func = img_filename_func
+        self.image_size = image_size
+
+    def add_item(self, data):
+        if isinstance(data, dict):
+            data = [data]
+        assert isinstance(data, list)
+
+        image_info = pycococreatortools.create_image_info(
+            self.next_idx, self.img_filename_func(), self.image_size)
+        self.coco_output["images"].append(image_info)
+
+        segmentation_id = 1
+        for ann in data:
+            annotation_info = pycococreatortools.create_annotation_info(
+                segmentation_id, self.next_idx, self.category_info, ann['mask'], self.image_size, tolerance=2,
+                keypoints=np.array([[ann['p0_x'], ann['p0_y']], [ann['p1_x'], ann['p1_y']]]))
+            assert annotation_info is not None
+            self.coco_output["annotations"].append(annotation_info)
+            segmentation_id += 1
+            # for key, val in bbox.items():
+            #     if key in ['xmin', 'xmax', 'ymin', 'ymax']:
+        self.next_idx += 1
+
+    def read_item(self):
+        assert False, 'not implemented'
+
+    # def write_imageset(self, out_filename, idx_range=None):
+    #     if idx_range is None:
+    #         idx_range = range(self.image_id)
+    #     imageset_str = '\n'.join([splitext(basename(self.filename_template.format(idx=i)))[0] for i in idx_range])
+    #     open(out_filename, 'w').write(imageset_str)
+
+    def close(self):
+        with open(self.json_filename, 'w') as output_json_file:
+            json.dump(self.coco_output, output_json_file)
+
 
 class Dataset(object):
     def __init__(self, image_io=None, data_io=None):
@@ -155,12 +245,12 @@ class Dataset(object):
 
     def add_item(self, image=None, data=None):
         if self.image_ios is not None:
+            if self.data_io is not None:
+                self.data_io.add_item(data)
             if not isinstance(image, list):
                 image = [image]
             for image_io, single_img in zip(self.image_ios, image):
                 image_io.add_item(single_img)
-        if self.data_io is not None:
-            self.data_io.add_item(data)
 
     def read_item(self):
         return self.image_ios.read_item(), self.data_io.read_item()
