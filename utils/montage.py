@@ -112,8 +112,8 @@ class Montage(object):
         images_resized = [cv2.resize(f, (tuple(np.round(s).astype(int)))) for f, s in zip(images, self.sizes)]
         out = np.zeros(self.shape, dtype=np.uint8)
         for i in range(len(images)):
-            x = (i % self.nm[0]) * int(self.cell_size[0])
-            y = (i / self.nm[0]) * int(self.cell_size[1])
+            x = int(i % self.nm[0]) * int(self.cell_size[0])
+            y = int(i / self.nm[0]) * int(self.cell_size[1])
             imgw, imgh = self.sizes[i]
             out[y: y + imgh, x: x + imgw] = images_resized[i]
         return out
