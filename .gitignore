@@ -13,3 +13,4 @@ name.arr
 packages/shapes/shapes.egg-info
 
 interactions_config.yaml
+/.tox/
