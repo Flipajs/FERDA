@@ -662,6 +662,7 @@ class ResultsWidget(QtGui.QWidget):
             print("update N sets callback not present in results_widget")
 
     def save_gt_file_dialog(self):
+        self.video_player.pause()
         path = ''
         if os.path.isdir(S_.temp.last_gt_path):
             path = S_.temp.last_gt_path
