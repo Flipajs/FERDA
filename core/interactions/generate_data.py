@@ -39,7 +39,7 @@ from core.project.project import Project
 from core.graph.region_chunk import RegionChunk
 from utils.video_manager import get_auto_video_manager
 from shapes.transformableregion import TransformableRegion
-from shapes.ellipse import Ellipse
+from utils.shapes import Ellipse
 from shapes.bbox import BBox
 from shapes.point import Point
 from core.interactions.visualization import save_prediction_img, save_img_with_objects

@@ -31,7 +31,7 @@ from core.graph.region_chunk import RegionChunk
 from utils.img import safe_crop
 from utils.objectsarray import ObjectsArray
 from utils.gt.io import load_mot, results_to_mot, eval_mot, mot_in_roi
-from shapes.ellipse import Ellipse
+from utils.shapes import Ellipse
 from utils.roi import ROI
 from utils.misc import makedirs
 from functools import reduce
