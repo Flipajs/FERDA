@@ -34,4 +34,4 @@ if args.project is not None:
 
 print("FERDA is READY, loaded in {:.3}s".format(time.time()-t_))
 
-sys.exit(app.exec_())
+sys.exit(app.exec())
