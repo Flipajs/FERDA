@@ -6,7 +6,7 @@ import math
 from utils.img import rotate_img, centered_crop, get_bounding_box, endpoint_rot
 from skimage.feature import local_binary_pattern
 from core.id_detection.feature_manager import FeatureManager
-from utils.gt.mot import Mot
+from motutils import Mot
 from utils.misc import print_progress
 
 # import pyximport; pyximport.install()

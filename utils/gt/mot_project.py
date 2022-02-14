@@ -3,7 +3,7 @@ from scipy.spatial.distance import cdist
 import tqdm
 import warnings
 from collections import OrderedDict
-from utils.gt.mot import Mot
+from motutils import Mot
 
 
 class MotProjectMixin(object):
