@@ -22,7 +22,7 @@ def get_default(key):
 class SettingsDialog(QDialog):
 
     def __init__(self, parent=None, actionlist=[]):
-        super(SettingsDialog, self).__init__(parent, Qt.WindowTitleHint | Qt.WindowSystemMenuHint)
+        super(SettingsDialog, self).__init__(parent, Qt.WindowType.WindowTitleHint | Qt.WindowType.WindowSystemMenuHint)
 
         self.actionlist = actionlist
 
@@ -33,21 +33,21 @@ class SettingsDialog(QDialog):
         self.layout = QVBoxLayout()
         self.setLayout(self.layout)
 
-        self.buttonBox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel | QDialogButtonBox.RestoreDefaults)
+        self.buttonBox = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel | QDialogButtonBox.StandardButton.RestoreDefaults)
         self.buttonBox.accepted.connect(self.accept)
         self.buttonBox.rejected.connect(self.reject)
-        self.buttonBox.button(QDialogButtonBox.RestoreDefaults).clicked.connect(self.restore_defaults)
+        self.buttonBox.button(QDialogButtonBox.StandardButton.RestoreDefaults).clicked.connect(self.restore_defaults)
 
         self.layout.addWidget(QLabel("Blur diameter:"))
         self.blur_slider = QSlider(self)
         self.blur_slider.setRange(1, 50)
-        self.blur_slider.setOrientation(Qt.Horizontal)
+        self.blur_slider.setOrientation(Qt.Orientation.Horizontal)
         self.layout.addWidget(self.blur_slider)
 
         self.layout.addWidget(QLabel("Width of square line:"))
         self.square_slider = QSlider(self)
         self.square_slider.setRange(1, 50)
-        self.square_slider.setOrientation(Qt.Horizontal)
+        self.square_slider.setOrientation(Qt.Orientation.Horizontal)
         self.layout.addWidget(self.square_slider)
 
         self.layout.addWidget(QLabel("Key bindings:"))
@@ -57,9 +57,9 @@ class SettingsDialog(QDialog):
         self.table.verticalHeader().setVisible(False)
         for i in range(len(self.actionlist)):
             self.table.setItem(i, 0, QTableWidgetItem(self.actionlist[i].text()))
-            self.table.item(i, 0).setFlags(Qt.NoItemFlags)
+            self.table.item(i, 0).setFlags(Qt.ItemFlag.NoItemFlags)
             self.table.setItem(i, 1, QTableWidgetItem())
-            self.table.item(i, 1).setFlags(Qt.NoItemFlags | Qt.ItemIsEnabled)
+            self.table.item(i, 1).setFlags(Qt.ItemFlag.NoItemFlags | Qt.ItemFlag.ItemIsEnabled)
         self.table.itemDoubleClicked.connect(self.bind_new_key)
 
         self.layout.addWidget(self.buttonBox)
@@ -88,7 +88,7 @@ class SettingsDialog(QDialog):
             self.actionlist[i].setShortcut(QKeySequence(self.table.item(i, 1).text()))
 
     def done(self, p_int):
-        if p_int == QDialog.Accepted:
+        if p_int == QDialog.DialogCode.Accepted:
             self.harvest()
         super(SettingsDialog, self).done(p_int)
 
@@ -102,7 +102,7 @@ class SettingsDialog(QDialog):
 class KeyBindingDialog(QDialog):
 
     def __init__(self, parent=None):
-        super(KeyBindingDialog, self).__init__(parent, Qt.WindowTitleHint | Qt.WindowSystemMenuHint)
+        super(KeyBindingDialog, self).__init__(parent, Qt.WindowType.WindowTitleHint | Qt.WindowType.WindowSystemMenuHint)
 
         self.setWindowTitle("Bind new shortcut")
 
@@ -111,7 +111,7 @@ class KeyBindingDialog(QDialog):
         self.main_layout = QVBoxLayout(self)
         self.setLayout(self.main_layout)
 
-        self.button_box = QDialogButtonBox(QDialogButtonBox.Cancel)
+        self.button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Cancel)
         self.button_box.rejected.connect(self.reject)
 
         self.main_layout.addWidget(QLabel("Press the shortcut you want to bind."))
@@ -121,14 +121,14 @@ class KeyBindingDialog(QDialog):
     def keyPressEvent(self, event):
         if not event.text().isEmpty():
             keyInt = event.key()
-            if event.modifiers() & Qt.ShiftModifier:
-                keyInt += Qt.SHIFT
-            if event.modifiers() & Qt.AltModifier:
-                keyInt += Qt.ALT
-            if event.modifiers() & Qt.ControlModifier:
-                keyInt += Qt.CTRL
-            if event.modifiers() & Qt.MetaModifier:
-                keyInt += Qt.META
+            if event.modifiers() & Qt.KeyboardModifier.ShiftModifier:
+                keyInt += Qt.Modifier.SHIFT
+            if event.modifiers() & Qt.KeyboardModifier.AltModifier:
+                keyInt += Qt.Modifier.ALT
+            if event.modifiers() & Qt.KeyboardModifier.ControlModifier:
+                keyInt += Qt.Modifier.CTRL
+            if event.modifiers() & Qt.KeyboardModifier.MetaModifier:
+                keyInt += Qt.Modifier.META
             self.shortcut = QKeySequence(keyInt)
             self.accept()
         else:

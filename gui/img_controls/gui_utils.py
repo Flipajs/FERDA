@@ -1,5 +1,4 @@
 __author__ = 'filip@naiser.cz'
-
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtGui import QImage
 # import ImageQt
@@ -57,22 +56,22 @@ def view_add_bg_image(g_view, pix_map):
 
 
 def add_circle(size=6, color=QtGui.QColor(0x22, 0x22, 0xFF, 0x30)):
-    brush = QtGui.QBrush(QtCore.Qt.SolidPattern)
+    brush = QtGui.QBrush(QtCore.Qt.BrushStyle.SolidPattern)
     brush.setColor(color)
     item = QtWidgets.QGraphicsEllipseItem(0, 0, size, size)
 
     #item.setPos(QtGui.QCursor.pos().x(), QtGui.QCursor.pos().y())
 
     item.setBrush(brush)
-    item.setFlag(QtWidgets.QGraphicsItem.ItemIsMovable, True)
-    item.setFlag(QtWidgets.QGraphicsItem.ItemIsSelectable, True)
+    item.setFlag(QtWidgets.QGraphicsItem.GraphicsItemFlag.ItemIsMovable, True)
+    item.setFlag(QtWidgets.QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, True)
 
-    brush = QtGui.QBrush(QtCore.Qt.SolidPattern)
+    brush = QtGui.QBrush(QtCore.Qt.BrushStyle.SolidPattern)
     brush.setColor(QtGui.QColor(0x22, 0xFF, 0x00, 0x30))
     item2 = QtWidgets.QGraphicsEllipseItem(size/2 - 0.5, size/2 - 0.5, 1, 1)
     item2.setPos(0, 0)
     item2.setBrush(brush)
-    item2.setFlag(QtWidgets.QGraphicsItem.ItemIsMovable, True)
+    item2.setFlag(QtWidgets.QGraphicsItem.GraphicsItemFlag.ItemIsMovable, True)
     item2.setParentItem(item)
 
     return item, item2

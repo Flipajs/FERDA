@@ -53,10 +53,10 @@ class VideoSlider(QtWidgets.QSlider):
         self.usercontrolled = True
         opt = QtWidgets.QStyleOptionSlider()
         self.initStyleOption(opt)
-        sr = self.style().subControlRect(QtWidgets.QStyle.CC_Slider, opt, QtWidgets.QStyle.SC_SliderHandle, self)
+        sr = self.style().subControlRect(QtWidgets.QStyle.ComplexControl.CC_Slider, opt, QtWidgets.QStyle.SC_SliderHandle, self)
 
-        if QMouseEvent.button() == QtCore.Qt.LeftButton and not sr.contains(QMouseEvent.pos()):
-            if self.orientation() == QtCore.Qt.Vertical:
+        if QMouseEvent.button() == QtCore.Qt.MouseButton.LeftButton and not sr.contains(QMouseEvent.pos()):
+            if self.orientation() == QtCore.Qt.Orientation.Vertical:
                 newVal = self.minimum() + ((self.maximum() - self.minimum()) * (self.height()-QMouseEvent.y()))/self.height()
             else:
                 newVal = self.minimum() + (self.maximum() - self.minimum()) * QMouseEvent.x() / self.width()
@@ -131,7 +131,7 @@ class CropVideoPage(QtWidgets.QWizardPage):
 
         self.video_label_widget = QtWidgets.QWidget()
         self.video_label_layout = QtWidgets.QHBoxLayout()
-        self.video_label_layout.setAlignment(QtCore.Qt.AlignLeft)
+        self.video_label_layout.setAlignment(QtCore.Qt.AlignmentFlag.AlignLeft)
         self.video_label_layout.setSpacing(0)
 
         self.video_label_widget.setLayout(self.video_label_layout)
@@ -143,7 +143,7 @@ class CropVideoPage(QtWidgets.QWizardPage):
         self.video_layout.addWidget(self.video_control_widget)
 
         self.speedSlider = QtWidgets.QSlider()
-        self.speedSlider.setOrientation(QtCore.Qt.Horizontal)
+        self.speedSlider.setOrientation(QtCore.Qt.Orientation.Horizontal)
         self.speedSlider.setMinimum(1)
         self.speedSlider.setMaximum(120)
 
@@ -167,16 +167,16 @@ class CropVideoPage(QtWidgets.QWizardPage):
         self.frameEdit.setValidator(self.frameEditValidator)
         self.showFrame = QtWidgets.QPushButton('go to frame')
         self.fpsLabel = QtWidgets.QLabel()
-        self.fpsLabel.setAlignment(QtCore.Qt.AlignRight)
+        self.fpsLabel.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight)
         self.start_frame_sign = QtWidgets.QLabel()
-        self.start_frame_sign.setAlignment(QtCore.Qt.AlignCenter)
+        self.start_frame_sign.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
         self.end_frame_sign = QtWidgets.QLabel()
-        self.end_frame_sign.setAlignment(QtCore.Qt.AlignCenter)
+        self.end_frame_sign.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
         self.num_frames_sign = QtWidgets.QLabel()
         self.update_start_end_num_labels()
         self.videoSlider = VideoSlider()
-        self.videoSlider.setOrientation(QtCore.Qt.Horizontal)
-        self.videoSlider.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.videoSlider.setOrientation(QtCore.Qt.Orientation.Horizontal)
+        self.videoSlider.setFocusPolicy(QtCore.Qt.FocusPolicy.NoFocus)
         self.videoSlider.setMaximumHeight(10)
         self.videoSlider.setMaximum(100)
 

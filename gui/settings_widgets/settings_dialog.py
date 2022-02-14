@@ -17,7 +17,7 @@ class SettingsDialog(QtWidgets.QDialog):
     """
 
     def __init__(self, parent=None, settable_buttons=[]):
-        super(SettingsDialog, self).__init__(parent, QtCore.Qt.WindowTitleHint | QtCore.Qt.WindowSystemMenuHint)
+        super(SettingsDialog, self).__init__(parent, QtCore.Qt.WindowType.WindowTitleHint | QtCore.Qt.WindowType.WindowSystemMenuHint)
 
         self.setStyleSheet("""QToolTip {
                             font-size: 15px;
@@ -26,10 +26,10 @@ class SettingsDialog(QtWidgets.QDialog):
 
         self.setWindowTitle("Settings")
 
-        self.buttonBox = QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel | QtWidgets.QDialogButtonBox.RestoreDefaults)
+        self.buttonBox = QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.StandardButton.Ok | QtWidgets.QDialogButtonBox.StandardButton.Cancel | QtWidgets.QDialogButtonBox.StandardButton.RestoreDefaults)
         self.buttonBox.accepted.connect(self.accept)
         self.buttonBox.rejected.connect(self.reject)
-        self.buttonBox.button(QtWidgets.QDialogButtonBox.RestoreDefaults).clicked.connect(self.restore_defaults)
+        self.buttonBox.button(QtWidgets.QDialogButtonBox.StandardButton.RestoreDefaults).clicked.connect(self.restore_defaults)
 
         self.tabWidget = QtWidgets.QTabWidget()
 
@@ -50,7 +50,7 @@ class SettingsDialog(QtWidgets.QDialog):
         # self.tabWidget.setCurrentWidget(self.parameters_tab)
 
         self.layout = QtWidgets.QVBoxLayout()
-        self.layout.setSizeConstraint(QtWidgets.QLayout.SetNoConstraint)
+        self.layout.setSizeConstraint(QtWidgets.QLayout.SizeConstraint.SetNoConstraint)
         self.layout.addWidget(self.tabWidget)
         self.layout.addWidget(self.buttonBox)
         self.setLayout(self.layout)
@@ -75,7 +75,7 @@ class SettingsDialog(QtWidgets.QDialog):
         self.tabWidget.currentWidget().restore_defaults()
 
     def done(self, p_int):
-        if p_int == QtWidgets.QDialog.Accepted:
+        if p_int == QtWidgets.QDialog.DialogCode.Accepted:
             self.harvest_results()
         super(SettingsDialog, self).done(p_int)
 
@@ -83,7 +83,7 @@ class SettingsDialog(QtWidgets.QDialog):
 class KeyBindingDialog(QtWidgets.QDialog):
 
     def __init__(self, parent=None):
-        super(KeyBindingDialog, self).__init__(parent, QtCore.Qt.WindowTitleHint | QtCore.Qt.WindowSystemMenuHint)
+        super(KeyBindingDialog, self).__init__(parent, QtCore.Qt.WindowType.WindowTitleHint | QtCore.Qt.WindowType.WindowSystemMenuHint)
 
         self.setWindowTitle("Bind new shortcut")
 
@@ -92,7 +92,7 @@ class KeyBindingDialog(QtWidgets.QDialog):
         self.main_layout = QtWidgets.QVBoxLayout(self)
         self.setLayout(self.main_layout)
 
-        self.button_box = QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.Cancel)
+        self.button_box = QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.StandardButton.Cancel)
         self.button_box.rejected.connect(self.reject)
 
         self.main_layout.addWidget(QtWidgets.QLabel("Press the shortcut you want to bind."))
@@ -102,14 +102,14 @@ class KeyBindingDialog(QtWidgets.QDialog):
     def keyPressEvent(self, event):
         if not event.text().isEmpty():
             keyInt = event.key()
-            if event.modifiers() & QtCore.Qt.ShiftModifier:
-                keyInt += QtCore.Qt.SHIFT
-            if event.modifiers() & QtCore.Qt.AltModifier:
-                keyInt += QtCore.Qt.ALT
-            if event.modifiers() & QtCore.Qt.ControlModifier:
-                keyInt += QtCore.Qt.CTRL
-            if event.modifiers() & QtCore.Qt.MetaModifier:
-                keyInt += QtCore.Qt.META
+            if event.modifiers() & QtCore.Qt.KeyboardModifier.ShiftModifier:
+                keyInt += QtCore.Qt.Modifier.SHIFT
+            if event.modifiers() & QtCore.Qt.KeyboardModifier.AltModifier:
+                keyInt += QtCore.Qt.Modifier.ALT
+            if event.modifiers() & QtCore.Qt.KeyboardModifier.ControlModifier:
+                keyInt += QtCore.Qt.Modifier.CTRL
+            if event.modifiers() & QtCore.Qt.KeyboardModifier.MetaModifier:
+                keyInt += QtCore.Qt.Modifier.META
             self.shortcut = QtGui.QKeySequence(keyInt)
             self.accept()
         else:
@@ -172,10 +172,10 @@ class KeyBindingsTab(QtWidgets.QWidget):
     def restore_defaults(self):
         for i in range(len(self.buttons)):
             self.table.setItem(i, 0, QtWidgets.QTableWidgetItem(self.translate(self.buttons[i])))
-            self.table.item(i, 0).setFlags(QtCore.Qt.NoItemFlags)
+            self.table.item(i, 0).setFlags(QtCore.Qt.ItemFlag.NoItemFlags)
             s = eval('S_.controls.'+self.buttons[i]).toString()
             self.table.setItem(i, 1, QtWidgets.QTableWidgetItem(s))
-            self.table.item(i, 1).setFlags(QtCore.Qt.NoItemFlags | QtCore.Qt.ItemIsEnabled)
+            self.table.item(i, 1).setFlags(QtCore.Qt.ItemFlag.NoItemFlags | QtCore.Qt.ItemFlag.ItemIsEnabled)
 
     def harvest(self):
         graph = self.make_graph()

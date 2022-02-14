@@ -70,7 +70,7 @@ class CreateProjectPage(QtWidgets.QWizardPage):
         else:
             path = ''
         working_directory = str(QtWidgets.QFileDialog.getExistingDirectory(self, "Select project folder",
-                                                                       path, QtWidgets.QFileDialog.ShowDirsOnly))
+                                                                       path, QtWidgets.QFileDialog.Option.ShowDirsOnly))
         if working_directory:
             S_.temp.last_wd_path = os.path.dirname(working_directory)
             tentative_name = working_directory.split('/')[-1]

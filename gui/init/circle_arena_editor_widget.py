@@ -133,7 +133,7 @@ class CircleArenaEditorWidget(QtWidgets.QWizardPage):
 
         y, x, r = self.give_me_best_circle()
 
-        brush = QtGui.QBrush(QtCore.Qt.SolidPattern)
+        brush = QtGui.QBrush(QtCore.Qt.BrushStyle.SolidPattern)
         brush.setColor(QtGui.QColor(0xff,0,0,0xaa))
         self.c_center = ArenaMark(self.arena_ellipse, self.update_circle_labels, radius=self.arena_mark_size)
         self.c_center.setBrush(brush)

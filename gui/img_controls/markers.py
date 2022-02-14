@@ -12,9 +12,9 @@ class BaseMarker(QtWidgets.QGraphicsEllipseItem, object):
     def __init__(self, x, y, size, color, antId, changeHandler=None):
         super(BaseMarker, self).__init__(x, y, size)
         if size is not None: size.addItem(self)
-        self.setFlag(QtWidgets.QGraphicsItem.ItemIsMovable, True)
-        self.setFlag(QtWidgets.QGraphicsItem.ItemIsSelectable, True)
-        brush = QtGui.QBrush(QtCore.Qt.SolidPattern)
+        self.setFlag(QtWidgets.QGraphicsItem.GraphicsItemFlag.ItemIsMovable, True)
+        self.setFlag(QtWidgets.QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, True)
+        brush = QtGui.QBrush(QtCore.Qt.BrushStyle.SolidPattern)
         brush.setColor(color)
         self.setBrush(brush)
         self.setFlag(self.ItemSendsGeometryChanges, True)
@@ -38,7 +38,7 @@ class BaseMarker(QtWidgets.QGraphicsEllipseItem, object):
         self.dot = QtWidgets.QGraphicsEllipseItem(self.rect().center().x() - dotsize/2, self.rect().center().y() - dotsize/2, dotsize, dotsize, self)
         self.dot.setBrush(brush)
         # self.dot.setPen(pen)
-        self.dot.setFlag(QtWidgets.QGraphicsItem.ItemIgnoresParentOpacity, True)
+        self.dot.setFlag(QtWidgets.QGraphicsItem.GraphicsItemFlag.ItemIgnoresParentOpacity, True)
         self.dot.setOpacity(0)
 
         self.setOpacity(S_.visualization.basic_marker_opacity)
@@ -56,7 +56,7 @@ class BaseMarker(QtWidgets.QGraphicsEllipseItem, object):
             self.changeHandler(self.antId)
 
     def itemChange(self, change, value):
-        if change == QtWidgets.QGraphicsItem.ItemPositionHasChanged:
+        if change == QtWidgets.QGraphicsItem.GraphicsItemChange.ItemPositionHasChanged:
             self.recently_changed = True
         return super(BaseMarker, self).itemChange(change, value)
 
@@ -88,7 +88,7 @@ class CenterMarker(BaseMarker):
     def mouseMoveEvent(self, event):
         super(CenterMarker, self).mouseMoveEvent(event)
         if (self.head_marker is not None) and (self.tail_marker is not None):
-            if event.modifiers() == QtCore.Qt.ControlModifier:
+            if event.modifiers() == QtCore.Qt.KeyboardModifier.ControlModifier:
                 dx = event.pos().x() - event.lastPos().x()
                 dy = event.pos().y() - event.lastPos().y()
                 self.head_marker.setCenterPos(self.head_marker.centerPos().x() + dx, self.head_marker.centerPos().y() + dy)
@@ -117,7 +117,7 @@ class TailHeadMarker(BaseMarker, object):
     def mouseMoveEvent(self, event):
         super(TailHeadMarker, self).mouseMoveEvent(event)
         if (self.center_marker is not None) and (self.other_marker is not None):
-            if event.modifiers() == QtCore.Qt.ControlModifier:
+            if event.modifiers() == QtCore.Qt.KeyboardModifier.ControlModifier:
                 x_dist = self.center_marker.centerPos().x() - self.centerPos().x()
                 y_dist = self.center_marker.centerPos().y() - self.centerPos().y()
                 self.other_marker.setCenterPos(self.center_marker.centerPos().x() + x_dist, self.center_marker.centerPos().y() + y_dist)
@@ -135,10 +135,10 @@ class HeadMarker(TailHeadMarker):
 
         dotsize = float(size)/2
         self.head_circle = QtWidgets.QGraphicsEllipseItem(self.rect().center().x() - dotsize/2, self.rect().center().y() - dotsize/2, dotsize, dotsize, self)
-        brush = QtGui.QBrush(QtCore.Qt.SolidPattern)
+        brush = QtGui.QBrush(QtCore.Qt.BrushStyle.SolidPattern)
         brush.setColor(QtGui.QColor(r, g, b))
         self.head_circle.setBrush(brush)
-        self.head_circle.setPen(QtGui.QPen(QtCore.Qt.NoPen))
+        self.head_circle.setPen(QtGui.QPen(QtCore.Qt.PenStyle.NoPen))
 
 
 class TailMarker(TailHeadMarker):

@@ -232,11 +232,11 @@ class CollisionEditor(QtWidgets.QMainWindow):
         width = point_two.x() - point_one.x()
         height = point_two.y() - point_one.y()
         pen = QtGui.QPen()
-        pen.setStyle(QtCore.Qt.DashDotLine)
+        pen.setStyle(QtCore.Qt.PenStyle.DashDotLine)
         pen.setWidth(settings.value('square_line_width', settings_dialog.get_default('square_line_width'), int))
         pen.setColor(settings.value('position_square_color', settings_dialog.get_default('position_square_color'), QtGui.QColor))
         brush = QtGui.QBrush()
-        brush.setStyle(QtCore.Qt.NoBrush)
+        brush.setStyle(QtCore.Qt.BrushStyle.NoBrush)
         self.pos_marker = QtWidgets.QGraphicsRectItem(0, 0, width, height)
         self.pos_marker.setPos(point_one)
         self.pos_marker.setBrush(brush)
@@ -248,17 +248,17 @@ class CollisionEditor(QtWidgets.QMainWindow):
         settings = QtCore.QSettings("Background corrector")
 
         pen = QtGui.QPen()
-        pen.setStyle(QtCore.Qt.DashDotLine)
+        pen.setStyle(QtCore.Qt.PenStyle.DashDotLine)
         pen.setWidth(settings.value('square_line_width', settings_dialog.get_default('square_line_width'), int))
         pen.setColor(settings.value('copy_square_color', settings_dialog.get_default('copy_square_color'), QtGui.QColor))
         brush = QtGui.QBrush()
-        brush.setStyle(QtCore.Qt.NoBrush)
+        brush.setStyle(QtCore.Qt.BrushStyle.NoBrush)
         self.copy_marker = QtWidgets.QGraphicsRectItem(0, 0, width, height)
         self.copy_marker.setPos(x, y)
         self.copy_marker.setBrush(brush)
         self.copy_marker.setPen(pen)
         self.copy_marker.setZValue(.6)
-        self.copy_marker.setFlag(QtWidgets.QGraphicsItem.ItemIsMovable, True)
+        self.copy_marker.setFlag(QtWidgets.QGraphicsItem.GraphicsItemFlag.ItemIsMovable, True)
         self.scene.addItem(self.copy_marker)
 
     def remove_pos_marker(self):
@@ -347,7 +347,7 @@ class CollisionEditor(QtWidgets.QMainWindow):
             im_height = r['roi_br'][1] - r['roi_tl'][1] + 2 * self.pix_map_offset
 
         ImageQt.QImage()
-        img_q = ImageQt.QImage(im_width, im_height, QtGui.QImage.Format_ARGB32)
+        img_q = ImageQt.QImage(im_width, im_height, QtGui.QImage.Format.Format_ARGB32)
         img_q.fill(QtGui.QColor(0, 0, 0, 0).rgba())
 
         for pt in pts:

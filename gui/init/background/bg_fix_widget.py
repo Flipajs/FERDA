@@ -107,7 +107,7 @@ class BgFixWidget(QtWidgets.QWidget):
         self.fix_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key.Key_F))
         self.cancel_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key.Key_Escape))
         self.finish_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key.Key_Enter))
-        self.undo_action.setShortcut(QtGui.QKeySequence.Undo)
+        self.undo_action.setShortcut(QtGui.QKeySequence.StandardKey.Undo)
 
     def init_actions(self):
         self.action_list.append(self.open_action)
@@ -153,7 +153,7 @@ class BgFixWidget(QtWidgets.QWidget):
         #cv2.imread has inexplicable problems with non-ascii paths, so the image loading has to be done like this
 
         img = QtGui.QImage(filename)
-        img = img.convertToFormat(QtGui.QImage.Format_RGB888)
+        img = img.convertToFormat(QtGui.QImage.Format.Format_RGB888)
         img = img.rgbSwapped()
         ptr = img.bits()
         ptr.setsize(img.byteCount())
@@ -186,11 +186,11 @@ class BgFixWidget(QtWidgets.QWidget):
         width = point_two.x() - point_one.x()
         height = point_two.y() - point_one.y()
         pen = QtGui.QPen()
-        pen.setStyle(QtCore.Qt.DashDotLine)
+        pen.setStyle(QtCore.Qt.PenStyle.DashDotLine)
         pen.setWidth(settings.value('square_line_width', settingsdialog.get_default('square_line_width'), int))
         pen.setColor(settings.value('position_square_color', settingsdialog.get_default('position_square_color'), QtGui.QColor))
         brush = QtGui.QBrush()
-        brush.setStyle(QtCore.Qt.NoBrush)
+        brush.setStyle(QtCore.Qt.BrushStyle.NoBrush)
         self.pos_marker = QtWidgets.QGraphicsRectItem(0, 0, width, height)
         self.pos_marker.setPos(point_one)
         self.pos_marker.setBrush(brush)
@@ -202,17 +202,17 @@ class BgFixWidget(QtWidgets.QWidget):
         settings = QtCore.QSettings("Background corrector")
 
         pen = QtGui.QPen()
-        pen.setStyle(QtCore.Qt.DashDotLine)
+        pen.setStyle(QtCore.Qt.PenStyle.DashDotLine)
         pen.setWidth(settings.value('square_line_width', settingsdialog.get_default('square_line_width'), int))
         pen.setColor(settings.value('copy_square_color', settingsdialog.get_default('copy_square_color'), QtGui.QColor))
         brush = QtGui.QBrush()
-        brush.setStyle(QtCore.Qt.NoBrush)
+        brush.setStyle(QtCore.Qt.BrushStyle.NoBrush)
         self.copy_marker = QtWidgets.QGraphicsRectItem(0, 0, width, height)
         self.copy_marker.setPos(x, y)
         self.copy_marker.setBrush(brush)
         self.copy_marker.setPen(pen)
         self.copy_marker.setZValue(.6)
-        self.copy_marker.setFlag(QtWidgets.QGraphicsItem.ItemIsMovable, True)
+        self.copy_marker.setFlag(QtWidgets.QGraphicsItem.GraphicsItemFlag.ItemIsMovable, True)
         self.scene.addItem(self.copy_marker)
 
     def remove_pos_marker(self):

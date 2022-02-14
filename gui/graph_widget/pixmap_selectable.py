@@ -14,7 +14,7 @@ class Pixmap_Selectable(QtWidgets.QGraphicsPixmapItem):
         self.x = self.parent_pixmap.offset().x()
         self.y = self.parent_pixmap.offset().y()
         self.size = size
-        self.setFlags(QtWidgets.QGraphicsItem.ItemIsSelectable)
+        self.setFlags(QtWidgets.QGraphicsItem.GraphicsItemFlag.ItemIsSelectable)
         self.selection_polygon = self.create_selection_polygon()
 
         self.clipped = False
@@ -23,15 +23,15 @@ class Pixmap_Selectable(QtWidgets.QGraphicsPixmapItem):
     def paint(self, QPainter, QStyleOptionGraphicsItem, QWidget_widget = None):
         self.parent_pixmap.paint(QPainter, QStyleOptionGraphicsItem, None)
         if self.isSelected():
-            pen = QtGui.QPen(Qt.black, SELECTION_LINE_WIDTH, Qt.DashLine, Qt.SquareCap, Qt.RoundJoin)
+            pen = QtGui.QPen(Qt.GlobalColor.black, SELECTION_LINE_WIDTH, Qt.PenStyle.DashLine, Qt.PenCapStyle.SquareCap, Qt.HighDpiScaleFactorRoundingPolicy.RoundJoin)
             QPainter.setPen(pen)
             QPainter.drawPolygon(self.selection_polygon)
         elif self.clipped:
-                pen = QtGui.QPen(self.color, SELECTION_LINE_WIDTH + 2, Qt.SolidLine, Qt.SquareCap, Qt.RoundJoin)
+                pen = QtGui.QPen(self.color, SELECTION_LINE_WIDTH + 2, Qt.PenStyle.SolidLine, Qt.PenCapStyle.SquareCap, Qt.HighDpiScaleFactorRoundingPolicy.RoundJoin)
                 QPainter.setPen(pen)
                 QPainter.drawPolygon(self.selection_polygon)
         else:
-            pen = QtGui.QPen(Qt.white, SELECTION_LINE_WIDTH, Qt.SolidLine, Qt.SquareCap, Qt.RoundJoin)
+            pen = QtGui.QPen(Qt.GlobalColor.white, SELECTION_LINE_WIDTH, Qt.PenStyle.SolidLine, Qt.PenCapStyle.SquareCap, Qt.HighDpiScaleFactorRoundingPolicy.RoundJoin)
             QPainter.setPen(pen)
             QPainter.drawPolygon(self.selection_polygon)
 

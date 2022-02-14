@@ -6,8 +6,8 @@ class ArenaMark(QtWidgets.QGraphicsEllipseItem):
         super(ArenaMark, self).__init__(-radius/2, -radius/2, radius)
         if radius is not None: radius.addItem(self)
         self.ellipse = ellipse
-        self.setFlag(QtWidgets.QGraphicsItem.ItemIsMovable, True)
-        self.setFlag(QtWidgets.QGraphicsItem.ItemIsSelectable, True)
+        self.setFlag(QtWidgets.QGraphicsItem.GraphicsItemFlag.ItemIsMovable, True)
+        self.setFlag(QtWidgets.QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, True)
         self.update_labels = update_labels
 
     def mouseMoveEvent(self, e):

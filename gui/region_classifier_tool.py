@@ -195,7 +195,7 @@ class RegionClassifierTool(QtWidgets.QWizardPage):
     def apply_active_features(self):
         mask = np.zeros(len(self.feature_checkboxes), dtype=np.int)
         for i, checkbox in enumerate(self.feature_checkboxes):
-            if checkbox.checkState() == QtCore.Qt.Checked:
+            if checkbox.checkState() == QtCore.Qt.CheckState.Checked:
                 mask[i] = True
         self.clustering.set_active_features(mask)
 

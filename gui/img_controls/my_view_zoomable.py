@@ -19,15 +19,15 @@ class MyViewZoomable(QtWidgets.QGraphicsView):
 
     def mouseDoubleClickEvent(self, QMouseEvent):
         if self.drag:
-            self.setDragMode(QtWidgets.QGraphicsView.NoDrag)
+            self.setDragMode(QtWidgets.QGraphicsView.DragMode.NoDrag)
         else:
-            self.setDragMode(QtWidgets.QGraphicsView.ScrollHandDrag)
+            self.setDragMode(QtWidgets.QGraphicsView.DragMode.ScrollHandDrag)
         self.drag = False if self.drag else True
         self.last_event_go_to = False
 
     def mousePressEvent(self, event):
-        if event.button() == QtCore.Qt.RightButton:
-            gsEvent = QtGui.QMouseEvent(QtCore.QEvent.MouseButtonPress, event.pos(), QtCore.Qt.LeftButton, QtCore.Qt.LeftButton, QtCore.Qt.NoModifier)
+        if event.button() == QtCore.Qt.MouseButton.RightButton:
+            gsEvent = QtGui.QMouseEvent(QtCore.QEvent.Type.MouseButtonPress, event.pos(), QtCore.Qt.MouseButton.LeftButton, QtCore.Qt.MouseButton.LeftButton, QtCore.Qt.KeyboardModifier.NoModifier)
             super(MyViewZoomable, self).mousePressEvent(gsEvent)
         else:
             super(MyViewZoomable, self).mousePressEvent(event)
@@ -45,7 +45,7 @@ class MyViewZoomable(QtWidgets.QGraphicsView):
             super(MyViewZoomable, self).keyPressEvent(event)
 
     def wheelEvent(self, event):
-        if QtWidgets.QApplication.keyboardModifiers() == QtCore.Qt.ControlModifier:
+        if QtWidgets.QApplication.keyboardModifiers() == QtCore.Qt.KeyboardModifier.ControlModifier:
             # if CTRL is pressed while scrolling
             if event.angleDelta().y() > 0:
                 self.zoom(True)
@@ -58,7 +58,7 @@ class MyViewZoomable(QtWidgets.QGraphicsView):
             super(MyViewZoomable, self).wheelEvent(event)
 
     def zoom (self, in_out):
-        self.setTransformationAnchor(QtWidgets.QGraphicsView.AnchorUnderMouse)
+        self.setTransformationAnchor(QtWidgets.QGraphicsView.ViewportAnchor.AnchorUnderMouse)
         m11 = self.transform().m11()
         m22 = self.transform().m22()
         time_line = QtCore.QTimeLine(100, self)
@@ -111,7 +111,7 @@ class MyViewZoomable(QtWidgets.QGraphicsView):
         self.centerOn(point)
 
     # def stretch(self, shrink):
-    #     self.setTransformationAnchor(QtGui.QGraphicsView.AnchorUnderMouse)
+    #     self.setTransformationAnchor(QtGui.QGraphicsView.ViewportAnchor.AnchorUnderMouse)
     #     m11 = self.transform().m11()
     #     m22 = self.transform().m22()
     #     time_line = QtCore.QTimeLine(100, self)

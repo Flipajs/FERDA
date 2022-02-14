@@ -158,15 +158,15 @@ class BlobWidget(QtWidgets.QWidget):
 
         self.layout = QtWidgets.QHBoxLayout()
         self.left_part = QtWidgets.QWidget()
-        self.left_part.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
+        self.left_part.setSizePolicy(QtWidgets.QSizePolicy.Policy.Fixed, QtWidgets.QSizePolicy.Policy.Fixed)
         self.left_part.setLayout(QtWidgets.QVBoxLayout())
-        self.left_part.layout().setAlignment(QtCore.Qt.AlignTop)
+        self.left_part.layout().setAlignment(QtCore.Qt.AlignmentFlag.AlignTop)
 
-        self.slider = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
+        self.slider = QtWidgets.QSlider(QtCore.Qt.Orientation.Horizontal, self)
         self.slider.setRange(0, 100)
         self.slider.setTickInterval(10)
         self.slider.setValue(self.threshold * 100)
-        self.slider.setTickPosition(QtWidgets.QSlider.TicksBelow)
+        self.slider.setTickPosition(QtWidgets.QSlider.TickPosition.TicksBelow)
         self.slider.valueChanged[int].connect(self.set_threshold)
 
         self.roi_tickbox = QtWidgets.QCheckBox("Roi")
@@ -174,9 +174,9 @@ class BlobWidget(QtWidgets.QWidget):
         self.roi_tickbox.toggled.connect(self.toggle_roi)
 
         self.buttons = QtWidgets.QWidget()
-        self.buttons.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Expanding)
+        self.buttons.setSizePolicy(QtWidgets.QSizePolicy.Policy.Fixed, QtWidgets.QSizePolicy.Policy.Expanding)
         self.buttons.setLayout(QtWidgets.QVBoxLayout())
-        self.buttons.layout().setAlignment(QtCore.Qt.AlignBottom)
+        self.buttons.layout().setAlignment(QtCore.Qt.AlignmentFlag.AlignBottom)
         self.next_region_button = QtWidgets.QPushButton('Next Region')
         self.next_region_button.clicked.connect(self.next_region)
 
@@ -400,7 +400,7 @@ class ImgPainter(MyView):
         self.img_pixmap = self.scene.addPixmap(cvimg2qtpixmap(self.img))
         self.roi_pixmap = self.scene.addPixmap(cvimg2qtpixmap(self.img_roi))
 
-        self.fitInView(self.scene.sceneRect(), QtCore.Qt.KeepAspectRatio)
+        self.fitInView(self.scene.sceneRect(), QtCore.Qt.AspectRatioMode.KeepAspectRatio)
 
     def draw_bitmask(self, mask, r=0, g=0, b=0):
         r = np.asarray(mask * r, dtype=np.uint8)
@@ -463,7 +463,7 @@ class ImgPainter(MyView):
 
     def wheelEvent(self, event):
         modifiers = QtWidgets.QApplication.keyboardModifiers()
-        if modifiers != QtCore.Qt.ControlModifier:
+        if modifiers != QtCore.Qt.KeyboardModifier.ControlModifier:
             val = np.sqrt(self.threshold)
             if event.angleDelta().y() > 0:
                 val += 0.01

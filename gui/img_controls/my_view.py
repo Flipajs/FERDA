@@ -31,8 +31,8 @@ class MyView(QtWidgets.QGraphicsView, object):
     def mousePressEvent(self,  event):
         self.last_ = "Click"
         self.event_click_pos = event.pos()
-        if event.button() == QtCore.Qt.RightButton:
-            self.setCursor(QtCore.Qt.ClosedHandCursor)
+        if event.button() == QtCore.Qt.MouseButton.RightButton:
+            self.setCursor(QtCore.Qt.CursorShape.ClosedHandCursor)
             self._drag_pos = event.pos()
             self._isPanning = True
             self.selection_point_one = event.pos()
@@ -54,8 +54,8 @@ class MyView(QtWidgets.QGraphicsView, object):
             super(MyView, self).mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event):
-        if event.button() == QtCore.Qt.RightButton:
-            self.setCursor(QtCore.Qt.ArrowCursor)
+        if event.button() == QtCore.Qt.MouseButton.RightButton:
+            self.setCursor(QtCore.Qt.CursorShape.ArrowCursor)
             self._isPanning = False
         else:
             if self.last_ == "Click":
@@ -87,10 +87,10 @@ class MyView(QtWidgets.QGraphicsView, object):
 
     def wheelEvent(self, event):
         modifiers = QtWidgets.QApplication.keyboardModifiers()
-        if modifiers == QtCore.Qt.ControlModifier:
+        if modifiers == QtCore.Qt.KeyboardModifier.ControlModifier:
             scale_factor = 1.06
 
-            self.setTransformationAnchor(QtWidgets.QGraphicsView.AnchorUnderMouse)
+            self.setTransformationAnchor(QtWidgets.QGraphicsView.ViewportAnchor.AnchorUnderMouse)
 
             m11 = self.transform().m11()
             m22 = self.transform().m22()

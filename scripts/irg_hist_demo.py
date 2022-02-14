@@ -190,7 +190,7 @@ def OnClick(event):
 
 def QImageToCvMat(incomingImage):
     '''  Converts a QImage into an opencv MAT format  '''
-    incomingImage = incomingImage.convertToFormat(QtGui.QImage.Format_RGB32)
+    incomingImage = incomingImage.convertToFormat(QtGui.QImage.Format.Format_RGB32)
 
     width = incomingImage.width()
     height = incomingImage.height()

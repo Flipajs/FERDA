@@ -37,9 +37,9 @@ class SelectableQLabel(QtWidgets.QLabel):
     def mouseMoveEvent(self, event):
         modifiers = QtWidgets.QApplication.keyboardModifiers()
         # mbutt = QtGui.QApplication.mouseButtons()
-        if modifiers == QtCore.Qt.ControlModifier:
+        if modifiers == QtCore.Qt.KeyboardModifier.ControlModifier:
             self.set_selected(True)
-        # elif modifiers == QtCore.Qt.ControlModifier:
+        # elif modifiers == QtCore.Qt.KeyboardModifier.ControlModifier:
         #     self.set_selected(False)
 
     def set_selected(self, selected):
@@ -54,11 +54,11 @@ class SelectableQLabel(QtWidgets.QLabel):
 def set_input_field_bg_valid(input_widget, valid=True):
     palette = QtGui.QPalette()
     if valid:
-        palette.setColor(QtGui.QPalette.Base, QtCore.Qt.white)
+        palette.setColor(QtGui.QPalette.ColorRole.Base, QtCore.Qt.GlobalColor.white)
         # input_widget.setStyleSheet('QLineEdit { background: rgb(255, 0, 0); }')
     else:
         # input_widget.setStyleSheet('QLineEdit { background: rgb(255, 0, 0); }')
-        palette.setColor(QtGui.QPalette.Base, QtCore.Qt.red)
+        palette.setColor(QtGui.QPalette.ColorRole.Base, QtCore.Qt.GlobalColor.red)
     input_widget.setPalette(palette)
 
 
@@ -164,7 +164,7 @@ def get_img_qlabel(pts, img, id, height=100, width=100, filled=False):
 class ClickableQGraphicsPixmapItem(QtWidgets.QGraphicsPixmapItem):
     def __init__(self, pixmap, id_, callback):
         super(ClickableQGraphicsPixmapItem, self).__init__(pixmap)
-        self.setFlag(QtWidgets.QGraphicsItem.ItemIsSelectable, True)
+        self.setFlag(QtWidgets.QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, True)
         self.id_ = id_
         self.callback = callback
 

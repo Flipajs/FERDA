@@ -56,7 +56,7 @@ class EditablePixmap:
         return pix_map
 
     def draw_pts(self, pts):
-        img_q = QImage(self.img_width, self.img_height, QImage.Format_ARGB32)
+        img_q = QImage(self.img_width, self.img_height, QImage.Format.Format_ARGB32)
         img_q.fill(QColor(0, 0, 0, 0).rgba())
 
         for pt in pts:

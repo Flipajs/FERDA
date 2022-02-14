@@ -44,7 +44,7 @@ class CropWidget(QtWidgets.QWidget):
         self.info_widget.setLayout(QtWidgets.QVBoxLayout())
 
         self.info_label = QtWidgets.QLabel()
-        self.info_label.setAlignment(Qt.AlignCenter)
+        self.info_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         stylesheet = "font: 30px"
         self.info_label.setStyleSheet(stylesheet)
         self.button_start = QtWidgets.QPushButton('Start (I)', self)
@@ -62,7 +62,7 @@ class CropWidget(QtWidgets.QWidget):
         self.layout().addWidget(self.info_widget)
 
         self.img_label = QtWidgets.QLabel()
-        self.img_label.setAlignment(Qt.AlignCenter)
+        self.img_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.layout().addWidget(self.img_label)
 
         self.next_frame_action = QtGui.QAction('next_frame', self)

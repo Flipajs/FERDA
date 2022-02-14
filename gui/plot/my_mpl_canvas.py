@@ -22,8 +22,8 @@ class MyMplCanvas(FigureCanvas):
         self.setParent(parent)
 
         FigureCanvas.setSizePolicy(self,
-                                   QtWidgets.QSizePolicy.Expanding,
-                                   QtWidgets.QSizePolicy.Expanding)
+                                   QtWidgets.QSizePolicy.Policy.Expanding,
+                                   QtWidgets.QSizePolicy.Policy.Expanding)
         FigureCanvas.updateGeometry(self)
 
         cid = self.mpl_connect('button_press_event', self.onclick)
@@ -56,8 +56,8 @@ class MyMplCanvas3D(FigureCanvas):
         self.setParent(parent)
 
         FigureCanvas.setSizePolicy(self,
-                                   QtWidgets.QSizePolicy.Expanding,
-                                   QtWidgets.QSizePolicy.Expanding)
+                                   QtWidgets.QSizePolicy.Policy.Expanding,
+                                   QtWidgets.QSizePolicy.Policy.Expanding)
         FigureCanvas.updateGeometry(self)
 
         # cid = self.mpl_connect('button_press_event', self.onclick)

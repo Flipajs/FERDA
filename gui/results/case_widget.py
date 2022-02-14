@@ -164,11 +164,11 @@ class CaseWidget(QtWidgets.QWidget):
         self.v = QtWidgets.QGraphicsView()
         self.scene = MyScene()
 
-        self.edge_pen = QtGui.QPen(QtCore.Qt.SolidLine)
+        self.edge_pen = QtGui.QPen(QtCore.Qt.PenStyle.SolidLine)
         self.edge_pen.setColor(QtGui.QColor(0, 0, 0, 0x16))
         self.edge_pen.setWidth(1)
 
-        self.strong_edge_pen = QtGui.QPen(QtCore.Qt.SolidLine)
+        self.strong_edge_pen = QtGui.QPen(QtCore.Qt.PenStyle.SolidLine)
         self.strong_edge_pen.setColor(QtGui.QColor(0, 255, 0, 0x78))
         self.strong_edge_pen.setWidth(2)
 
@@ -180,15 +180,15 @@ class CaseWidget(QtWidgets.QWidget):
         self.bg_light_stripe_r = QtGui.QColor(212, 250, 255, op)
         self.bg_dark_stripe_r = QtGui.QColor(242, 220, 232, op)
 
-        self.chunk_highlight_pen = QtGui.QPen(QtCore.Qt.DotLine)
+        self.chunk_highlight_pen = QtGui.QPen(QtCore.Qt.PenStyle.DotLine)
         self.chunk_highlight_pen.setColor(QtGui.QColor(255, 0, 0, 0x78))
         self.chunk_highlight_pen.setWidth(2)
 
-        self.grid_pen = QtGui.QPen(QtCore.Qt.SolidLine)
+        self.grid_pen = QtGui.QPen(QtCore.Qt.PenStyle.SolidLine)
         self.grid_pen.setColor(QtGui.QColor(135, 185, 201, 0x86))
         self.grid_pen.setWidth(1)
 
-        self.grid_mark_pen = QtGui.QPen(QtCore.Qt.SolidLine)
+        self.grid_mark_pen = QtGui.QPen(QtCore.Qt.PenStyle.SolidLine)
         self.grid_mark_pen.setColor(QtGui.QColor(0, 0, 0, 0xff))
         self.grid_mark_pen.setWidth(2)
 
@@ -196,7 +196,7 @@ class CaseWidget(QtWidgets.QWidget):
         self.v.setScene(self.scene)
 
         self.scene.clicked.connect(self.scene_clicked)
-        self.v.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        self.v.setSizePolicy(QtWidgets.QSizePolicy.Policy.Expanding, QtWidgets.QSizePolicy.Policy.Expanding)
 
         self.cache_frames()
         self.draw_frames()
@@ -207,7 +207,7 @@ class CaseWidget(QtWidgets.QWidget):
         # self.highlight_node(self.nodes_groups[self.active_col][self.active_row])
         # self.draw_selection_rect()
 
-        self.v.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.v.setContextMenuPolicy(QtCore.Qt.ContextMenuPolicy.CustomContextMenu)
         self.v.customContextMenuRequested[QPoint].connect(self.on_context_menu)
 
         for _, n1, n2 in self.suggested_config:
@@ -313,7 +313,7 @@ class CaseWidget(QtWidgets.QWidget):
 
         self.active_col_it = col_it
         self.scene.addItem(col_it)
-        col_it.setFlag(QtWidgets.QGraphicsItem.ItemIsSelectable, False)
+        col_it.setFlag(QtWidgets.QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, False)
         col_it.setZValue(-1)
 
         row_it = QtWidgets.QGraphicsRectItem(self.left_margin - self.node_size / 2,
@@ -324,7 +324,7 @@ class CaseWidget(QtWidgets.QWidget):
 
         self.active_row_it = row_it
         self.scene.addItem(row_it)
-        row_it.setFlag(QtWidgets.QGraphicsItem.ItemIsSelectable, False)
+        row_it.setFlag(QtWidgets.QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, False)
         row_it.setZValue(-1)
 
         n = self.vertices_groups[self.active_col][self.active_row]
@@ -476,11 +476,11 @@ class CaseWidget(QtWidgets.QWidget):
         return n_it
 
     def connect_with_(self):
-        QtWidgets.QApplication.setOverrideCursor(QtCore.Qt.CrossCursor)
+        QtWidgets.QApplication.setOverrideCursor(QtCore.Qt.CursorShape.CrossCursor)
         self.connect_with_active = True
 
     def join_with_(self):
-        QtWidgets.QApplication.setOverrideCursor(QtCore.Qt.CrossCursor)
+        QtWidgets.QApplication.setOverrideCursor(QtCore.Qt.CursorShape.CrossCursor)
         self.join_with_active = True
 
     def highlight_node(self, node):
@@ -488,7 +488,7 @@ class CaseWidget(QtWidgets.QWidget):
 
         self.active_node = node
         it = self.get_node_item(node)
-        it.setFlag(QtWidgets.QGraphicsItem.ItemIsSelectable, True)
+        it.setFlag(QtWidgets.QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, True)
         it.setSelected(True)
         self.v.centerOn(QtCore.QPointF(it.pos().x(), it.pos().y()))
 
@@ -498,7 +498,7 @@ class CaseWidget(QtWidgets.QWidget):
 
         if node:
             it = self.get_node_item(node)
-            it.setFlag(QtWidgets.QGraphicsItem.ItemIsSelectable, False)
+            it.setFlag(QtWidgets.QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, False)
             it.setSelected(False)
             self.active_node = None
 
@@ -533,12 +533,12 @@ class CaseWidget(QtWidgets.QWidget):
 
                 self.parent.confirm_edges([(n1, n2)])
                 self.connect_with_active = False
-                QtWidgets.QApplication.setOverrideCursor(QtCore.Qt.ArrowCursor)
+                QtWidgets.QApplication.setOverrideCursor(QtCore.Qt.CursorShape.ArrowCursor)
 
             elif self.join_with_active:
                 self.parent.join_regions(n1, n2)
                 self.join_with_active = False
-                QtWidgets.QApplication.setOverrideCursor(QtCore.Qt.ArrowCursor)
+                QtWidgets.QApplication.setOverrideCursor(QtCore.Qt.CursorShape.ArrowCursor)
 
             else:
                 self.active_row = int(round((it.pos().y() - self.top_margin) / (self.h_ + 0.0)))
@@ -550,7 +550,7 @@ class CaseWidget(QtWidgets.QWidget):
         else:
             self.connect_with_active = False
             self.join_with_active = False
-            QtWidgets.QApplication.setOverrideCursor(QtCore.Qt.ArrowCursor)
+            QtWidgets.QApplication.setOverrideCursor(QtCore.Qt.CursorShape.ArrowCursor)
             # self.active_node = None
 
     def confirm_clicked(self):

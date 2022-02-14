@@ -51,7 +51,7 @@ class ArenaEditor(QtWidgets.QDialog):
         # image to store all progress
         bg_height, bg_width = self.background.shape[:2]
         bg_size = QtCore.QSize(bg_width, bg_height)
-        fmt = QtGui.QImage.Format_ARGB32
+        fmt = QtGui.QImage.Format.Format_ARGB32
         self.paint_image = QtGui.QImage(bg_size, fmt)
         self.paint_image.fill(QtGui.qRgba(0, 0, 0, 0))
         self.paint_pixmap = self.scene.addPixmap(QtGui.QPixmap.fromImage(self.paint_image))
@@ -509,7 +509,7 @@ class ArenaEditor(QtWidgets.QDialog):
             qc = QtGui.QColor(0, 0, 255, 100)
         pen = QtGui.QPen(qc)
         brush.setColor(qc)
-        brush.setStyle(QtCore.Qt.SolidPattern)
+        brush.setStyle(QtCore.Qt.BrushStyle.SolidPattern)
         painter.setBrush(brush)
         painter.setPen(pen)
         painter.drawPolygon(polygon)
@@ -555,7 +555,7 @@ class ArenaEditor(QtWidgets.QDialog):
         """
         bg_height, bg_width = self.background.shape[:2]
         bg_size = QtCore.QSize(bg_width, bg_height)
-        fmt = QtGui.QImage.Format_ARGB32
+        fmt = QtGui.QImage.Format.Format_ARGB32
         result = QtGui.QImage(bg_size, fmt)
         result.fill(QtGui.qRgba(0, 0, 0, 0))
         p = QtGui.QPainter()
@@ -589,12 +589,12 @@ class ArenaEditor(QtWidgets.QDialog):
         ##########################
 
         self.setLayout(QtWidgets.QHBoxLayout())
-        self.layout().setAlignment(QtCore.Qt.AlignBottom)
+        self.layout().setAlignment(QtCore.Qt.AlignmentFlag.AlignBottom)
 
         # left panel widget
         widget = QtWidgets.QWidget()
         widget.setLayout(QtWidgets.QVBoxLayout())
-        widget.layout().setAlignment(QtCore.Qt.AlignTop)
+        widget.layout().setAlignment(QtCore.Qt.AlignmentFlag.AlignTop)
         # set left panel widget width to 300px
         widget.setMaximumWidth(300)
         widget.setMinimumWidth(300)
@@ -660,13 +660,13 @@ class ArenaEditor(QtWidgets.QDialog):
         widget.layout().addWidget(self.circle_label)
 
         # PEN SIZE slider
-        self.slider = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
-        self.slider.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.slider = QtWidgets.QSlider(QtCore.Qt.Orientation.Horizontal, self)
+        self.slider.setFocusPolicy(QtCore.Qt.FocusPolicy.NoFocus)
         self.slider.setGeometry(30, 40, 50, 30)
         self.slider.setRange(3, 50)
         self.slider.setTickInterval(3)
         self.slider.setValue(30)
-        self.slider.setTickPosition(QtWidgets.QSlider.TicksBelow)
+        self.slider.setTickPosition(QtWidgets.QSlider.TickPosition.TicksBelow)
         self.slider.valueChanged[int].connect(self.change_pen_size)
         self.slider.setVisible(False)
         widget.layout().addWidget(self.slider)

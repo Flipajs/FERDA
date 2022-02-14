@@ -20,7 +20,7 @@ class MyView(QtWidgets.QGraphicsView):
         super(MyView, self).mouseMoveEvent(e)
 
         if self.update_callback_move:
-            if (e.buttons() & QtCore.Qt.LeftButton):
+            if (e.buttons() & QtCore.Qt.MouseButton.LeftButton):
                 self.update_callback_move(e)
 
     def setScene(self, scene):
@@ -36,10 +36,10 @@ class MyView(QtWidgets.QGraphicsView):
 
     def wheelEvent(self, event):
         modifiers = QtWidgets.QApplication.keyboardModifiers()
-        if modifiers == QtCore.Qt.ControlModifier:
+        if modifiers == QtCore.Qt.KeyboardModifier.ControlModifier:
             scale_factor = 1.06
 
-            self.setTransformationAnchor(QtWidgets.QGraphicsView.AnchorUnderMouse)
+            self.setTransformationAnchor(QtWidgets.QGraphicsView.ViewportAnchor.AnchorUnderMouse)
 
             m11 = self.transform().m11()
             m22 = self.transform().m22()
@@ -58,7 +58,7 @@ class MyView(QtWidgets.QGraphicsView):
                 self.scale(1.0 / scale_factor, 1.0 / scale_factor)
     #
     # def wheelEvent(self, event):
-    #     if QtGui.QApplication.keyboardModifiers() == QtCore.Qt.ControlModifier:
+    #     if QtGui.QApplication.keyboardModifiers() == QtCore.Qt.KeyboardModifier.ControlModifier:
     #         # if CTRL is pressed while scrolling
     #
     #         # modify scale level (step)
@@ -75,7 +75,7 @@ class MyView(QtWidgets.QGraphicsView):
     #         matrix.scale(self.scale, self.scale)
     #
     #         # center on mouse
-    #         self.setTransformationAnchor(QtGui.QGraphicsView.AnchorUnderMouse)
+    #         self.setTransformationAnchor(QtGui.QGraphicsView.ViewportAnchor.AnchorUnderMouse)
     #
     #         self.setMatrix(matrix)
     #     else:

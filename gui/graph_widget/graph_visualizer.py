@@ -79,7 +79,7 @@ class GraphVisualizer(QtWidgets.QWidget):
         self.view = MyViewZoomable(self)
         self.view.setContentsMargins(0, 0, 0, 0)
         self.view.setMouseTracking(True)
-        self.view.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.view.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.scene = MyScene()
         self.scene_width = 0
         self.view.setScene(self.scene)
@@ -100,7 +100,7 @@ class GraphVisualizer(QtWidgets.QWidget):
         self.chunk_detail_scroll_vertical.hide()
 
         self.load_ind = QtWidgets.QLabel()
-        self.load_ind.setAlignment(QtCore.Qt.AlignCenter)
+        self.load_ind.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
         stylesheet = "font: 18px"
         self.load_ind.setStyleSheet(stylesheet)
         self.layout().addWidget(self.load_ind)
@@ -134,7 +134,7 @@ class GraphVisualizer(QtWidgets.QWidget):
         self.menu_edge.addAction(self.hide_info_menu_action)
         self.menu_edge.addAction(self.show_detail_menu_action)
         self.menu_edge.addAction(self.view_results_menu_action)
-        self.view.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.view.setContextMenuPolicy(QtCore.Qt.ContextMenuPolicy.CustomContextMenu)
         self.view.customContextMenuRequested[QPoint].connect(self.menu)
 
         if len(self.loader.edges) + len(self.loader.regions) > 0:
@@ -185,7 +185,7 @@ class GraphVisualizer(QtWidgets.QWidget):
             pixmap = cvimg2qtpixmap(img)
             label = QtWidgets.QLabel()
             label.setPixmap(pixmap)
-            label.setAlignment(Qt.AlignCenter)
+            label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             widget.layout().addWidget(label)
 
         scroll = self.chunk_detail_scroll_vertical if self.show_vertically else self.chunk_detail_scroll_horizontal
@@ -618,10 +618,10 @@ class GraphVisualizer(QtWidgets.QWidget):
 
     def flash(self):
         self.view.setEnabled(False)
-        self.scene.setForegroundBrush(QtCore.Qt.white)
+        self.scene.setForegroundBrush(QtCore.Qt.GlobalColor.white)
         self.info_manager.remove_info_all()
         self.redraw(self.columns[0].frame, self.columns[len(self.columns) - 1].frame)
-        self.scene.setForegroundBrush(QtCore.Qt.transparent)
+        self.scene.setForegroundBrush(QtCore.Qt.GlobalColor.transparent)
         self.view.setEnabled(True)
 
     def redraw(self, first_frame=None, last_frame=None, columns=True):
@@ -650,8 +650,8 @@ class GraphVisualizer(QtWidgets.QWidget):
         if self.show_vertically:
             width, height = height, width
         rect = QtWidgets.QGraphicsRectItem(QtCore.QRectF(QtCore.QPointF(0, 0), QtCore.QPointF(width, height)))
-        rect.setBrush(QtCore.Qt.transparent)
-        rect.setPen(QtCore.Qt.transparent)
+        rect.setBrush(QtCore.Qt.GlobalColor.transparent)
+        rect.setPen(QtCore.Qt.GlobalColor.transparent)
         self.scene.addItem(rect)
         return rect
 

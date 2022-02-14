@@ -180,7 +180,7 @@ class SegmentationPicker(QtWidgets.QWidget):
         ##########################
 
         self.setLayout(QtWidgets.QHBoxLayout())
-        self.layout().setAlignment(QtCore.Qt.AlignBottom)
+        self.layout().setAlignment(QtCore.Qt.AlignmentFlag.AlignBottom)
 
         # drawing area
         self.view = painter.Painter(self.image, pen_size=5, undo_len=self.undo_len, paint_name="PINK", paint_r=255, paint_g=0, paint_b=238, paint_a=255, update_callback=self.done)
@@ -189,7 +189,7 @@ class SegmentationPicker(QtWidgets.QWidget):
         # left panel widget
         self.left_panel = QtWidgets.QWidget()
         self.left_panel.setLayout(QtWidgets.QVBoxLayout())
-        self.left_panel.layout().setAlignment(QtCore.Qt.AlignTop)
+        self.left_panel.layout().setAlignment(QtCore.Qt.AlignmentFlag.AlignTop)
         # set left panel widget width to 300px
         self.left_panel.setMaximumWidth(300)
         self.left_panel.setMinimumWidth(300)
@@ -200,13 +200,13 @@ class SegmentationPicker(QtWidgets.QWidget):
         self.left_panel.layout().addWidget(self.pen_label)
 
         # PEN SIZE slider
-        self.slider = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
-        self.slider.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.slider = QtWidgets.QSlider(QtCore.Qt.Orientation.Horizontal, self)
+        self.slider.setFocusPolicy(QtCore.Qt.FocusPolicy.NoFocus)
         self.slider.setGeometry(30, 40, 50, 30)
         self.slider.setRange(2, 30)
         self.slider.setTickInterval(1)
         self.slider.setValue(self.pen_size)
-        self.slider.setTickPosition(QtWidgets.QSlider.TicksBelow)
+        self.slider.setTickPosition(QtWidgets.QSlider.TickPosition.TicksBelow)
         self.slider.valueChanged[int].connect(self.view.set_pen_size)
         self.slider.setVisible(True)
         self.left_panel.layout().addWidget(self.slider)

@@ -63,7 +63,7 @@ class Painter(QtWidgets.QWidget):
         self.w = w
         self.h = h
         bg_size = QtCore.QSize(self.w, self.h)
-        fmt = QtGui.QImage.Format_ARGB32
+        fmt = QtGui.QImage.Format.Format_ARGB32
         overlay_image = QtGui.QImage(bg_size, fmt)
         overlay_image.fill(QtGui.qRgba(0, 0, 0, 0))
         self.overlay_pixmap = self.scene.addPixmap(QtGui.QPixmap.fromImage(overlay_image))
@@ -320,7 +320,7 @@ class Painter(QtWidgets.QWidget):
         ##########################
 
         self.setLayout(QtWidgets.QHBoxLayout())
-        self.layout().setAlignment(QtCore.Qt.AlignBottom)
+        self.layout().setAlignment(QtCore.Qt.AlignmentFlag.AlignBottom)
 
         # UNDO key shortcut
         self.action_undo = QtGui.QAction('undo', self)
@@ -352,14 +352,14 @@ def numpy2qimage(image):
         return image
     height, width, channels = image.shape
     bytesPerLine = channels * width
-    return QtGui.QImage(image.data, width, height, bytesPerLine, QtGui.QImage.Format_RGB888)
+    return QtGui.QImage(image.data, width, height, bytesPerLine, QtGui.QImage.Format.Format_RGB888)
 
 def rgba2qimage(image):
     if type(image) == QtGui.QImage:
         return image
     height, width, channels = image.shape
     bytesPerLine = channels * width
-    return QtGui.QImage(image.data, width, height, bytesPerLine, QtGui.QImage.Format_ARGB32)
+    return QtGui.QImage(image.data, width, height, bytesPerLine, QtGui.QImage.Format.Format_ARGB32)
 
 
 def mask2qimage(mask, color):

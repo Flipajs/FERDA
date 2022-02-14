@@ -32,7 +32,7 @@ class LandingTab(QtWidgets.QWidget):
 
     def show_new_project_wizard(self):
         wizard = NewProjectWizard(self)
-        if wizard.exec_() == QtWidgets.QDialog.Accepted:
+        if wizard.exec_() == QtWidgets.QDialog.DialogCode.Accepted:
             self.project_ready.emit(wizard.project)
 
     def show_settings_dialog(self):
@@ -60,7 +60,7 @@ class LandingTab(QtWidgets.QWidget):
                              regions_optional=True, graph_optional=True, tracklets_optional=True)
                 break
             except ProjectNotFoundError as e:
-                QtWidgets.QMessageBox.critical(self, 'No project found!', str(e), QtWidgets.QMessageBox.Ok)
+                QtWidgets.QMessageBox.critical(self, 'No project found!', str(e), QtWidgets.QMessageBox.StandardButton.Ok)
                 return
             except VideoFileError:
                 video_file = str(QtWidgets.QFileDialog.getOpenFileName(
@@ -92,12 +92,12 @@ class MainTabWidget(QtWidgets.QWidget):
 
         # # TODO: takes too much space
         # self.undock_button = QtGui.QPushButton("Undock")
-        # self.undock_button.setSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Minimum)
+        # self.undock_button.setSizePolicy(QtGui.QSizePolicy.Policy.Minimum, QtGui.QSizePolicy.Policy.Minimum)
         # self.undock_button.pressed.connect(self.detach_tab)
         # self.buttons = QtGui.QWidget()
         # self.buttons.setLayout(QtGui.QHBoxLayout())
         # spacer = QtGui.QWidget()
-        # spacer.setSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
+        # spacer.setSizePolicy(QtGui.QSizePolicy.Policy.Expanding, QtGui.QSizePolicy.Policy.Minimum)
         # self.buttons.layout().addWidget(spacer)
         # self.buttons.layout().addWidget(self.undock_button)
         # self.undock_button.setFixedHeight(30)
@@ -301,16 +301,16 @@ class DetachedWindow(QtWidgets.QMainWindow):
         content.setLayout(QtWidgets.QVBoxLayout())
         self.dock_widget = QtWidgets.QWidget()
         dock_button = QtWidgets.QPushButton("Dock")
-        dock_button.setSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum)
+        dock_button.setSizePolicy(QtWidgets.QSizePolicy.Policy.Minimum, QtWidgets.QSizePolicy.Policy.Minimum)
         dock_button.pressed.connect(self.close)
         self.dock_widget.setLayout(QtWidgets.QHBoxLayout())
         spacer = QtWidgets.QWidget()
-        spacer.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        spacer.setSizePolicy(QtWidgets.QSizePolicy.Policy.Expanding, QtWidgets.QSizePolicy.Policy.Minimum)
         self.dock_widget.layout().addWidget(spacer)
         self.dock_widget.layout().addWidget(dock_button)
         self.widget_callback = widget_callback
         self.number = number
-        self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
+        self.setAttribute(QtCore.Qt.WindowType.WindowType.WidgetAttribute.WA_DeleteOnClose)
         self.setWindowTitle(self.widget_callback.tab_names[number])
         content.layout().addWidget(widget)
         content.layout().addWidget(self.dock_widget)

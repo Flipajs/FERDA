@@ -45,7 +45,7 @@ class ImgSequenceWidget(QtWidgets.QWidget):
         self.scroll_area_content_vlayout.setContentsMargins(0, 0, 0, 0)
 
         self.grid = QtWidgets.QGridLayout()
-        self.grid.setSizeConstraint(QtWidgets.QLayout.SetNoConstraint)
+        self.grid.setSizeConstraint(QtWidgets.QLayout.SizeConstraint.SetNoConstraint)
         self.grid.setSpacing(1)
 
         self.scroll_area_content_vlayout.addLayout(self.grid)

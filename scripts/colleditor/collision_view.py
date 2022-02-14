@@ -27,7 +27,7 @@ class CollisionView(MyView):
         self.drawing = not self.drawing
 
         if self.drawing:
-            QtWidgets.QApplication.setOverrideCursor(QtGui.QCursor(Qt.CrossCursor))
+            QtWidgets.QApplication.setOverrideCursor(QtGui.QCursor(Qt.CursorShape.CrossCursor))
             self.drawing_handler = drawing_handler
         else:
             QtWidgets.QApplication.restoreOverrideCursor()
@@ -49,8 +49,8 @@ class CollisionView(MyView):
     def draw(self, event, pts):
         modifiers = QtWidgets.QApplication.keyboardModifiers()
 
-        if event.buttons() == Qt.LeftButton:
-            if modifiers == QtCore.Qt.ControlModifier:
+        if event.buttons() == Qt.MouseButton.LeftButton:
+            if modifiers == QtCore.Qt.KeyboardModifier.ControlModifier:
                 self.drawing_handler(pts, True)
             else:
                 self.drawing_handler(pts)

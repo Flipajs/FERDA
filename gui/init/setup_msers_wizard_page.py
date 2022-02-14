@@ -76,7 +76,7 @@ class SetupMSERsWizardPage(QtWidgets.QWizardPage):
         left_scroll.setMaximumWidth(450)
         left_scroll.setMinimumWidth(200)
 
-        form_row_wrap_policy = QtWidgets.QFormLayout.WrapLongRows  # WrapAllRows
+        form_row_wrap_policy = QtWidgets.QFormLayout.RowWrapPolicy.WrapLongRows  # WrapAllRows
 
         self.form_panel = QtWidgets.QFormLayout()
         self.form_panel.setRowWrapPolicy(form_row_wrap_policy)
@@ -218,8 +218,8 @@ class SetupMSERsWizardPage(QtWidgets.QWizardPage):
 
         c = QtGui.QColor(167, 255, 36)
         it = markers.CenterMarker(0, 0, 2*radius, c, 0, None)
-        it.setFlag(QtWidgets.QGraphicsItem.ItemIsMovable, False)
-        it.setFlag(QtWidgets.QGraphicsItem.ItemIsSelectable, False)
+        it.setFlag(QtWidgets.QGraphicsItem.GraphicsItemFlag.ItemIsMovable, False)
+        it.setFlag(QtWidgets.QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, False)
         it.setOpacity(0.2)
 
         text = QtWidgets.QGraphicsTextItem()
@@ -239,7 +239,7 @@ class SetupMSERsWizardPage(QtWidgets.QWizardPage):
         :return: None
         """
         # start loading cursor animation
-        QtWidgets.QApplication.setOverrideCursor(QtGui.QCursor(QtCore.Qt.WaitCursor))
+        QtWidgets.QApplication.setOverrideCursor(QtGui.QCursor(QtCore.Qt.CursorShape.WaitCursor))
 
         # get working image
         # TODO: update project settings to contain "use_segmentation_image"
@@ -287,7 +287,7 @@ class SetupMSERsWizardPage(QtWidgets.QWizardPage):
         """
 
         # start cursor animation
-        QtWidgets.QApplication.setOverrideCursor(QtGui.QCursor(QtCore.Qt.WaitCursor))
+        QtWidgets.QApplication.setOverrideCursor(QtGui.QCursor(QtCore.Qt.CursorShape.WaitCursor))
 
         # get painted data masks from painter
         result = self.painter.get_result()
@@ -301,7 +301,7 @@ class SetupMSERsWizardPage(QtWidgets.QWizardPage):
         QtWidgets.QApplication.restoreOverrideCursor()
 
     def update_img(self):
-        QtWidgets.QApplication.setOverrideCursor(QtGui.QCursor(QtCore.Qt.WaitCursor))
+        QtWidgets.QApplication.setOverrideCursor(QtGui.QCursor(QtCore.Qt.CursorShape.WaitCursor))
 
         if self.use_segmentation_:
             t = time.time()
@@ -679,13 +679,13 @@ class SetupMSERsWizardPage(QtWidgets.QWizardPage):
 
     def configure_paint_panel(self):
         # PEN SIZE slider
-        self.slider = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
-        self.slider.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.slider = QtWidgets.QSlider(QtCore.Qt.Orientation.Horizontal, self)
+        self.slider.setFocusPolicy(QtCore.Qt.FocusPolicy.NoFocus)
         self.slider.setGeometry(30, 40, 50, 30)
         self.slider.setRange(2, 30)
         self.slider.setTickInterval(1)
         self.slider.setValue(self.pen_size)
-        self.slider.setTickPosition(QtWidgets.QSlider.TicksBelow)
+        self.slider.setTickPosition(QtWidgets.QSlider.TickPosition.TicksBelow)
         self.slider.valueChanged[int].connect(self.painter.set_pen_size)
         self.slider.setVisible(True)
         self.gb_pixel_classifier.layout().addRow(self.slider)

@@ -3,7 +3,6 @@ import pickle as pickle
 from functools import partial
 import numpy as np
 from PyQt6 import QtCore, QtGui, QtWidgets
-from pyqtgraph import makeQImage
 from tqdm import tqdm
 import warnings
 import os
@@ -486,9 +485,9 @@ class ResultsWidget(QtWidgets.QWidget):
     def reset_chunk_ids(self):
         msg = "Do you really want to delete all assigned ids to chunks?"
         reply = QtWidgets.QMessageBox.question(self, 'Message',
-                                           msg, QtWidgets.QMessageBox.Yes, QtWidgets.QMessageBox.No)
+                                           msg, QtWidgets.QMessageBox.StandardButton.Yes, QtWidgets.QMessageBox.StandardButton.No)
 
-        if reply == QtWidgets.QMessageBox.Yes:
+        if reply == QtWidgets.QMessageBox.StandardButton.Yes:
             for ch in self.project.chm.chunk_gen():
                 ch.P = set()
                 ch.N = set()
@@ -747,7 +746,7 @@ class ResultsWidget(QtWidgets.QWidget):
             b = 17
 
             item = QtWidgets.QGraphicsEllipseItem(-a/2, -b/2, a, b)
-            brush = QtGui.QBrush(QtCore.Qt.SolidPattern)
+            brush = QtGui.QBrush(QtCore.Qt.BrushStyle.SolidPattern)
 
             opacity = 0.5
             if len(tracklet.P):
@@ -787,7 +786,7 @@ class ResultsWidget(QtWidgets.QWidget):
 
         offset = roi.top_left_corner()
 
-        # qim_ = QtGui.QImage(roi.width(), roi.height(), QtGui.QImage.Format_ARGB32)
+        # qim_ = QtGui.QImage(roi.width(), roi.height(), QtGui.QImage.Format.Format_ARGB32)
         # qim_.fill(QtGui.qRgba(0, 0, 0, 0))
 
         step = 1
@@ -1222,7 +1221,7 @@ class ResultsWidget(QtWidgets.QWidget):
 
                 w = 10
                 item = QtWidgets.QGraphicsRectItem(0, 0, w, w)
-                brush = QtGui.QBrush(QtCore.Qt.SolidPattern)
+                brush = QtGui.QBrush(QtCore.Qt.BrushStyle.SolidPattern)
                 brush.setColor(c_)
                 item.setBrush(brush)
                 item.setOpacity(0.8)
@@ -1307,7 +1306,7 @@ class ResultsWidget(QtWidgets.QWidget):
         reg = rch.region_in_t(frame)
         item.setPos(reg.centroid()[1], reg.centroid()[0])
         item.setZValue(0.9)
-        item.setFlags(QtWidgets.QGraphicsItem.ItemIsMovable)
+        item.setFlags(QtWidgets.QGraphicsItem.GraphicsItemFlag.ItemIsMovable)
 
         return item
 
@@ -1791,7 +1790,7 @@ class ResultsWidget(QtWidgets.QWidget):
     def QImageToCvMat(self, incomingImage):
         '''  Converts a QImage into an opencv MAT format  '''
 
-        incomingImage = incomingImage.convertToFormat(QtGui.QImage.Format_RGB32)
+        incomingImage = incomingImage.convertToFormat(QtGui.QImage.Format.Format_RGB32)
 
         width = incomingImage.width()
         height = incomingImage.height()
@@ -1816,7 +1815,7 @@ class ResultsWidget(QtWidgets.QWidget):
 
         self.video_player.goto(start)
 
-        # qim_ = QtGui.QImage(1000, 1102, QtGui.QImage.Format_RGB32)
+        # qim_ = QtGui.QImage(1000, 1102, QtGui.QImage.Format.Format_RGB32)
 
         # painter = QtGui.QPainter(pixmap)
         # self.video_player._scene.render(painter)
@@ -1824,9 +1823,9 @@ class ResultsWidget(QtWidgets.QWidget):
 
         # del painter
         for i in range(end-start):
-            # qim_ = QtGui.QImage(2022, 1080, QtGui.QImage.Format_RGB32)
-            # qim_ = QtGui.QImage(1102, 1000, QtGui.QImage.Format_RGB32)
-            qim_ = QtGui.QImage(1102, 732, QtGui.QImage.Format_RGB32)
+            # qim_ = QtGui.QImage(2022, 1080, QtGui.QImage.Format.Format_RGB32)
+            # qim_ = QtGui.QImage(1102, 1000, QtGui.QImage.Format.Format_RGB32)
+            qim_ = QtGui.QImage(1102, 732, QtGui.QImage.Format.Format_RGB32)
             qim_.fill(QtGui.qRgba(0, 0, 0, 0))
             pixmap = QtGui.QPixmap.fromImage(qim_)
 
@@ -1921,7 +1920,7 @@ class ResultsWidget(QtWidgets.QWidget):
                     val = hist_query(H, edges, desc)
                     data[i, j] = val
 
-            qim_ = QtGui.QImage(w_, h_, QtGui.QImage.Format_ARGB32)
+            qim_ = QtGui.QImage(w_, h_, QtGui.QImage.Format.Format_ARGB32)
             qim_.fill(QtGui.qRgba(0, 0, 0, 0))
 
             if data.max() == 0:
@@ -1948,7 +1947,7 @@ class ResultsWidget(QtWidgets.QWidget):
             # end = QtCore.QPointF(r2.centroid()[0], r2.centroid()[1])
             # item2 = QtGui.QGraphicsLineItem(QtCore.QLineF(start, end))
             item2 = QtWidgets.QGraphicsLineItem(r1.centroid()[1], r1.centroid()[0], r2.centroid()[1], r2.centroid()[0])
-            pen = QtGui.QPen(QtGui.QColor(250, 255, 0, 255), 2, QtCore.Qt.SolidLine)
+            pen = QtGui.QPen(QtGui.QColor(250, 255, 0, 255), 2, QtCore.Qt.PenStyle.SolidLine)
             item2.setPen(pen)
             item2.setZValue(0.99)
             self.video_player.visualise_temp(item2)

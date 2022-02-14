@@ -71,7 +71,7 @@ class DiffTest(QtWidgets.QWidget):
         ##########################
 
         self.setLayout(QtWidgets.QHBoxLayout())
-        self.layout().setAlignment(QtCore.Qt.AlignBottom)
+        self.layout().setAlignment(QtCore.Qt.AlignmentFlag.AlignBottom)
 
         # drawing area
         self.view1 = painter.Painter(self.image, paint_name="PINK", paint_r=255, paint_g=0, paint_b=238, paint_a=255)
@@ -80,29 +80,29 @@ class DiffTest(QtWidgets.QWidget):
         # left panel widget
         self.left_panel = QtWidgets.QWidget()
         self.left_panel.setLayout(QtWidgets.QVBoxLayout())
-        self.left_panel.layout().setAlignment(QtCore.Qt.AlignTop)
+        self.left_panel.layout().setAlignment(QtCore.Qt.AlignmentFlag.AlignTop)
         # set left panel widget width to 300px
         self.left_panel.setMaximumWidth(300)
         self.left_panel.setMinimumWidth(300)
 
-        self.slider1 = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
-        self.slider1.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.slider1 = QtWidgets.QSlider(QtCore.Qt.Orientation.Horizontal, self)
+        self.slider1.setFocusPolicy(QtCore.Qt.FocusPolicy.NoFocus)
         self.slider1.setGeometry(30, 40, 50, 30)
         self.slider1.setRange(0, 50)
         self.slider1.setTickInterval(2)
         self.slider1.setValue(self.shift_x)
-        self.slider1.setTickPosition(QtWidgets.QSlider.TicksBelow)
+        self.slider1.setTickPosition(QtWidgets.QSlider.TickPosition.TicksBelow)
         self.slider1.valueChanged[int].connect(self.slide1)
         self.slider1.setVisible(True)
         self.left_panel.layout().addWidget(self.slider1)
 
-        self.slider2 = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
-        self.slider2.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.slider2 = QtWidgets.QSlider(QtCore.Qt.Orientation.Horizontal, self)
+        self.slider2.setFocusPolicy(QtCore.Qt.FocusPolicy.NoFocus)
         self.slider2.setGeometry(30, 40, 50, 30)
         self.slider2.setRange(0, 50)
         self.slider2.setTickInterval(2)
         self.slider2.setValue(self.shift_y)
-        self.slider2.setTickPosition(QtWidgets.QSlider.TicksBelow)
+        self.slider2.setTickPosition(QtWidgets.QSlider.TickPosition.TicksBelow)
         self.slider2.valueChanged[int].connect(self.slide2)
         self.slider2.setVisible(True)
         self.left_panel.layout().addWidget(self.slider2)

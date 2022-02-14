@@ -87,7 +87,7 @@ class NewRegionWidget(QtWidgets.QWidget):
 
         elif self.put_colormark_active_state > -1:
             if self.put_colormark_active_state == 0:
-                if modifiers == QtCore.Qt.ControlModifier:
+                if modifiers == QtCore.Qt.KeyboardModifier.ControlModifier:
                     self.put_colormark_active_state += 1
 
                     self.scene_marks[self.active_id]['c_center'].setPos(pos.x(), pos.y())
@@ -99,7 +99,7 @@ class NewRegionWidget(QtWidgets.QWidget):
 
                     self.scene_marks[self.active_id]['c_circle'].update_geometry()
 
-        if modifiers == QtCore.Qt.ControlModifier and self.put_colormark_active_state < 0:
+        if modifiers == QtCore.Qt.KeyboardModifier.ControlModifier and self.put_colormark_active_state < 0:
             if not self.put_mark_active and len(self.scene_marks) == 0:
                 self.put_mark_active = True
 
@@ -134,7 +134,7 @@ class NewRegionWidget(QtWidgets.QWidget):
     def get_new_scene_marks(self):
         marks = {}
 
-        brush = QtGui.QBrush(QtCore.Qt.SolidPattern)
+        brush = QtGui.QBrush(QtCore.Qt.BrushStyle.SolidPattern)
         brush.setColor(QtGui.QColor(0,0xff,0,0x11))
 
         marks['circle'] = Circle(self.active_id)

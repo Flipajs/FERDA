@@ -25,16 +25,16 @@ class QCustomTableWidgetItem (QtWidgets.QTableWidgetItem):
     def __lt__ (self, other):
         if (isinstance(other, QCustomTableWidgetItem)):
             try:
-                s1 = self.data(QtCore.Qt.EditRole).toString()
+                s1 = self.data(QtCore.Qt.ItemDataRole.EditRole).toString()
                 s1 = s1[:-1] if s1[-1] == '%' else s1
 
-                s2 = other.data(QtCore.Qt.EditRole).toString()
+                s2 = other.data(QtCore.Qt.ItemDataRole.EditRole).toString()
                 s2 = s2[:-1] if s2[-1] == '%' else s2
                 selfDataValue  = float(s1)
                 otherDataValue = float(s2)
                 return selfDataValue < otherDataValue
             except:
-                return self.data(QtCore.Qt.EditRole).toString() < other.data(QtCore.Qt.EditRole).toString()
+                return self.data(QtCore.Qt.ItemDataRole.EditRole).toString() < other.data(QtCore.Qt.ItemDataRole.EditRole).toString()
         else:
             return QtWidgets.QTableWidgetItem.__lt__(self, other)
 
@@ -57,7 +57,7 @@ class Filter(QtCore.QObject):
     
     def eventFilter(self, widget, event):
         # FocusOut event
-        if event.type() == QtCore.QEvent.FocusOut:
+        if event.type() == QtCore.QEvent.Type.FocusOut:
             # do custom stuff
             self.callback(int(self.line_edit.text()))
             # return False so that the widget will also handle the event
@@ -472,19 +472,19 @@ class LearningWidget(QtWidgets.QWidget):
                     t = self.project.chm[t_id]
 
                     item = it()
-                    item.setData(QtCore.Qt.EditRole, t.id())
+                    item.setData(QtCore.Qt.ItemDataRole.EditRole, t.id())
                     self.tracklets_table.setItem(i, 0, item)
 
                     item = it()
-                    item.setData(QtCore.Qt.EditRole, t.length())
+                    item.setData(QtCore.Qt.ItemDataRole.EditRole, t.length())
                     self.tracklets_table.setItem(i, 1, item)
 
                     item = it()
-                    item.setData(QtCore.Qt.EditRole, t.start_frame())
+                    item.setData(QtCore.Qt.ItemDataRole.EditRole, t.start_frame())
                     self.tracklets_table.setItem(i, 2, item)
 
                     item = it()
-                    item.setData(QtCore.Qt.EditRole, t.end_frame())
+                    item.setData(QtCore.Qt.ItemDataRole.EditRole, t.end_frame())
                     self.tracklets_table.setItem(i, 3, item)
 
                     self.tracklets_table.setItem(i, 4, QCustomTableWidgetItem(self.__f2str(self.lp.tracklet_certainty[t_id])))
@@ -550,7 +550,7 @@ class LearningWidget(QtWidgets.QWidget):
         if os.path.isdir(S_.temp.last_wd_path):
             path = S_.temp.last_wd_path
 
-        working_directory = str(QtWidgets.QFileDialog.getExistingDirectory(self, "Select working directory", path, QtWidgets.QFileDialog.ShowDirsOnly))
+        working_directory = str(QtWidgets.QFileDialog.getExistingDirectory(self, "Select working directory", path, QtWidgets.QFileDialog.Option.ShowDirsOnly))
         # TODO: load project...
         # self.project = ...
         # TODO: use_feature_cache...
@@ -585,9 +585,9 @@ class LearningWidget(QtWidgets.QWidget):
     def clear_user_decisions(self):
         msg = "Do you really want to delete all USERs decisions?"
         reply = QtWidgets.QMessageBox.question(self, 'Message',
-                                           msg, QtWidgets.QMessageBox.Yes, QtWidgets.QMessageBox.No)
+                                           msg, QtWidgets.QMessageBox.StandardButton.Yes, QtWidgets.QMessageBox.StandardButton.No)
 
-        if reply == QtWidgets.QMessageBox.Yes:
+        if reply == QtWidgets.QMessageBox.StandardButton.Yes:
             self.lp.user_decisions = []
 
         self.update_callback()
