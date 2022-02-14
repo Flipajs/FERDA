@@ -44,7 +44,7 @@ class VideoPlayer(QtWidgets.QWidget):
 
         self.frame_rate = 30
         self.timer = QtCore.QTimer()
-        self.timer.setInterval(1000 / self.frame_rate)
+        self.timer.setInterval(1000 // self.frame_rate)
 
         self._video_controls()
         self._add_actions()
@@ -331,7 +331,7 @@ class VideoPlayer(QtWidgets.QWidget):
     def init_speed_slider(self):
         """Initiates components associated with speed of viewing videos"""
         self.speedSlider.setValue(self.frame_rate)
-        self.timer.setInterval(1000 / self.frame_rate)
+        self.timer.setInterval(1000 // self.frame_rate)
         self.fpsLabel.setText(str(self.frame_rate) + ' fps')
         self.speedSlider.setMinimum(1)
         self.speedSlider.setMaximum(120)
@@ -339,7 +339,7 @@ class VideoPlayer(QtWidgets.QWidget):
     def speed_slider_changed(self):
         """Method invoked when value of slider controlling speed of video changed it's value"""
         self.frame_rate = self.speedSlider.value()
-        self.timer.setInterval(1000 / self.frame_rate)
+        self.timer.setInterval(1000 // self.frame_rate)
         self.fpsLabel.setText(str(self.frame_rate) + ' fps')
 
     def video_slider_changed(self):

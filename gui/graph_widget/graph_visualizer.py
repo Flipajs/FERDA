@@ -2,8 +2,7 @@ import threading
 from PyQt5 import QtCore, QtGui, QtWidgets
 
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QApplication, QLabel, QSizePolicy
-from PyQt5.QtWidgets import QWidget
+from PyQt5.QtWidgets import QWidget, QApplication, QLabel, QSizePolicy
 
 from . import computer as comp
 from gui.graph_widget.control_panel import ControlPanel

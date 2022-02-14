@@ -6,16 +6,17 @@ from gui.plot.plot_utils import line_picker
 from gui.settings import Settings as S_
 from .my_mpl_canvas import *
 from utils.img import DistinguishableColors
+from PyQt5 import QtGui, QtWidgets
 
 
-class PlotChunks(QtGui.QWidget):
+class PlotChunks(QtWidgets.QWidget):
     def __init__(self):
         super(PlotChunks, self).__init__()
 
         self.main_layout = QtGui.QVBoxLayout()
         self.setLayout(self.main_layout)
 
-        self.central_widget = QtGui.QWidget()
+        self.central_widget = QtWidgets.QWidget()
 
         self.p3 = MyMplCanvas3D(self.central_widget, width=5, height=4, dpi=90)
         self.z = 0
