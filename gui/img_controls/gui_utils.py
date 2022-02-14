@@ -1,40 +1,23 @@
 __author__ = 'filip@naiser.cz'
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtGui import QImage
-# import ImageQt
 import math
 import numpy as np
 
 
-def cvimg2qtpixmap(img, transparent=False):
-    if transparent:
-        img_q = QImage(img.data, img.shape[1], img.shape[0], img.shape[1]*3, 13)
-        pix_map = QtGui.QPixmap.fromImage(img_q)
-        # img_q =
-        """
-        bmp = QtGui.QBitmap()
-        bmp.fromImage(img_q.createAlphaMask())
-        pix_map.setMask(bmp)
-        """
-        """
-        qcolor = QtGui.QColor()
-        qcolor.setAlpha(200)
-        pixmap = QtGui.QPixmap.fromImage(img_q.createAlphaMask())
-        pixmap.fill(qcolor)
-        """
-        """
-        for x in range(0,120):
-            for y in range(0,120):
-                c = pix_map.toImage().pixel(x,y)
-                colors = QtGui.QColor(c).getRgbF()
-                print "(%s,%s) = %s" % (x, y, colors)
-        """
-
-        return pix_map
+def cvimg2qimage(img):
+    assert img.ndim == 3
+    img_rgb = np.transpose(img, (1, 0, 2))
+    if img.shape[2] == 3:
+        return QImage(img_rgb.copy(), img_rgb.shape[1], img_rgb.shape[0], QImage.Format.Format_RGB888)
+    elif img.shape[2] == 4:
+        return QImage(img_rgb.copy(), img_rgb.shape[1], img_rgb.shape[0], QImage.Format.Format_RGBA8888)
     else:
-        img_q = QImage(img.data, img.shape[1], img.shape[0], img.shape[1]*3, 13)
-        pix_map = QtGui.QPixmap.fromImage(img_q.rgbSwapped())
-        return pix_map
+        assert False
+
+
+def cvimg2qtpixmap(img):
+    return QtGui.QPixmap.fromImage(cvimg2qimage(img))
 
 
 def view_add_bg_image(g_view, pix_map):
