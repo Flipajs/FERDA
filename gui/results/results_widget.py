@@ -10,6 +10,7 @@ import os
 from core.graph.region_chunk import RegionChunk
 from core.region.region import get_region_endpoints
 from gui.gui_utils import SelectAllLineEdit, ClickableQGraphicsPixmapItem
+from gui.img_controls.gui_utils import cvimg2qtpixmap
 from gui.img_controls import markers
 from gui.qt_flow_layout import FlowLayout
 from gui.settings import Settings as S_
@@ -839,12 +840,7 @@ class ResultsWidget(QtWidgets.QWidget):
         else:
             rgba[pts_[:, 1], pts_[:, 0], :] = c[2], c[1], c[0], c[3]
 
-        # TODO: do other way if possible. This is the only place where pyqtgraph is needed.
-        qim_ = makeQImage(rgba)
-
-        pixmap = QtGui.QPixmap.fromImage(qim_)
-
-        item = ClickableQGraphicsPixmapItem(pixmap, tracklet.id())
+        item = ClickableQGraphicsPixmapItem(cvimg2qtpixmap(rgba), tracklet.id())
         self._highlight_tracklet.addItem(item)
         item.setPos(offset[1], offset[0])
         item.setZValue(0.6)
