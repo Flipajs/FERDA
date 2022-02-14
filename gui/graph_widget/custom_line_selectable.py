@@ -1,7 +1,7 @@
 __author__ = 'simon'
 
-from PyQt4 import QtGui, QtCore
-from PyQt4.QtCore import Qt
+from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5.QtCore import Qt
 import math
 
 SELECTION_OFFSET = 1.5
@@ -10,11 +10,11 @@ LINE_WIDTH = SELECTION_OFFSET * 2
 
 SENSITIVITY_CONSTANT = SELECTION_OFFSET * 2
 
-class Custom_Line_Selectable(QtGui.QGraphicsLineItem):
+class Custom_Line_Selectable(QtWidgets.QGraphicsLineItem):
     def __init__(self, parent_line, style='default'):
         super(Custom_Line_Selectable, self).__init__(parent_line)
         self.parent_line = parent_line
-        self.setFlags(QtGui.QGraphicsItem.ItemIsSelectable)
+        self.setFlags(QtWidgets.QGraphicsItem.ItemIsSelectable)
         self.selection_offset = SELECTION_OFFSET
         self.selection_polygon = self.create_selection_polygon()
         self.pick_polygon = self.create_pick_polygon()

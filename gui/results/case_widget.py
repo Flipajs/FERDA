@@ -4,7 +4,7 @@ from functools import partial
 
 import cv2
 import numpy as np
-from PyQt4 import QtGui, QtCore
+from PyQt5 import QtCore, QtGui, QtWidgets
 from skimage.transform import rescale
 from skimage.transform import resize
 
@@ -16,7 +16,7 @@ from utils.drawing.points import draw_points_crop, draw_points
 from utils.roi import ROI, get_roi
 
 
-class CaseWidget(QtGui.QWidget):
+class CaseWidget(QtWidgets.QWidget):
     def __init__(self, project, vertices_groups, suggested_config, vid, parent_widget, color_assignments=None):
         super(CaseWidget, self).__init__()
 
@@ -98,50 +98,50 @@ class CaseWidget(QtGui.QWidget):
             for _, n1, n2 in self.suggested_config:
                 self.color_assignments[n2] = self.color_assignments[n1]
 
-        self.pop_menu_node = QtGui.QMenu(self)
-        self.action_remove_node = QtGui.QAction('remove', self)
+        self.pop_menu_node = QtWidgets.QMenu(self)
+        self.action_remove_node = QtWidgets.QAction('remove', self)
         self.action_remove_node.triggered.connect(self.remove_node_)
 
-        self.action_partially_confirm = QtGui.QAction('confirm this connection', self)
+        self.action_partially_confirm = QtWidgets.QAction('confirm this connection', self)
         self.action_partially_confirm.triggered.connect(self.parent.partially_confirm)
 
         # self.action_mark_merged = QtGui.QAction('merged', self)
         # self.action_mark_merged.triggered.connect(self.mark_merged)
 
-        self.new_region_t1 = QtGui.QAction('new region t1', self)
+        self.new_region_t1 = QtWidgets.QAction('new region t1', self)
         self.new_region_t1.triggered.connect(partial(self.parent.new_region, 0))
 
-        self.new_region_t2 = QtGui.QAction('new region t2', self)
+        self.new_region_t2 = QtWidgets.QAction('new region t2', self)
         self.new_region_t2.triggered.connect(partial(self.parent.new_region, 1))
 
-        self.connect_with = QtGui.QAction('connect with and confirm', self)
+        self.connect_with = QtWidgets.QAction('connect with and confirm', self)
         self.connect_with.triggered.connect(self.connect_with_)
 
-        self.join_with = QtGui.QAction('join with', self)
+        self.join_with = QtWidgets.QAction('join with', self)
         self.join_with.triggered.connect(self.join_with_)
 
-        self.get_info_action = QtGui.QAction('get info', self)
+        self.get_info_action = QtWidgets.QAction('get info', self)
         self.get_info_action.triggered.connect(self.get_info)
         self.get_info_action.setShortcut(S_.controls.get_info)
         self.addAction(self.get_info_action)
 
         # ARROW KEYS
-        self.row_up = QtGui.QAction('row up', self)
+        self.row_up = QtWidgets.QAction('row up', self)
         self.row_up.triggered.connect(partial(self.row_changed, -1))
         self.row_up.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Up))
         self.addAction(self.row_up)
 
-        self.row_down = QtGui.QAction('row down', self)
+        self.row_down = QtWidgets.QAction('row down', self)
         self.row_down.triggered.connect(partial(self.row_changed, 1))
         self.row_down.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Down))
         self.addAction(self.row_down)
 
-        self.col_left = QtGui.QAction('col left', self)
+        self.col_left = QtWidgets.QAction('col left', self)
         self.col_left.triggered.connect(partial(self.col_changed, -1))
         self.col_left.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Left))
         self.addAction(self.col_left)
 
-        self.col_right = QtGui.QAction('col right', self)
+        self.col_right = QtWidgets.QAction('col right', self)
         self.col_right.triggered.connect(partial(self.col_changed, 1))
         self.col_right.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Right))
         self.addAction(self.col_right)
@@ -160,8 +160,8 @@ class CaseWidget(QtGui.QWidget):
         self.pop_menu_node.addAction(self.join_with)
         self.pop_menu_node.addAction(self.get_info_action)
 
-        self.setLayout(QtGui.QVBoxLayout())
-        self.v = QtGui.QGraphicsView()
+        self.setLayout(QtWidgets.QVBoxLayout())
+        self.v = QtWidgets.QGraphicsView()
         self.scene = MyScene()
 
         self.edge_pen = QtGui.QPen(QtCore.Qt.SolidLine)
@@ -196,7 +196,7 @@ class CaseWidget(QtGui.QWidget):
         self.v.setScene(self.scene)
 
         self.scene.clicked.connect(self.scene_clicked)
-        self.v.setSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
+        self.v.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
 
         self.cache_frames()
         self.draw_frames()
@@ -208,7 +208,7 @@ class CaseWidget(QtGui.QWidget):
         # self.draw_selection_rect()
 
         self.v.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
-        self.connect(self.v, QtCore.SIGNAL('customContextMenuRequested(const QPoint&)'), self.on_context_menu)
+        self.v.customContextMenuRequested[QPoint].connect(self.on_context_menu)
 
         for _, n1, n2 in self.suggested_config:
             if n1 not in self.color_assignments:
@@ -218,7 +218,7 @@ class CaseWidget(QtGui.QWidget):
 
             r1 = self.project.gm.region(n1)
             t = r1.frame_ - self.frame_t
-            line_ = QtGui.QGraphicsLineItem(self.left_margin + self.node_size + self.w_ * t,
+            line_ = QtWidgets.QGraphicsLineItem(self.left_margin + self.node_size + self.w_ * t,
                                             self.top_margin + self.node_positions[n1] * self.h_ + self.h_ / 2,
                                             self.left_margin + self.w_ * (t + 1),
                                             self.top_margin + self.node_positions[n2] * self.h_ + self.h_ / 2)
@@ -282,7 +282,7 @@ class CaseWidget(QtGui.QWidget):
                 if self.project.gm.g.ep['score'][e] == 0 and ch_start_vertex.in_degree() > 1:
                     is_merged = True
 
-        QtGui.QMessageBox.about(self, "My message box",
+        QtWidgets.QMessageBox.about(self, "My message box",
                                 "ID = %i\nArea = %i\nframe=%i\nCentroid = %s\nMargin = %i\n"
                                 "Is virtual: %s\nBest in = %s, (%d)\nBest out = %s (%d)\nChunk info = %s\n"
                                 "Chunk start: %d end: %d\ntest:%s\nnew_s:%f, %f, %f\ntheta: %f\n" %
@@ -306,17 +306,17 @@ class CaseWidget(QtGui.QWidget):
         c = self.active_col
         r = self.active_row
 
-        col_it = QtGui.QGraphicsRectItem(self.left_margin + self.w_ * c - self.node_size / 2,
+        col_it = QtWidgets.QGraphicsRectItem(self.left_margin + self.w_ * c - self.node_size / 2,
                                          self.top_margin, self.w_, self.h_ * self.rows)
         if self.active_col_it:
             self.scene.removeItem(self.active_col_it)
 
         self.active_col_it = col_it
         self.scene.addItem(col_it)
-        col_it.setFlag(QtGui.QGraphicsItem.ItemIsSelectable, False)
+        col_it.setFlag(QtWidgets.QGraphicsItem.ItemIsSelectable, False)
         col_it.setZValue(-1)
 
-        row_it = QtGui.QGraphicsRectItem(self.left_margin - self.node_size / 2,
+        row_it = QtWidgets.QGraphicsRectItem(self.left_margin - self.node_size / 2,
                                          self.top_margin + self.h_ * r, self.w_ * self.cols, self.h_)
 
         if self.active_row_it:
@@ -324,7 +324,7 @@ class CaseWidget(QtGui.QWidget):
 
         self.active_row_it = row_it
         self.scene.addItem(row_it)
-        row_it.setFlag(QtGui.QGraphicsItem.ItemIsSelectable, False)
+        row_it.setFlag(QtWidgets.QGraphicsItem.ItemIsSelectable, False)
         row_it.setZValue(-1)
 
         n = self.vertices_groups[self.active_col][self.active_row]
@@ -369,7 +369,7 @@ class CaseWidget(QtGui.QWidget):
 
         if whole_grid:
             for r in range(1, rows):
-                line_ = QtGui.QGraphicsLineItem(self.left_margin - self.node_size / 2,
+                line_ = QtWidgets.QGraphicsLineItem(self.left_margin - self.node_size / 2,
                                                 self.top_margin + self.h_ * r - 1,
                                                 self.left_margin - self.node_size / 2 + self.w_ * cols,
                                                 self.top_margin + self.h_ * r - 1)
@@ -378,7 +378,7 @@ class CaseWidget(QtGui.QWidget):
                 self.scene.addItem(line_)
 
             for c in range(1, cols):
-                line_ = QtGui.QGraphicsLineItem(self.left_margin + self.w_ * c - self.node_size / 2,
+                line_ = QtWidgets.QGraphicsLineItem(self.left_margin + self.w_ * c - self.node_size / 2,
                                                 self.top_margin,
                                                 self.left_margin + self.w_ * c - self.node_size / 2,
                                                 self.top_margin + self.h_ * rows)
@@ -389,7 +389,7 @@ class CaseWidget(QtGui.QWidget):
             mark_w = 10
             for r in range(rows + 1):
                 a = (self.w_ - self.node_size) / 2
-                line_ = QtGui.QGraphicsLineItem(self.left_margin - a - mark_w / 2,
+                line_ = QtWidgets.QGraphicsLineItem(self.left_margin - a - mark_w / 2,
                                                 self.top_margin + self.h_ * r - 1,
                                                 self.left_margin - a + mark_w / 2,
                                                 self.top_margin + self.h_ * r - 1)
@@ -398,7 +398,7 @@ class CaseWidget(QtGui.QWidget):
                 self.scene.addItem(line_)
 
             for c in range(cols + 1):
-                line_ = QtGui.QGraphicsLineItem(self.left_margin + self.w_ * c - self.node_size / 2,
+                line_ = QtWidgets.QGraphicsLineItem(self.left_margin + self.w_ * c - self.node_size / 2,
                                                 self.top_margin + self.h_ * rows - mark_w / 2,
                                                 self.left_margin + self.w_ * c - self.node_size / 2,
                                                 self.top_margin + self.h_ * rows + mark_w / 2)
@@ -419,14 +419,14 @@ class CaseWidget(QtGui.QWidget):
                     t = self.project.gm.region(n).frame_ - self.frame_t
 
                     if t_rev:
-                        line_ = QtGui.QGraphicsLineItem(self.left_margin + self.w_ * t - highlight_line_len,
+                        line_ = QtWidgets.QGraphicsLineItem(self.left_margin + self.w_ * t - highlight_line_len,
                                                         self.top_margin + self.node_positions[
                                                             n] * self.h_ + self.h_ / 2,
                                                         self.left_margin + self.w_ * t,
                                                         self.top_margin + self.node_positions[
                                                             n] * self.h_ + self.h_ / 2)
                     else:
-                        line_ = QtGui.QGraphicsLineItem(self.left_margin + self.node_size + self.w_ * t,
+                        line_ = QtWidgets.QGraphicsLineItem(self.left_margin + self.node_size + self.w_ * t,
                                                         self.top_margin + self.node_positions[
                                                             n] * self.h_ + self.h_ / 2,
                                                         self.left_margin + self.node_size + self.w_ * t + highlight_line_len,
@@ -476,11 +476,11 @@ class CaseWidget(QtGui.QWidget):
         return n_it
 
     def connect_with_(self):
-        QtGui.QApplication.setOverrideCursor(QtCore.Qt.CrossCursor)
+        QtWidgets.QApplication.setOverrideCursor(QtCore.Qt.CrossCursor)
         self.connect_with_active = True
 
     def join_with_(self):
-        QtGui.QApplication.setOverrideCursor(QtCore.Qt.CrossCursor)
+        QtWidgets.QApplication.setOverrideCursor(QtCore.Qt.CrossCursor)
         self.join_with_active = True
 
     def highlight_node(self, node):
@@ -488,7 +488,7 @@ class CaseWidget(QtGui.QWidget):
 
         self.active_node = node
         it = self.get_node_item(node)
-        it.setFlag(QtGui.QGraphicsItem.ItemIsSelectable, True)
+        it.setFlag(QtWidgets.QGraphicsItem.ItemIsSelectable, True)
         it.setSelected(True)
         self.v.centerOn(QtCore.QPointF(it.pos().x(), it.pos().y()))
 
@@ -498,14 +498,14 @@ class CaseWidget(QtGui.QWidget):
 
         if node:
             it = self.get_node_item(node)
-            it.setFlag(QtGui.QGraphicsItem.ItemIsSelectable, False)
+            it.setFlag(QtWidgets.QGraphicsItem.ItemIsSelectable, False)
             it.setSelected(False)
             self.active_node = None
 
     def on_context_menu(self, point):
         it = self.scene.itemAt(self.v.mapToScene(point))
 
-        if isinstance(it, QtGui.QGraphicsPixmapItem):
+        if isinstance(it, QtWidgets.QGraphicsPixmapItem):
             self.active_node = self.it_nodes[it]
             self.pop_menu_node.exec_(self.v.mapToGlobal(point))
         else:
@@ -514,11 +514,11 @@ class CaseWidget(QtGui.QWidget):
     def scene_clicked(self, point):
         it = self.scene.itemAt(point)
 
-        if isinstance(it, QtGui.QGraphicsRectItem):
+        if isinstance(it, QtWidgets.QGraphicsRectItem):
             br = it.boundingRect()
             it = self.scene.itemAt(br.x() + br.width() / 2, br.y() + br.height() / 2)
 
-        if isinstance(it, QtGui.QGraphicsPixmapItem):
+        if isinstance(it, QtWidgets.QGraphicsPixmapItem):
             # it is not a node:
             if it.pos().y() < self.top_margin:
                 return
@@ -533,12 +533,12 @@ class CaseWidget(QtGui.QWidget):
 
                 self.parent.confirm_edges([(n1, n2)])
                 self.connect_with_active = False
-                QtGui.QApplication.setOverrideCursor(QtCore.Qt.ArrowCursor)
+                QtWidgets.QApplication.setOverrideCursor(QtCore.Qt.ArrowCursor)
 
             elif self.join_with_active:
                 self.parent.join_regions(n1, n2)
                 self.join_with_active = False
-                QtGui.QApplication.setOverrideCursor(QtCore.Qt.ArrowCursor)
+                QtWidgets.QApplication.setOverrideCursor(QtCore.Qt.ArrowCursor)
 
             else:
                 self.active_row = int(round((it.pos().y() - self.top_margin) / (self.h_ + 0.0)))
@@ -550,7 +550,7 @@ class CaseWidget(QtGui.QWidget):
         else:
             self.connect_with_active = False
             self.join_with_active = False
-            QtGui.QApplication.setOverrideCursor(QtCore.Qt.ArrowCursor)
+            QtWidgets.QApplication.setOverrideCursor(QtCore.Qt.ArrowCursor)
             # self.active_node = None
 
     def confirm_clicked(self):
@@ -710,7 +710,7 @@ class CaseWidget(QtGui.QWidget):
                     if ch_end:
                         continue
                     try:
-                        line_ = QtGui.QGraphicsLineItem(self.left_margin + self.node_size + self.w_ * i,
+                        line_ = QtWidgets.QGraphicsLineItem(self.left_margin + self.node_size + self.w_ * i,
                                                         self.top_margin + self.node_positions[
                                                             n] * self.h_ + self.h_ / 2,
                                                         self.left_margin + self.w_ + i * self.w_,

@@ -1,9 +1,9 @@
-from PyQt4 import QtGui, QtCore
+from PyQt5 import QtCore, QtGui, QtWidgets
 import sys
 from functools import partial
 
 
-class EditTrackletAdvanced(QtGui.QWidget):
+class EditTrackletAdvanced(QtWidgets.QWidget):
     def __init__(self, tracklet, num_animals, callback):
         super(EditTrackletAdvanced, self).__init__()
 
@@ -11,24 +11,24 @@ class EditTrackletAdvanced(QtGui.QWidget):
         self.num_animals = num_animals
         self.tracklet = tracklet
 
-        self.vbox = QtGui.QVBoxLayout()
+        self.vbox = QtWidgets.QVBoxLayout()
 
         self.setLayout(self.vbox)
 
-        self.vbox.addWidget(QtGui.QLabel('tracklet id: '+str(tracklet.id())))
-        self.hbox = QtGui.QHBoxLayout()
+        self.vbox.addWidget(QtWidgets.QLabel('tracklet id: '+str(tracklet.id())))
+        self.hbox = QtWidgets.QHBoxLayout()
         self.vbox.addLayout(self.hbox)
-        self.ps_layout = QtGui.QVBoxLayout()
-        self.ns_layout = QtGui.QVBoxLayout()
+        self.ps_layout = QtWidgets.QVBoxLayout()
+        self.ns_layout = QtWidgets.QVBoxLayout()
 
         self.hbox.addLayout(self.ps_layout)
         self.hbox.addLayout(self.ns_layout)
 
-        self.fix_tracklet_only_b = QtGui.QPushButton('fix_tracklet_only')
+        self.fix_tracklet_only_b = QtWidgets.QPushButton('fix_tracklet_only')
         self.fix_tracklet_only_b.clicked.connect(partial(self.confirm, 'fix_tracklet_only'))
         self.vbox.addWidget(self.fix_tracklet_only_b)
 
-        self.fix_affected_b = QtGui.QPushButton('fix_affected')
+        self.fix_affected_b = QtWidgets.QPushButton('fix_affected')
         self.fix_affected_b.clicked.connect(partial(self.confirm, 'fix_affected'))
         self.vbox.addWidget(self.fix_affected_b)
 
@@ -36,7 +36,7 @@ class EditTrackletAdvanced(QtGui.QWidget):
         self.ps = []
 
         for i in range(self.num_animals):
-            ch = QtGui.QCheckBox(str(i))
+            ch = QtWidgets.QCheckBox(str(i))
             ch.setChecked(False)
 
             if i in tracklet.P:
@@ -46,7 +46,7 @@ class EditTrackletAdvanced(QtGui.QWidget):
             self.ps_layout.addWidget(ch)
             self.ps.append(ch)
 
-            ch = QtGui.QCheckBox(str(i))
+            ch = QtWidgets.QCheckBox(str(i))
             ch.setChecked(False)
             if i in tracklet.N:
                 ch.setChecked(True)
@@ -95,7 +95,7 @@ def confirmed(tracklet, P, N, method='fix_tracklet_only'):
 
 if __name__ == '__main__':
     import sys
-    app = QtGui.QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
 
     tracklet = FakeTracklet()
 

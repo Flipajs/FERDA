@@ -4,7 +4,7 @@ import time
 
 import numpy as np
 from PIL import ImageQt
-from PyQt4 import QtGui, QtCore
+from PyQt5 import QtCore, QtGui, QtWidgets
 
 from core.segmentation_helper import SegmentationHelper
 from core.project.project import Project
@@ -21,7 +21,7 @@ from core.animal import Animal
 __author__ = 'filip@naiser.cz', 'dita'
 
 
-class SetupMSERsWizardPage(QtGui.QWizardPage):
+class SetupMSERsWizardPage(QtWidgets.QWizardPage):
     def __init__(self):
         """
         Interactive tool to improve msers search using segmentation.
@@ -66,42 +66,42 @@ class SetupMSERsWizardPage(QtGui.QWizardPage):
         self.old_max_area_helper_text = None
 
         # Left panel with options and paint tools
-        self.left_panel = QtGui.QWidget()
-        self.left_panel.setLayout(QtGui.QVBoxLayout())
+        self.left_panel = QtWidgets.QWidget()
+        self.left_panel.setLayout(QtWidgets.QVBoxLayout())
 
         # Left panel must be scrollable on smaller screens
-        left_scroll = QtGui.QScrollArea()
+        left_scroll = QtWidgets.QScrollArea()
         left_scroll.setWidgetResizable(True)
         left_scroll.setWidget(self.left_panel)
         left_scroll.setMaximumWidth(450)
         left_scroll.setMinimumWidth(200)
 
-        form_row_wrap_policy = QtGui.QFormLayout.WrapLongRows  # WrapAllRows
+        form_row_wrap_policy = QtWidgets.QFormLayout.WrapLongRows  # WrapAllRows
 
-        self.form_panel = QtGui.QFormLayout()
+        self.form_panel = QtWidgets.QFormLayout()
         self.form_panel.setRowWrapPolicy(form_row_wrap_policy)
 
-        self.gb_general = QtGui.QGroupBox('general')
-        self.gb_general.setLayout(QtGui.QFormLayout())
+        self.gb_general = QtWidgets.QGroupBox('general')
+        self.gb_general.setLayout(QtWidgets.QFormLayout())
         self.left_panel.layout().addWidget(self.gb_general)
 
-        self.gb_mser_related = QtGui.QGroupBox('MSER settings')
-        self.gb_mser_related.setLayout(QtGui.QFormLayout())
+        self.gb_mser_related = QtWidgets.QGroupBox('MSER settings')
+        self.gb_mser_related.setLayout(QtWidgets.QFormLayout())
         self.gb_mser_related.layout().setRowWrapPolicy(form_row_wrap_policy)
         self.left_panel.layout().addWidget(self.gb_mser_related)
 
         # TODO: describe all parameters...
-        self.gb_region_filtering = QtGui.QGroupBox('region filtering')
-        self.gb_region_filtering.setLayout(QtGui.QFormLayout())
+        self.gb_region_filtering = QtWidgets.QGroupBox('region filtering')
+        self.gb_region_filtering.setLayout(QtWidgets.QFormLayout())
         self.gb_region_filtering.layout().setRowWrapPolicy(form_row_wrap_policy)
         self.left_panel.layout().addWidget(self.gb_region_filtering)
 
-        self.gb_video_controls = QtGui.QGroupBox('video controls')
-        self.gb_video_controls.setLayout(QtGui.QVBoxLayout())
+        self.gb_video_controls = QtWidgets.QGroupBox('video controls')
+        self.gb_video_controls.setLayout(QtWidgets.QVBoxLayout())
         self.left_panel.layout().addWidget(self.gb_video_controls)
 
-        self.gb_pixel_classifier = QtGui.QGroupBox('pixel classifier')
-        self.gb_pixel_classifier.setLayout(QtGui.QFormLayout())
+        self.gb_pixel_classifier = QtWidgets.QGroupBox('pixel classifier')
+        self.gb_pixel_classifier.setLayout(QtWidgets.QFormLayout())
         self.gb_pixel_classifier.layout().setRowWrapPolicy(form_row_wrap_policy)
         self.gb_pixel_classifier.setCheckable(True)
         self.gb_pixel_classifier.setChecked(False)
@@ -109,7 +109,7 @@ class SetupMSERsWizardPage(QtGui.QWizardPage):
 
         self.left_panel.layout().addLayout(self.form_panel)
 
-        self.num_animals_sb = QtGui.QSpinBox()
+        self.num_animals_sb = QtWidgets.QSpinBox()
         self.num_animals_sb.setValue(6)
         self.num_animals_sb.setMinimum(1)
         self.num_animals_sb.setMaximum(999)
@@ -118,8 +118,8 @@ class SetupMSERsWizardPage(QtGui.QWizardPage):
         self.gb_general.layout().addRow('<b>#animals:</b> ', self.num_animals_sb)
 
         # Right panel with image grid
-        self.right_panel = QtGui.QWidget()
-        self.right_panel.setLayout(QtGui.QVBoxLayout())
+        self.right_panel = QtWidgets.QWidget()
+        self.right_panel.setLayout(QtWidgets.QVBoxLayout())
 
         # Setup gui elements
         self.prepare_widgets()
@@ -127,7 +127,7 @@ class SetupMSERsWizardPage(QtGui.QWizardPage):
         self.configure_paint_panel()
 
         # Complete the gui
-        self.setLayout(QtGui.QHBoxLayout())
+        self.setLayout(QtWidgets.QHBoxLayout())
         self.layout().addWidget(left_scroll)
         self.layout().addWidget(self.painter)
 
@@ -218,11 +218,11 @@ class SetupMSERsWizardPage(QtGui.QWizardPage):
 
         c = QtGui.QColor(167, 255, 36)
         it = markers.CenterMarker(0, 0, 2*radius, c, 0, None)
-        it.setFlag(QtGui.QGraphicsItem.ItemIsMovable, False)
-        it.setFlag(QtGui.QGraphicsItem.ItemIsSelectable, False)
+        it.setFlag(QtWidgets.QGraphicsItem.ItemIsMovable, False)
+        it.setFlag(QtWidgets.QGraphicsItem.ItemIsSelectable, False)
         it.setOpacity(0.2)
 
-        text = QtGui.QGraphicsTextItem()
+        text = QtWidgets.QGraphicsTextItem()
         text.setPos(radius/3, radius/3)
         text.setPlainText("max area helper")
 
@@ -239,7 +239,7 @@ class SetupMSERsWizardPage(QtGui.QWizardPage):
         :return: None
         """
         # start loading cursor animation
-        QtGui.QApplication.setOverrideCursor(QtGui.QCursor(QtCore.Qt.WaitCursor))
+        QtWidgets.QApplication.setOverrideCursor(QtGui.QCursor(QtCore.Qt.WaitCursor))
 
         # get working image
         # TODO: update project settings to contain "use_segmentation_image"
@@ -275,7 +275,7 @@ class SetupMSERsWizardPage(QtGui.QWizardPage):
         self.painter.set_overlay2_visible(self.check_mser.isChecked())
 
         # restore cursor look to default
-        QtGui.QApplication.restoreOverrideCursor()
+        QtWidgets.QApplication.restoreOverrideCursor()
 
         self.draw_max_area_helper()
 
@@ -287,7 +287,7 @@ class SetupMSERsWizardPage(QtGui.QWizardPage):
         """
 
         # start cursor animation
-        QtGui.QApplication.setOverrideCursor(QtGui.QCursor(QtCore.Qt.WaitCursor))
+        QtWidgets.QApplication.setOverrideCursor(QtGui.QCursor(QtCore.Qt.WaitCursor))
 
         # get painted data masks from painter
         result = self.painter.get_result()
@@ -298,10 +298,10 @@ class SetupMSERsWizardPage(QtGui.QWizardPage):
         self.helper.train(background, foreground)
 
         # stop cursor animation
-        QtGui.QApplication.restoreOverrideCursor()
+        QtWidgets.QApplication.restoreOverrideCursor()
 
     def update_img(self):
-        QtGui.QApplication.setOverrideCursor(QtGui.QCursor(QtCore.Qt.WaitCursor))
+        QtWidgets.QApplication.setOverrideCursor(QtGui.QCursor(QtCore.Qt.WaitCursor))
 
         if self.use_segmentation_:
             t = time.time()
@@ -319,7 +319,7 @@ class SetupMSERsWizardPage(QtGui.QWizardPage):
             self.painter.set_overlay(None)
 
         # stop cursor animation
-        QtGui.QApplication.restoreOverrideCursor()
+        QtWidgets.QApplication.restoreOverrideCursor()
 
     def fill_new_grid(self, msers, img_vis, mser_vis):
         """
@@ -511,61 +511,61 @@ class SetupMSERsWizardPage(QtGui.QWizardPage):
             self.update_all()
 
     def prepare_widgets(self):
-        self.use_intensity_percentile_threshold = QtGui.QCheckBox()
+        self.use_intensity_percentile_threshold = QtWidgets.QCheckBox()
         self.use_intensity_percentile_threshold.setToolTip('Instead of region filtering based on minimum intensity, the n-th percentile will be computed, which is slightly slower but more robust thus relevant.')
-        self.intensity_percentile = QtGui.QSpinBox()
+        self.intensity_percentile = QtWidgets.QSpinBox()
         self.intensity_percentile.setMinimum(1)
         self.intensity_percentile.setMaximum(100)
         self.intensity_percentile.setValue(10)
 
-        self.area_roi_ratio_threshold = QtGui.QDoubleSpinBox()
+        self.area_roi_ratio_threshold = QtWidgets.QDoubleSpinBox()
         self.area_roi_ratio_threshold.setMinimum(0)
         self.area_roi_ratio_threshold.setMaximum(1.0)
         self.area_roi_ratio_threshold.setValue(0)
 
-        self.max_dist_object_length = QtGui.QDoubleSpinBox()
+        self.max_dist_object_length = QtWidgets.QDoubleSpinBox()
         self.max_dist_object_length.setMinimum(0.01)
         self.max_dist_object_length.setMaximum(100)
         self.max_dist_object_length.setValue(2.0)
 
-        self.major_axis_median = QtGui.QSpinBox()
+        self.major_axis_median = QtWidgets.QSpinBox()
         self.major_axis_median.setMinimum(0)
         self.major_axis_median.setMaximum(1000)
         self.major_axis_median.setValue(20)
 
-        self.use_margin_filter = QtGui.QCheckBox()
+        self.use_margin_filter = QtWidgets.QCheckBox()
         self.use_margin_filter.setChecked(True)
 
-        self.use_children_filter = QtGui.QCheckBox()
-        self.button_group = QtGui.QButtonGroup()
-        self.use_only_red_ch = QtGui.QCheckBox()
-        self.use_full_image = QtGui.QCheckBox()
-        self.mser_max_area = QtGui.QSpinBox()
-        self.mser_min_area = QtGui.QSpinBox()
-        self.mser_min_margin = QtGui.QSpinBox()
-        self.mser_img_subsample = QtGui.QDoubleSpinBox()
-        self.blur_kernel_size = QtGui.QDoubleSpinBox()
-        self.intensity_threshold = QtGui.QSpinBox()
-        self.region_min_intensity = QtGui.QSpinBox()
-        self.check_bg = QtGui.QCheckBox("Background image")
-        self.check_prob = QtGui.QCheckBox("Probability mask")
-        self.check_paint = QtGui.QCheckBox("Paint data")
-        self.check_mser = QtGui.QCheckBox("MSER view")
-        self.button_next = QtGui.QPushButton("Next frame")
-        self.button_prev = QtGui.QPushButton("Previous frame")
-        self.button_rand = QtGui.QPushButton("Random frame")
+        self.use_children_filter = QtWidgets.QCheckBox()
+        self.button_group = QtWidgets.QButtonGroup()
+        self.use_only_red_ch = QtWidgets.QCheckBox()
+        self.use_full_image = QtWidgets.QCheckBox()
+        self.mser_max_area = QtWidgets.QSpinBox()
+        self.mser_min_area = QtWidgets.QSpinBox()
+        self.mser_min_margin = QtWidgets.QSpinBox()
+        self.mser_img_subsample = QtWidgets.QDoubleSpinBox()
+        self.blur_kernel_size = QtWidgets.QDoubleSpinBox()
+        self.intensity_threshold = QtWidgets.QSpinBox()
+        self.region_min_intensity = QtWidgets.QSpinBox()
+        self.check_bg = QtWidgets.QCheckBox("Background image")
+        self.check_prob = QtWidgets.QCheckBox("Probability mask")
+        self.check_paint = QtWidgets.QCheckBox("Paint data")
+        self.check_mser = QtWidgets.QCheckBox("MSER view")
+        self.button_next = QtWidgets.QPushButton("Next frame")
+        self.button_prev = QtWidgets.QPushButton("Previous frame")
+        self.button_rand = QtWidgets.QPushButton("Random frame")
         from gui.init.crop_video_page import SelectAllLineEdit
         self.frame_input = SelectAllLineEdit()
-        self.show_frame_b = QtGui.QPushButton('go to frame')
+        self.show_frame_b = QtWidgets.QPushButton('go to frame')
         self.show_frame_b.clicked.connect(self.go_to_frame)
 
 
-        self.button_refresh = QtGui.QPushButton("refresh (new randomized training)")
-        self.button_reset = QtGui.QPushButton("restart (delete labels)")
+        self.button_refresh = QtWidgets.QPushButton("refresh (new randomized training)")
+        self.button_reset = QtWidgets.QPushButton("restart (delete labels)")
 
-        self.use_roi_prediction_optimisation_ch = QtGui.QCheckBox('')
-        self.prediction_optimisation_border_spin = QtGui.QSpinBox()
-        self.full_segmentation_refresh_in_spin = QtGui.QSpinBox()
+        self.use_roi_prediction_optimisation_ch = QtWidgets.QCheckBox('')
+        self.prediction_optimisation_border_spin = QtWidgets.QSpinBox()
+        self.full_segmentation_refresh_in_spin = QtWidgets.QSpinBox()
 
         # self.button_done = QtGui.QPushButton("Done")
 
@@ -615,7 +615,7 @@ class SetupMSERsWizardPage(QtGui.QWizardPage):
         self.region_min_intensity.setMinimum(0)
         self.region_min_intensity.setSingleStep(1)
 
-        tmp_label = QtGui.QLabel('suppress bright region (all pixels intensity above threshold)')
+        tmp_label = QtWidgets.QLabel('suppress bright region (all pixels intensity above threshold)')
         tmp_label.setWordWrap(True)
         self.gb_mser_related.layout().addRow(tmp_label, self.region_min_intensity)
         # this line is necessary to avoid possible bugs in the future
@@ -679,36 +679,36 @@ class SetupMSERsWizardPage(QtGui.QWizardPage):
 
     def configure_paint_panel(self):
         # PEN SIZE slider
-        self.slider = QtGui.QSlider(QtCore.Qt.Horizontal, self)
+        self.slider = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
         self.slider.setFocusPolicy(QtCore.Qt.NoFocus)
         self.slider.setGeometry(30, 40, 50, 30)
         self.slider.setRange(2, 30)
         self.slider.setTickInterval(1)
         self.slider.setValue(self.pen_size)
-        self.slider.setTickPosition(QtGui.QSlider.TicksBelow)
+        self.slider.setTickPosition(QtWidgets.QSlider.TicksBelow)
         self.slider.valueChanged[int].connect(self.painter.set_pen_size)
         self.slider.setVisible(True)
         self.gb_pixel_classifier.layout().addRow(self.slider)
 
         # color switcher widget
-        color_widget = QtGui.QWidget()
-        color_widget.setLayout(QtGui.QHBoxLayout())
+        color_widget = QtWidgets.QWidget()
+        color_widget.setLayout(QtWidgets.QHBoxLayout())
 
         self.color_buttons = {}
-        button_bg = QtGui.QPushButton("background")
+        button_bg = QtWidgets.QPushButton("background")
         button_bg.setCheckable(True)
         button_bg.setChecked(True)
         button_bg.clicked.connect(self.set_color_bg)
         color_widget.layout().addWidget(button_bg)
         self.color_buttons["background"] = button_bg
 
-        button_fg = QtGui.QPushButton("foreground")
+        button_fg = QtWidgets.QPushButton("foreground")
         button_fg.setCheckable(True)
         button_fg.clicked.connect(self.set_color_fg)
         color_widget.layout().addWidget(button_fg)
         self.color_buttons["foreground"] = button_fg
 
-        eraser_button = QtGui.QPushButton("Eraser")
+        eraser_button = QtWidgets.QPushButton("Eraser")
         eraser_button.setCheckable(True)
         eraser_button.clicked.connect(self.set_eraser)
         color_widget.layout().addWidget(eraser_button)
@@ -762,7 +762,7 @@ class SetupMSERsWizardPage(QtGui.QWizardPage):
 
 
 if __name__ == "__main__":
-    app = QtGui.QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
     proj = Project()
 
     # proj.load('/Users/flipajs/Documents/wd/FERDA/Cam1_rfs')

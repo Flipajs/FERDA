@@ -17,7 +17,7 @@ import numpy as np
 from scipy.spatial.distance import cdist
 import time
 import scipy
-from PyQt4 import QtGui, QtCore
+from PyQt5 import QtCore, QtGui, QtWidgets
 import sys
 from gui.arena.arena_editor import ArenaEditor
 import pickle as pickle
@@ -347,7 +347,7 @@ def get_color_samples_tool(vid, frames=None, wd_=''):
         # frames = [52, 52, 52, 52, 52]
         # frames = []
 
-    app = QtGui.QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
 
     for frame in frames:
         im = vid.get_frame(frame)

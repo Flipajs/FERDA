@@ -1,6 +1,6 @@
 __author__ = 'filip@naiser.cz'
 
-from PyQt4 import QtGui
+from PyQt5 import QtGui, QtWidgets
 from numpy import arange, sin, pi, cos
 from .my_mpl_canvas import *
 import sys
@@ -11,14 +11,14 @@ from matplotlib._png import read_png
 import numpy as np
 
 
-class PlotWidget(QtGui.QWidget):
+class PlotWidget(QtWidgets.QWidget):
     def __init__(self):
         super(PlotWidget, self).__init__()
 
-        self.main_layout = QtGui.QVBoxLayout()
+        self.main_layout = QtWidgets.QVBoxLayout()
         self.setLayout(self.main_layout)
 
-        self.central_widget = QtGui.QWidget()
+        self.central_widget = QtWidgets.QWidget()
 
         self.p3 = MyMplCanvas3D(self.central_widget, width=5, height=4, dpi=100)
 
@@ -26,7 +26,7 @@ class PlotWidget(QtGui.QWidget):
         self.draw_plane()
         self.main_layout.addWidget(self.p3)
 
-        self.b = QtGui.QPushButton('draw plane')
+        self.b = QtWidgets.QPushButton('draw plane')
         self.b.clicked.connect(self.draw_plane)
         self.main_layout.addWidget(self.b)
 
@@ -63,7 +63,7 @@ class PlotWidget(QtGui.QWidget):
         self.b4.onclick_callback = method
 
 if __name__ == "__main__":
-    app = QtGui.QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
     ex = PlotWidget()
 
     app.exec_()

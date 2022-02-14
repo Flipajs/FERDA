@@ -8,7 +8,7 @@ __author__ = 'fnaiser'
 
 import time
 
-from PyQt4 import QtGui, QtCore
+from PyQt5 import QtCore, QtGui, QtWidgets
 import cv2
 import numpy as np
 
@@ -22,41 +22,47 @@ from core.bg_model.model import Model
 from core.bg_model.bg_model import BGModel
 
 
-class CircleArenaEditorWidget(QtGui.QWizardPage):
+try:
+    QString = unicode
+except NameError:
+    # Python 3
+    QString = str
+
+class CircleArenaEditorWidget(QtWidgets.QWizardPage):
     def __init__(self):
         super(CircleArenaEditorWidget, self).__init__()
         self.arena_mark_size = 15
         self.project = None
 
-        self.vbox = QtGui.QVBoxLayout()
+        self.vbox = QtWidgets.QVBoxLayout()
         self.setLayout(self.vbox)
 
         self.progress_dialog = None
         self.bg_fix_widget = None
 
-        self.top_stripe_layout = QtGui.QHBoxLayout()
+        self.top_stripe_layout = QtWidgets.QHBoxLayout()
         self.vbox.addLayout(self.top_stripe_layout)
 
         self.video = None
         self.first_frame = None
 
-        self.label_instructions = QtGui.QLabel('<i>Please select region of interest by dragging red and blue dot or confirm the suggested one.</i>')
+        self.label_instructions = QtWidgets.QLabel('<i>Please select region of interest by dragging red and blue dot or confirm the suggested one.</i>')
         self.label_instructions.setWordWrap(True)
         self.top_stripe_layout.addWidget(self.label_instructions)
 
-        self.use_advanced_arena_editor = QtGui.QPushButton('Use polygon arena editor')
+        self.use_advanced_arena_editor = QtWidgets.QPushButton('Use polygon arena editor')
         self.use_advanced_arena_editor.clicked.connect(self.use_advanced_editor)
         self.use_advanced_arena_editor.setDisabled(False)
         self.top_stripe_layout.addWidget(self.use_advanced_arena_editor)
 
-        self.skip_bg_model = QtGui.QPushButton('Run without background model')
+        self.skip_bg_model = QtWidgets.QPushButton('Run without background model')
         self.skip_bg_model.clicked.connect(self.skip_bg_clicked)
-        self.confirm_bg_model = QtGui.QPushButton('Everything is all right, lets continue!')
+        self.confirm_bg_model = QtWidgets.QPushButton('Everything is all right, lets continue!')
         self.confirm_bg_model.clicked.connect(self.finish)
 
         # image window...
         self.scene_objects = {}
-        self.scene = QtGui.QGraphicsScene()
+        self.scene = QtWidgets.QGraphicsScene()
         self.graphics_view = my_view.MyView()
         self.graphics_view.setScene(self.scene)
         self.bg_model_pixmap = None
@@ -90,7 +96,7 @@ class CircleArenaEditorWidget(QtGui.QWizardPage):
 
             # self.graphics_view.hide()
             # self.bg_fix_widget = BgFixWidget(self.project.bg_model.img(), self.finish)
-            self.bg_fix_widget = QtGui.QWidget()
+            self.bg_fix_widget = QtWidgets.QWidget()
             # self.graphics_view.hide()
             # self.vbox.addWidget(self.bg_fix_widget)
 
@@ -101,12 +107,12 @@ class CircleArenaEditorWidget(QtGui.QWizardPage):
             while True:
                 time.sleep(.100)
                 if not self.progress_dialog:
-                    self.progress_dialog = QtGui.QProgressDialog('Computing background model. Be patient please...', QtCore.QString("Cancel"), 0, 100)
+                    self.progress_dialog = QtWidgets.QProgressDialog('Computing background model. Be patient please...', QString("Cancel"), 0, 100)
                     self.progress_dialog.setWindowTitle('Upload status')
                 else:
                     self.progress_dialog.setLabelText('Computing '+str(self.project.bg_model.get_progress()))
                     self.progress_dialog.setValue(self.project.bg_model.get_progress())
-                    QtGui.QApplication.processEvents()
+                    QtWidgets.QApplication.processEvents()
 
                 if self.project.bg_model.is_computed():
                     break
@@ -148,7 +154,7 @@ class CircleArenaEditorWidget(QtGui.QWizardPage):
         self.scene_objects['c_radius'] = self.scene.addItem(self.c_radius)
 
     def update_circle_labels(self):
-        item = lambda x: QtGui.QTableWidgetItem(QtCore.QString.number(int(x)))
+        item = lambda x: QtWidgets.QTableWidgetItem(QString.number(int(x)))
         # print item
 
     def give_me_best_circle(self):

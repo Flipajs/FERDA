@@ -1,8 +1,8 @@
 __author__ = 'flipajs'
 
 import sys
-from PyQt4 import QtCore
-from PyQt4 import QtGui
+from PyQt5 import QtCore, QtWidgets
+from PyQt5 import QtGui, QtWidgets
 
 import cv2
 import numpy as np
@@ -14,17 +14,23 @@ from gui.img_controls.gui_utils import cvimg2qtpixmap
 from scripts.region_graph3 import visualize_nodes
 
 
-class MSERTree(QtGui.QWidget):
+try:
+    QString = unicode
+except NameError:
+    # Python 3
+    QString = str
+
+class MSERTree(QtWidgets.QWidget):
     def __init__(self, img, project):
         super(MSERTree, self).__init__()
 
         self.img = img
         self.project = project
 
-        self.setLayout(QtGui.QVBoxLayout())
+        self.setLayout(QtWidgets.QVBoxLayout())
 
-        self.view = QtGui.QGraphicsView()
-        self.scene = QtGui.QGraphicsScene()
+        self.view = QtWidgets.QGraphicsView()
+        self.scene = QtWidgets.QGraphicsScene()
 
         self.view.setScene(self.scene)
 
@@ -70,8 +76,9 @@ class MSERTree(QtGui.QWidget):
             text_item = QtGui.QGraphicsSimpleTextItem(text, scene=self.scene)
             text_item.setPos(pos_x, pos_y + image_width)
             """
-            text = QtCore.QString("id = %s" % r.id_)
-            text_item = QtGui.QGraphicsSimpleTextItem(text, scene=self.scene)
+            text = QString("id = %s" % r.id_)
+            text_item = QtWidgets.QGraphicsSimpleTextItem(text)
+            self.scene.addItem(text_item)
             text_item.setPos(pos_x, pos_y + image_width)
 
             if r.id_ in find_ids:
@@ -91,10 +98,10 @@ class MSERTree(QtGui.QWidget):
         # pridat obrazek do sceny na nejakou pozici a jak ho mit klikaci...
         self.view.update()
         self.scene.update()
-        QtGui.QApplication.processEvents()
+        QtWidgets.QApplication.processEvents()
         self.focus_on(qt_points)
 
-        self.b = QtGui.QPushButton("test")
+        self.b = QtWidgets.QPushButton("test")
         from functools import partial
         self.b.clicked.connect(partial(self.focus_on, qt_points))
         self.layout().addWidget(self.b)
@@ -109,7 +116,7 @@ class MSERTree(QtGui.QWidget):
 
     def focus_on(self, items):
         for item in items[:]:
-            if item is not isinstance(item, QtGui.QGraphicsPixmapItem):
+            if item is not isinstance(item, QtWidgets.QGraphicsPixmapItem):
                 items.remove(item)
 
         # create a rectangle with covering all points
@@ -118,8 +125,9 @@ class MSERTree(QtGui.QWidget):
         # check if it fits into the view
         if rect.width() < self.view.width() and rect.height() < self.view.height():
             point = rect.center()
-            text = QtCore.QString("x")
-            text_item = QtGui.QGraphicsSimpleTextItem(text, scene=self.scene)
+            text = QString("x")
+            text_item = QtWidgets.QGraphicsSimpleTextItem(text)
+            self.scene.addItem(text_item)
             text_item.setPos(point)
             print("focusing on rectangle [%s, %s]" % (point.x(), point.y()))
             self.view.centerOn(point)
@@ -150,8 +158,9 @@ class MSERTree(QtGui.QWidget):
             else:
                 new_y = item.y() - self.view.height()/2 + item.pixmap().height()
 
-            text = QtCore.QString("x")
-            text_item = QtGui.QGraphicsSimpleTextItem(text, scene=self.scene)
+            text = QString("x")
+            text_item = QtWidgets.QGraphicsSimpleTextItem(text)
+            self.scene.addItem(text_item)
             new = QtCore.QPointF(new_x, new_y)
             text_item.setPos(new)
             print("focusing on point [%s, %s]" % (new_x, new_y))
@@ -176,7 +185,7 @@ class MSERTree(QtGui.QWidget):
 
 
 if __name__ == "__main__":
-    app = QtGui.QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
 
     im = cv2.imread('/home/dita/PycharmProjects/sample2.png')
     p = Project()

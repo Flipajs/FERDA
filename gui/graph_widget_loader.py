@@ -1,6 +1,6 @@
 import sys
 import cv2
-from PyQt4 import QtGui
+from PyQt5 import QtGui, QtWidgets
 
 from core.graph.region_chunk import RegionChunk
 from core.project.project import Project
@@ -35,7 +35,7 @@ OPACITY = 255
 from gui.graph_widget.graph_visualizer import GraphVisualizer
 
 
-class GraphWidgetLoader(QtGui.QWidget):
+class GraphWidgetLoader(QtWidgets.QWidget):
     def __init__(self, project=None, width=WIDTH, height=HEIGHT, relative_margin=RELATIVE_MARGIN, tracklet_callback=None):
         super(GraphWidgetLoader, self).__init__()
 
@@ -253,7 +253,7 @@ if __name__ == '__main__':
 
     project.load('/home/simon/FERDA/projects/clusters_gt/Cam1_/cam1.fproj')
 
-    app = QtGui.QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
     l1 = GraphWidgetLoader(project)
     l1.set_relative_margin(1)
     # l1.set_width(60)

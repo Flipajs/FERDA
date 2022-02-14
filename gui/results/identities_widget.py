@@ -1,4 +1,4 @@
-from PyQt4 import QtGui, QtCore
+from PyQt5 import QtCore, QtGui, QtWidgets
 from gui.img_controls.my_view import MyView
 from utils.video_manager import get_auto_video_manager
 from gui.img_controls.gui_utils import cvimg2qtpixmap
@@ -12,11 +12,11 @@ import sys
 from core.animal import Animal
 from gui import gui_utils
 
-class AnimalVisu(QtGui.QWidget):
+class AnimalVisu(QtWidgets.QWidget):
     def __init__(self, animal):
         super(AnimalVisu, self).__init__()
 
-        self.hbox = QtGui.QHBoxLayout()
+        self.hbox = QtWidgets.QHBoxLayout()
         self.setLayout(self.hbox)
 
         cimg = np.zeros((15, 10, 3), dtype=np.uint8)
@@ -26,7 +26,7 @@ class AnimalVisu(QtGui.QWidget):
         self.img2 = None
 
         self.hbox.addWidget(self.color_img)
-        self.hbox.addWidget(QtGui.QLabel(animal.name))
+        self.hbox.addWidget(QtWidgets.QLabel(animal.name))
 
         self.orig_img = None
         self.adjusted_img = None
@@ -73,7 +73,7 @@ class AnimalVisu(QtGui.QWidget):
 
 
 
-class IdentitiesWidget(QtGui.QWidget):
+class IdentitiesWidget(QtWidgets.QWidget):
     def __init__(self, project):
         super(IdentitiesWidget, self).__init__()
 
@@ -92,7 +92,7 @@ class IdentitiesWidget(QtGui.QWidget):
                 Animal(5, 'dark blue', color=(230, 0, 0)),
             ]
 
-        self.vbox = QtGui.QVBoxLayout()
+        self.vbox = QtWidgets.QVBoxLayout()
         self.setLayout(self.vbox)
 
         self.animal_widgets = []
@@ -121,7 +121,7 @@ class IdentitiesWidget(QtGui.QWidget):
 
 
 if __name__ == '__main__':
-    app = QtGui.QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
     from core.project.project import Project
     import pickle as pickle
 

@@ -6,55 +6,49 @@
 #
 # WARNING! All changes made in this file will be lost!
 
-from PyQt4 import QtCore, QtGui
+from PyQt5 import QtCore, QtGui, QtWidgets
 
 try:
-    _fromUtf8 = QtCore.QString.fromUtf8
-except AttributeError:
-    def _fromUtf8(s):
-        return s
-
-try:
-    _encoding = QtGui.QApplication.UnicodeUTF8
+    _encoding = QtWidgets.QApplication.UnicodeUTF8
     def _translate(context, text, disambig):
-        return QtGui.QApplication.translate(context, text, disambig, _encoding)
+        return QtCore.QCoreApplication.translate(context, text, disambig, _encoding)
 except AttributeError:
     def _translate(context, text, disambig):
-        return QtGui.QApplication.translate(context, text, disambig)
+        return QtCore.QCoreApplication.translate(context, text, disambig)
 
 class Ui_MainWidget(object):
     def setupUi(self, MainWidget):
-        MainWidget.setObjectName(_fromUtf8("MainWidget"))
+        MainWidget.setObjectName("MainWidget")
         MainWidget.resize(539, 449)
-        self.horizontalLayout = QtGui.QHBoxLayout(MainWidget)
-        self.horizontalLayout.setObjectName(_fromUtf8("horizontalLayout"))
-        self.verticalLayout = QtGui.QVBoxLayout()
-        self.verticalLayout.setObjectName(_fromUtf8("verticalLayout"))
-        self.newProjectButton = QtGui.QPushButton(MainWidget)
-        self.newProjectButton.setObjectName(_fromUtf8("newProjectButton"))
+        self.horizontalLayout = QtWidgets.QHBoxLayout(MainWidget)
+        self.horizontalLayout.setObjectName("horizontalLayout")
+        self.verticalLayout = QtWidgets.QVBoxLayout()
+        self.verticalLayout.setObjectName("verticalLayout")
+        self.newProjectButton = QtWidgets.QPushButton(MainWidget)
+        self.newProjectButton.setObjectName("newProjectButton")
         self.verticalLayout.addWidget(self.newProjectButton)
-        spacerItem = QtGui.QSpacerItem(20, 20, QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Preferred)
+        spacerItem = QtWidgets.QSpacerItem(20, 20, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Preferred)
         self.verticalLayout.addItem(spacerItem)
-        self.loadProjectButton = QtGui.QPushButton(MainWidget)
-        self.loadProjectButton.setObjectName(_fromUtf8("loadProjectButton"))
+        self.loadProjectButton = QtWidgets.QPushButton(MainWidget)
+        self.loadProjectButton.setObjectName("loadProjectButton")
         self.verticalLayout.addWidget(self.loadProjectButton)
-        spacerItem1 = QtGui.QSpacerItem(20, 20, QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Preferred)
+        spacerItem1 = QtWidgets.QSpacerItem(20, 20, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Preferred)
         self.verticalLayout.addItem(spacerItem1)
-        self.settingsButton = QtGui.QPushButton(MainWidget)
-        self.settingsButton.setObjectName(_fromUtf8("settingsButton"))
+        self.settingsButton = QtWidgets.QPushButton(MainWidget)
+        self.settingsButton.setObjectName("settingsButton")
         self.verticalLayout.addWidget(self.settingsButton)
-        spacerItem2 = QtGui.QSpacerItem(20, 40, QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Expanding)
+        spacerItem2 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
         self.verticalLayout.addItem(spacerItem2)
         self.horizontalLayout.addLayout(self.verticalLayout)
-        spacerItem3 = QtGui.QSpacerItem(30, 20, QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Minimum)
+        spacerItem3 = QtWidgets.QSpacerItem(30, 20, QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout.addItem(spacerItem3)
-        self.verticalLayout_2 = QtGui.QVBoxLayout()
-        self.verticalLayout_2.setObjectName(_fromUtf8("verticalLayout_2"))
-        self.label = QtGui.QLabel(MainWidget)
-        self.label.setObjectName(_fromUtf8("label"))
+        self.verticalLayout_2 = QtWidgets.QVBoxLayout()
+        self.verticalLayout_2.setObjectName("verticalLayout_2")
+        self.label = QtWidgets.QLabel(MainWidget)
+        self.label.setObjectName("label")
         self.verticalLayout_2.addWidget(self.label)
-        self.recentProjectsListWidget = QtGui.QListWidget(MainWidget)
-        self.recentProjectsListWidget.setObjectName(_fromUtf8("recentProjectsListWidget"))
+        self.recentProjectsListWidget = QtWidgets.QListWidget(MainWidget)
+        self.recentProjectsListWidget.setObjectName("recentProjectsListWidget")
         self.verticalLayout_2.addWidget(self.recentProjectsListWidget)
         self.horizontalLayout.addLayout(self.verticalLayout_2)
         self.label.setBuddy(self.recentProjectsListWidget)
@@ -75,8 +69,8 @@ class Ui_MainWidget(object):
 
 if __name__ == "__main__":
     import sys
-    app = QtGui.QApplication(sys.argv)
-    MainWidget = QtGui.QWidget()
+    app = QtWidgets.QApplication(sys.argv)
+    MainWidget = QtWidgets.QWidget()
     ui = Ui_MainWidget()
     ui.setupUi(MainWidget)
     MainWidget.show()

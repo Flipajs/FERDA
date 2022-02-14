@@ -1,18 +1,19 @@
-from PyQt4 import QtCore, QtGui
+from PyQt5 import QtCore, QtGui, QtWidgets
 
 import utils
 from gui.settings import Settings as S_
 
 
-class BaseMarker(QtGui.QGraphicsEllipseItem, object):
+class BaseMarker(QtWidgets.QGraphicsEllipseItem, object):
     """An ancestor to all ant markers. Note the changeHandler attribute. The changeHandler's marker_changed method
     is used when mouseReleaseEvent	happens.
     """
 
     def __init__(self, x, y, size, color, antId, changeHandler=None):
-        super(BaseMarker, self).__init__(x, y, size, size)
-        self.setFlag(QtGui.QGraphicsItem.ItemIsMovable, True)
-        self.setFlag(QtGui.QGraphicsItem.ItemIsSelectable, True)
+        super(BaseMarker, self).__init__(x, y, size)
+        if size is not None: size.addItem(self)
+        self.setFlag(QtWidgets.QGraphicsItem.ItemIsMovable, True)
+        self.setFlag(QtWidgets.QGraphicsItem.ItemIsSelectable, True)
         brush = QtGui.QBrush(QtCore.Qt.SolidPattern)
         brush.setColor(color)
         self.setBrush(brush)
@@ -34,10 +35,10 @@ class BaseMarker(QtGui.QGraphicsEllipseItem, object):
         self.setPen(pen)
 
         dotsize = float(2)
-        self.dot = QtGui.QGraphicsEllipseItem(self.rect().center().x() - dotsize/2, self.rect().center().y() - dotsize/2, dotsize, dotsize, self)
+        self.dot = QtWidgets.QGraphicsEllipseItem(self.rect().center().x() - dotsize/2, self.rect().center().y() - dotsize/2, dotsize, dotsize, self)
         self.dot.setBrush(brush)
         # self.dot.setPen(pen)
-        self.dot.setFlag(QtGui.QGraphicsItem.ItemIgnoresParentOpacity, True)
+        self.dot.setFlag(QtWidgets.QGraphicsItem.ItemIgnoresParentOpacity, True)
         self.dot.setOpacity(0)
 
         self.setOpacity(S_.visualization.basic_marker_opacity)
@@ -55,7 +56,7 @@ class BaseMarker(QtGui.QGraphicsEllipseItem, object):
             self.changeHandler(self.antId)
 
     def itemChange(self, change, value):
-        if change == QtGui.QGraphicsItem.ItemPositionHasChanged:
+        if change == QtWidgets.QGraphicsItem.ItemPositionHasChanged:
             self.recently_changed = True
         return super(BaseMarker, self).itemChange(change, value)
 
@@ -133,7 +134,7 @@ class HeadMarker(TailHeadMarker):
         r, g, b = utils.visualization_utils.get_contrast_color(color.red(), color.green(), color.blue())
 
         dotsize = float(size)/2
-        self.head_circle = QtGui.QGraphicsEllipseItem(self.rect().center().x() - dotsize/2, self.rect().center().y() - dotsize/2, dotsize, dotsize, self)
+        self.head_circle = QtWidgets.QGraphicsEllipseItem(self.rect().center().x() - dotsize/2, self.rect().center().y() - dotsize/2, dotsize, dotsize, self)
         brush = QtGui.QBrush(QtCore.Qt.SolidPattern)
         brush.setColor(QtGui.QColor(r, g, b))
         self.head_circle.setBrush(brush)

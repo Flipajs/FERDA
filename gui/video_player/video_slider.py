@@ -1,6 +1,6 @@
-from PyQt4 import QtGui, QtCore
+from PyQt5 import QtCore, QtGui, QtWidgets
 
-class VideoSlider(QtGui.QSlider):
+class VideoSlider(QtWidgets.QSlider):
     """A slider that changes it's value directly to the part where it was clicked instead of slowly sliding there.
     Also, it's nice! """
 
@@ -33,9 +33,9 @@ class VideoSlider(QtGui.QSlider):
     def mousePressEvent(self, QMouseEvent):
         super(VideoSlider, self).mousePressEvent(QMouseEvent)
         self.usercontrolled = True
-        opt = QtGui.QStyleOptionSlider()
+        opt = QtWidgets.QStyleOptionSlider()
         self.initStyleOption(opt)
-        sr = self.style().subControlRect(QtGui.QStyle.CC_Slider, opt, QtGui.QStyle.SC_SliderHandle, self)
+        sr = self.style().subControlRect(QtWidgets.QStyle.CC_Slider, opt, QtWidgets.QStyle.SC_SliderHandle, self)
 
         if QMouseEvent.button() == QtCore.Qt.LeftButton and not sr.contains(QMouseEvent.pos()):
             if self.orientation() == QtCore.Qt.Vertical:

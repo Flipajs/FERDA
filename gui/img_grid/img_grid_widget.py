@@ -1,10 +1,10 @@
-from PyQt4 import QtGui
+from PyQt5 import QtGui, QtWidgets
 from gui.gui_utils import SelectableQLabel
 
 __author__ = 'fnaiser'
 
 
-class ImgGridWidget(QtGui.QWidget):
+class ImgGridWidget(QtWidgets.QWidget):
     def __init__(self, scrolling=True, cols=5, element_width=300):
         super(ImgGridWidget, self).__init__()
 
@@ -13,22 +13,22 @@ class ImgGridWidget(QtGui.QWidget):
         self.cols = cols
         self.id = 0
 
-        self.grid = QtGui.QGridLayout()
+        self.grid = QtWidgets.QGridLayout()
         self.grid.setSpacing(1)
-        self.grid.setMargin(0)
+        self.grid.setContentsMargins(0, 0, 0, 0)
 
-        self.grid_widget = QtGui.QWidget()
+        self.grid_widget = QtWidgets.QWidget()
         self.grid_widget.setLayout(self.grid)
 
         self.items = []
 
-        self.setLayout(QtGui.QVBoxLayout())
+        self.setLayout(QtWidgets.QVBoxLayout())
         self.layout().setSpacing(0)
         self.layout().setMargin(0)
 
         self.layout().addWidget(self.grid_widget)
         if self.scrolling:
-            self.scroll_ = QtGui.QScrollArea()
+            self.scroll_ = QtWidgets.QScrollArea()
             self.scroll_.setWidget(self.grid_widget)
             self.scroll_.setWidgetResizable(True)
             self.set_width_()
@@ -45,18 +45,18 @@ class ImgGridWidget(QtGui.QWidget):
         self.cols = cols
         self.element_width = element_width
 
-        grid2 = QtGui.QGridLayout()
+        grid2 = QtWidgets.QGridLayout()
 
         for i, item in enumerate(self.items):
             row = i / cols
             col = i % cols
             grid2.addWidget(self._widget(item), row, col)
 
-        QtGui.QWidget().setLayout(self.grid)
+        QtWidgets.QWidget().setLayout(self.grid)
         self.grid_widget.setLayout(grid2)
         self.grid = grid2
         self.grid.setSpacing(1)
-        self.grid.setMargin(0)
+        self.grid.setContentsMargins(0, 0, 0, 0)
 
         self.set_width_()
 

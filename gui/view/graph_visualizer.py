@@ -6,7 +6,7 @@ __author__ = 'flipajs'
 import sys
 
 import numpy as np
-from PyQt4 import QtGui
+from PyQt5 import QtGui, QtWidgets
 from skimage.transform import rescale
 
 from core.project.project import Project
@@ -82,7 +82,7 @@ def call_visualizer(t_start, t_end, project, solver, min_chunk_len, update_callb
 
 
 if __name__ == "__main__":
-    app = QtGui.QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
 
     if is_flipajs_pc():
         project = Project()

@@ -1,20 +1,20 @@
-from PyQt4 import QtCore
-from PyQt4 import QtGui
+from PyQt5 import QtCore, QtWidgets
+from PyQt5 import QtGui, QtWidgets
 
 
-class ControlPanel(QtGui.QFrame):
+class ControlPanel(QtWidgets.QFrame):
 
     def __init__(self, graph_w_callback):
         super(ControlPanel, self).__init__()
         # self.setStyleSheet("background-color: rgb(255,255,255); margin:5px; border:1px solid rgb(0, 0, 0); ")
-        self.l = QtGui.QHBoxLayout()
+        self.l = QtWidgets.QHBoxLayout()
         self.l.setContentsMargins(20, 0, 20, 0)
         self.prepare_buttons(graph_w_callback)
         self.setLayout(self.l)
 
     def prepare_button(self, label, callback, key):
-        button = QtGui.QPushButton(label)
-        action = QtGui.QAction(self)
+        button = QtWidgets.QPushButton(label)
+        action = QtWidgets.QAction(self)
         action.triggered.connect(callback)
         button.clicked.connect(callback)
         action.setShortcut(QtGui.QKeySequence(key))

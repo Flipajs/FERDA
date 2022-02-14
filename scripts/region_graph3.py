@@ -4,7 +4,7 @@ import random
 
 import matplotlib.colors as colors
 import numpy as np
-from PyQt4 import QtGui, QtCore
+from PyQt5 import QtCore, QtGui, QtWidgets
 from skimage.transform import resize
 
 from core.log import LogCategories, ActionNames
@@ -40,7 +40,7 @@ MERGED = 'm'
 SPLIT = 'split'
 
 
-class NodeGraphVisualizer(QtGui.QWidget):
+class NodeGraphVisualizer(QtWidgets.QWidget):
     def __init__(self, solver, g, regions, chunks, node_size=30, show_in_visualize_callback=None, show_vertically=False):
         super(NodeGraphVisualizer, self).__init__()
         self.show_in_visualizer_callback = show_in_visualize_callback
@@ -69,10 +69,10 @@ class NodeGraphVisualizer(QtGui.QWidget):
 
         self.chunks = chunks
 
-        self.view = QtGui.QGraphicsView(self)
-        self.setLayout(QtGui.QVBoxLayout())
-        self.edge_info_layout = QtGui.QHBoxLayout()
-        self.node_info_layout = QtGui.QHBoxLayout()
+        self.view = QtWidgets.QGraphicsView(self)
+        self.setLayout(QtWidgets.QVBoxLayout())
+        self.edge_info_layout = QtWidgets.QHBoxLayout()
+        self.node_info_layout = QtWidgets.QHBoxLayout()
         self.edge_info_layout.setSpacing(M)
         self.node_info_layout.setSpacing(M)
         self.view.setMouseTracking(True)
@@ -84,18 +84,18 @@ class NodeGraphVisualizer(QtGui.QWidget):
         self.layout().addLayout(self.node_info_layout)
         self.layout().setContentsMargins(M, M, M, M)
 
-        self.info_label_upper = QtGui.QLabel()
+        self.info_label_upper = QtWidgets.QLabel()
         self.stylesheet_info_label = "font: bold %spx" % FONT_SIZE
         self.info_label_upper.setStyleSheet(self.stylesheet_info_label)
         self.info_label_upper.setText("Frame:\nCentroid:\nArea:")
         self.info_label_upper.setFixedWidth(HEIGHT)
         self.info_label_upper.setAlignment(QtCore.Qt.AlignVCenter | QtCore.Qt.AlignRight)
         self.edge_info_layout.addWidget(self.info_label_upper)
-        self.left_label = QtGui.QLabel()
+        self.left_label = QtWidgets.QLabel()
         self.edge_info_layout.addWidget(self.left_label)
-        self.chunk_label = QtGui.QLabel()
+        self.chunk_label = QtWidgets.QLabel()
         self.edge_info_layout.addWidget(self.chunk_label)
-        self.right_label = QtGui.QLabel()
+        self.right_label = QtWidgets.QLabel()
         self.edge_info_layout.addWidget(self.right_label)
         stylesheet = "font: %spx; border-style: solid; border-radius: 25px; border-width: 1.5px" % FONT_SIZE
         self.right_label.setStyleSheet(stylesheet)
@@ -104,14 +104,14 @@ class NodeGraphVisualizer(QtGui.QWidget):
         self.left_label.setAlignment(QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter)
         self.right_label.setAlignment(QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter)
         self.chunk_label.setAlignment(QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter)
-        self.hide_button = QtGui.QPushButton("Hide (h)")
+        self.hide_button = QtWidgets.QPushButton("Hide (h)")
         self.hide_button.setStyleSheet("background-color: grey; border-style:outset; border-radius: 25px; \
                     border-width: 2px; border-color: beige; font: bold 14px; min-width:10em; padding 6px")
         self.hide_button.setFixedHeight(HEIGHT)
         self.hide_button.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_H))
         self.hide_button.clicked.connect(self.hide_button_function)
         self.edge_info_layout.addWidget(self.hide_button)
-        self.aux_space_upper = QtGui.QLabel()
+        self.aux_space_upper = QtWidgets.QLabel()
         self.aux_space_upper.setFixedHeight(HEIGHT)
         self.aux_space_upper.setFixedWidth(0)
         self.upper_widgets = [self.info_label_upper, self.left_label, self.right_label,
@@ -120,38 +120,38 @@ class NodeGraphVisualizer(QtGui.QWidget):
         for label in self.upper_widgets:
             label.setFixedHeight(HEIGHT)
 
-        self.plot_action = QtGui.QAction('plot', self)
+        self.plot_action = QtWidgets.QAction('plot', self)
         self.plot_action.triggered.connect(self.plot_graph)
         self.plot_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_P))
         self.addAction(self.plot_action)
 
-        self.connect_action = QtGui.QAction('connect', self)
+        self.connect_action = QtWidgets.QAction('connect', self)
         self.connect_action.triggered.connect(self.connect_chunks)
         self.connect_action.setShortcut(S_.controls.global_view_join_chunks)
         self.addAction(self.connect_action)
 
-        self.remove_action = QtGui.QAction('remove', self)
+        self.remove_action = QtWidgets.QAction('remove', self)
         self.remove_action.triggered.connect(self.remove_chunk)
         self.remove_action.setShortcut(S_.controls.remove_tracklet)
         self.addAction(self.remove_action)
 
-        self.stop_following_action = QtGui.QAction('stop following', self)
+        self.stop_following_action = QtWidgets.QAction('stop following', self)
         self.stop_following_action.triggered.connect(self.stop_following)
         self.stop_following_action.setShortcut(S_.controls.global_view_stop_following)
         self.addAction(self.stop_following_action)
 
-        self.ignore_during_suggestions_action = QtGui.QAction('ignore during suggestion', self)
+        self.ignore_during_suggestions_action = QtWidgets.QAction('ignore during suggestion', self)
         self.ignore_during_suggestions_action.triggered.connect(self.ignore_during_suggestions)
         self.ignore_during_suggestions_action.setShortcut(S_.controls.ignore_case)
         self.addAction(self.ignore_during_suggestions_action)
 
-        self.info_label_lower = QtGui.QLabel()
+        self.info_label_lower = QtWidgets.QLabel()
         self.info_label_lower.setStyleSheet(self.stylesheet_info_label)
         self.info_label_lower.setText("Frame:\nCentroid:\nArea:")
         self.info_label_lower.setAlignment(QtCore.Qt.AlignVCenter | QtCore.Qt.AlignRight)
         self.info_label_lower.setFixedWidth(HEIGHT)
         self.node_info_layout.addWidget(self.info_label_lower)
-        self.aux_space_lower = QtGui.QLabel()
+        self.aux_space_lower = QtWidgets.QLabel()
         self.aux_space_lower.setFixedHeight(HEIGHT)
         self.aux_space_lower.setFixedWidth(0)
         self.edge_info_layout.addWidget(self.aux_space_upper)
@@ -161,13 +161,13 @@ class NodeGraphVisualizer(QtGui.QWidget):
         self.boxes = []
         self.box_aux_count = 0
         for i in range(BOX_NUM):
-            label = QtGui.QLabel()
+            label = QtWidgets.QLabel()
             label.setAlignment(QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter)
             label.setFixedHeight(HEIGHT)
             label.hide()
             self.boxes.append([label, None, None, None])
             self.node_info_layout.addWidget(label)
-        self.clear_all_button = QtGui.QPushButton("Clear All (x)")
+        self.clear_all_button = QtWidgets.QPushButton("Clear All (x)")
         self.clear_all_button.setStyleSheet("background-color: grey; border-style:outset; border-width: 2px;\
                             border-color: beige; font: bold 14px;min-width:10em; border-radius:25px; padding 6px")
         self.clear_all_button.setFixedHeight(HEIGHT)
@@ -175,7 +175,7 @@ class NodeGraphVisualizer(QtGui.QWidget):
         self.clear_all_button.clicked.connect(self.clear_all_button_function)
         self.clear_all_button.setFixedHeight(HEIGHT)
 
-        self.show_in_visualizer_action = QtGui.QAction('show in visualizer', self)
+        self.show_in_visualizer_action = QtWidgets.QAction('show in visualizer', self)
         self.show_in_visualizer_action.triggered.connect(self.show_in_visualizer)
         self.show_in_visualizer_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_V))
         self.addAction(self.show_in_visualizer_action)
@@ -237,7 +237,7 @@ class NodeGraphVisualizer(QtGui.QWidget):
             self.node_label_update(n_)
             if self.use_img_toggle:
                 self.toggle_n(n_)
-        elif isinstance(item, QtGui.QGraphicsPixmapItem):
+        elif isinstance(item, QtWidgets.QGraphicsPixmapItem):
             # toggled item...
             return
         else:
@@ -551,7 +551,7 @@ class NodeGraphVisualizer(QtGui.QWidget):
         for f in self.frames:
             if self.show_frames_number:
                 f_num = self.frames.index(f) * GRAPH_WIDTH
-                t_ = QtGui.QGraphicsTextItem(str(f))
+                t_ = QtWidgets.QGraphicsTextItem(str(f))
 
                 x = self.x_step * f_num + self.node_size * 0.2
                 y = -20
@@ -617,7 +617,7 @@ class NodeGraphVisualizer(QtGui.QWidget):
                 self.toggle_n(picked)
                 self.toggle_n(best_match)
 
-            QtGui.QApplication.processEvents()
+            QtWidgets.QApplication.processEvents()
             self.view.centerOn(self.pixmaps[picked].scenePos())
 
     def draw_chunk_residual_edge(self, n1, n2, outgoing):
@@ -664,7 +664,7 @@ class NodeGraphVisualizer(QtGui.QWidget):
             self.widgets_hide(self.upper_widgets)
             self.clear_all_button_function()
 
-            hbox = QtGui.QHBoxLayout()
+            hbox = QtWidgets.QHBoxLayout()
 
             self.chunks_w = ChunksOnFrame(self.solver.project, self.plot_chunks_w, start_t, end_t, self.close_plot_graph)
             hbox.addWidget(self.chunks_w)
@@ -722,7 +722,7 @@ class NodeGraphVisualizer(QtGui.QWidget):
 
     def update_view(self, n1=None, n2=None):
         self.view.setParent(None)
-        self.view = QtGui.QGraphicsView(self)
+        self.view = QtWidgets.QGraphicsView(self)
 
         self.scene = MyScene()
         self.view.setScene(self.scene)

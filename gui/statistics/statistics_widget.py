@@ -1,6 +1,6 @@
 __author__ = 'fnaiser'
 
-from PyQt4 import QtGui
+from PyQt5 import QtGui, QtWidgets
 import csv
 import scipy.io as sio
 import numpy as np
@@ -13,47 +13,47 @@ import gc
 from scripts.export.export_part import Exporter, export_arena
 
 
-class StatisticsWidget(QtGui.QWidget):
+class StatisticsWidget(QtWidgets.QWidget):
     def __init__(self, project):
         super(StatisticsWidget, self).__init__()
 
         self.project = project
 
-        self.vbox = QtGui.QVBoxLayout()
+        self.vbox = QtWidgets.QVBoxLayout()
         self.setLayout(self.vbox)
-        self.fbox = QtGui.QFormLayout()
+        self.fbox = QtWidgets.QFormLayout()
         self.vbox.addLayout(self.fbox)
 
-        self.num_of_single_nodes = QtGui.QLabel('-1')
+        self.num_of_single_nodes = QtWidgets.QLabel('-1')
         self.fbox.addRow('Nodes num:', self.num_of_single_nodes)
 
-        self.num_of_chunks = QtGui.QLabel('-1')
+        self.num_of_chunks = QtWidgets.QLabel('-1')
         self.fbox.addRow('Chunks num:', self.num_of_chunks)
 
-        self.mean_ch_len = QtGui.QLabel('-1')
+        self.mean_ch_len = QtWidgets.QLabel('-1')
         self.fbox.addRow('Chunks mean len', self.mean_ch_len)
 
-        self.mean_ch_area = QtGui.QLabel('-1')
+        self.mean_ch_area = QtWidgets.QLabel('-1')
         self.fbox.addRow('Mean of means of chunks area', self.mean_ch_area)
 
-        self.med_ch_area = QtGui.QLabel('-1')
+        self.med_ch_area = QtWidgets.QLabel('-1')
         self.fbox.addRow('Med of means of chunks area', self.med_ch_area)
 
 
-        self.fbox.addRow('Min certainty value: ', QtGui.QLabel(str(self.project.solver_parameters.certainty_threshold)))
+        self.fbox.addRow('Min certainty value: ', QtWidgets.QLabel(str(self.project.solver_parameters.certainty_threshold)))
 
-        self.tracklet_coverage_step = QtGui.QLineEdit()
+        self.tracklet_coverage_step = QtWidgets.QLineEdit()
         self.tracklet_coverage_step.setText('10')
 
-        self.show_tracklet_coverage_b = QtGui.QPushButton('show coverage')
+        self.show_tracklet_coverage_b = QtWidgets.QPushButton('show coverage')
         self.show_tracklet_coverage_b.clicked.connect(self.show_tracklet_coverage)
         self.fbox.addWidget(self.tracklet_coverage_step)
         self.fbox.addWidget(self.show_tracklet_coverage_b)
 
-        self.export_fbox = QtGui.QFormLayout()
+        self.export_fbox = QtWidgets.QFormLayout()
         self.vbox.addLayout(self.export_fbox)
 
-        self.export_name = QtGui.QLineEdit('out')
+        self.export_name = QtWidgets.QLineEdit('out')
         self.export_fbox.addRow('output name', self.export_name)
 
         # self.export_trajectories = QtGui.QCheckBox('')
@@ -76,17 +76,17 @@ class StatisticsWidget(QtGui.QWidget):
         # self.include_axes.setChecked(True)
         # self.export_fbox.addRow('include axes (major/minor)', self.include_axes)
 
-        self.include_region_points = QtGui.QCheckBox('')
+        self.include_region_points = QtWidgets.QCheckBox('')
         self.include_region_points.setChecked(True)
         self.export_fbox.addRow('include region points', self.include_region_points)
 
-        self.include_region_contour = QtGui.QCheckBox('')
+        self.include_region_contour = QtWidgets.QCheckBox('')
         self.export_fbox.addRow('include region contour', self.include_region_contour)
 
-        self.export_chunks_only = QtGui.QCheckBox('')
+        self.export_chunks_only = QtWidgets.QCheckBox('')
         self.export_fbox.addRow('export chunks only', self.export_chunks_only)
 
-        self.file_type = QtGui.QComboBox()
+        self.file_type = QtWidgets.QComboBox()
         # self.file_type.addItem('.csv')
         self.file_type.addItem('.mat')
         # self.file_type.addItem('.txt')
@@ -98,7 +98,7 @@ class StatisticsWidget(QtGui.QWidget):
         # self.memory_limit_mb.setText('1000')
         # self.export_fbox.addRow('memory approx. limit (MB)', self.memory_limit_mb)
 
-        self.export_b = QtGui.QPushButton('export')
+        self.export_b = QtWidgets.QPushButton('export')
         self.export_b.clicked.connect(self.export)
         self.export_fbox.addRow(self.export_b)
 

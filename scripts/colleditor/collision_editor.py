@@ -2,7 +2,7 @@ import sys
 
 __author__ = 'filip@naiser.cz'
 
-from PyQt4 import QtGui, QtCore
+from PyQt5 import QtCore, QtGui, QtWidgets
 from .collision_view import CollisionView
 import cv2
 import os
@@ -17,7 +17,7 @@ import default_settings
 
 settings = QtCore.QSettings("FERDA")
 
-class CollisionEditor(QtGui.QMainWindow):
+class CollisionEditor(QtWidgets.QMainWindow):
     """A tool for results of collision including MSER region editing and
         ant contour fitting."""
 
@@ -47,27 +47,27 @@ class CollisionEditor(QtGui.QMainWindow):
         self.resize(800, 600)
         self.setWindowTitle("Collision Editor")
 
-        self.setCentralWidget(QtGui.QWidget(self))
-        self.central_layout = QtGui.QVBoxLayout()
-        self.central_layout.setMargin(0)
+        self.setCentralWidget(QtWidgets.QWidget(self))
+        self.central_layout = QtWidgets.QVBoxLayout()
+        self.central_layout.setContentsMargins(0, 0, 0, 0)
         self.centralWidget().setLayout(self.central_layout)
 
-        self.setStatusBar(QtGui.QStatusBar())
+        self.setStatusBar(QtWidgets.QStatusBar())
         self.statusBar().setSizeGripEnabled(False)
 
-        self.setMenuBar(QtGui.QMenuBar())
+        self.setMenuBar(QtWidgets.QMenuBar())
 
-        self.draw_region_action = QtGui.QAction("Draw region", self.centralWidget())
-        self.settings_action = QtGui.QAction("Settings", self.centralWidget())
+        self.draw_region_action = QtWidgets.QAction("Draw region", self.centralWidget())
+        self.settings_action = QtWidgets.QAction("Settings", self.centralWidget())
         self.menuBar().addAction(self.draw_region_action)
         self.menuBar().addAction(self.settings_action)
 
-        self.cancel_action = QtGui.QAction("Cancel fixing", self.centralWidget())
+        self.cancel_action = QtWidgets.QAction("Cancel fixing", self.centralWidget())
         self.addAction(self.cancel_action)
 
         self.init_actions()
 
-        self.scene = QtGui.QGraphicsScene()
+        self.scene = QtWidgets.QGraphicsScene()
         self.graphics_view = CollisionView(self.centralWidget())
         self.central_layout.addWidget(self.graphics_view)
         self.graphics_view.setScene(self.scene)
@@ -237,7 +237,7 @@ class CollisionEditor(QtGui.QMainWindow):
         pen.setColor(settings.value('position_square_color', settings_dialog.get_default('position_square_color'), QtGui.QColor))
         brush = QtGui.QBrush()
         brush.setStyle(QtCore.Qt.NoBrush)
-        self.pos_marker = QtGui.QGraphicsRectItem(0, 0, width, height)
+        self.pos_marker = QtWidgets.QGraphicsRectItem(0, 0, width, height)
         self.pos_marker.setPos(point_one)
         self.pos_marker.setBrush(brush)
         self.pos_marker.setPen(pen)
@@ -253,12 +253,12 @@ class CollisionEditor(QtGui.QMainWindow):
         pen.setColor(settings.value('copy_square_color', settings_dialog.get_default('copy_square_color'), QtGui.QColor))
         brush = QtGui.QBrush()
         brush.setStyle(QtCore.Qt.NoBrush)
-        self.copy_marker = QtGui.QGraphicsRectItem(0, 0, width, height)
+        self.copy_marker = QtWidgets.QGraphicsRectItem(0, 0, width, height)
         self.copy_marker.setPos(x, y)
         self.copy_marker.setBrush(brush)
         self.copy_marker.setPen(pen)
         self.copy_marker.setZValue(.6)
-        self.copy_marker.setFlag(QtGui.QGraphicsItem.ItemIsMovable, True)
+        self.copy_marker.setFlag(QtWidgets.QGraphicsItem.ItemIsMovable, True)
         self.scene.addItem(self.copy_marker)
 
     def remove_pos_marker(self):
@@ -365,7 +365,7 @@ class CollisionEditor(QtGui.QMainWindow):
 
 
 def main():
-    app = QtGui.QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
     ex = CollisionEditor()
 
     sys.exit(app.exec_())

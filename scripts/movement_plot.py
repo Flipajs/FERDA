@@ -6,7 +6,7 @@ from utils.video_manager import get_auto_video_manager
 from utils.drawing.points import draw_points, draw_points_crop, draw_points_crop_binary
 import cv2
 from math import sin, cos
-from PyQt4 import QtGui, QtCore
+from PyQt5 import QtCore
 import sys
 from gui.img_grid.img_grid_widget import ImgGridWidget
 from gui.gui_utils import get_image_label

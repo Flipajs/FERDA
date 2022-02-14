@@ -1,6 +1,6 @@
 import numpy as np
 import cv2
-from PyQt4 import QtGui
+from PyQt5 import QtGui, QtWidgets
 from gui.img_controls.gui_utils import cvimg2qtpixmap
 
 default_params = {'P_width': 20,
@@ -28,7 +28,7 @@ default_params = {'P_width': 20,
                   }
 
 
-class PNIdsItem(QtGui.QGraphicsPixmapItem):
+class PNIdsItem(QtWidgets.QGraphicsPixmapItem):
     def __init__(self, pixmap, id_=None, callback=None):
         super(PNIdsItem, self).__init__(pixmap)
 

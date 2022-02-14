@@ -1,7 +1,7 @@
 __author__ = 'flipajs'
 
 import numpy as np
-from PyQt4 import QtGui
+from PyQt5 import QtGui, QtWidgets
 from skimage.transform import resize
 
 from gui.img_controls import markers
@@ -10,45 +10,45 @@ from gui.settings import Settings as S_
 from utils.video_manager import get_auto_video_manager
 
 
-class ChunksOnFrame(QtGui.QWidget):
+class ChunksOnFrame(QtWidgets.QWidget):
     def __init__(self, project, plot_w, start_t, end_t, close_callback):
         super(ChunksOnFrame, self).__init__()
 
         self.close_callback = close_callback
         self.plot_w = plot_w
-        self.setLayout(QtGui.QHBoxLayout())
+        self.setLayout(QtWidgets.QHBoxLayout())
         self.setFixedWidth(450)
         self.project = project
-        self.slider = QtGui.QSlider()
+        self.slider = QtWidgets.QSlider()
         self.slider.setMinimum(start_t)
         self.slider.setMaximum(end_t)
         self.slider.valueChanged.connect(self.frame_slider_changed)
 
         self.layout().addWidget(self.slider)
 
-        self.view = QtGui.QGraphicsView()
-        self.scene = QtGui.QGraphicsScene()
+        self.view = QtWidgets.QGraphicsView()
+        self.scene = QtWidgets.QGraphicsScene()
         self.view.setScene(self.scene)
 
         self.vid = get_auto_video_manager(self.project)
         self.frame_it = None
 
-        self.next_action = QtGui.QAction('next', self)
+        self.next_action = QtWidgets.QAction('next', self)
         self.next_action.triggered.connect(self.next_frame)
         self.next_action.setShortcut(S_.controls.video_next)
         self.addAction(self.next_action)
 
-        self.prev_action = QtGui.QAction('prev', self)
+        self.prev_action = QtWidgets.QAction('prev', self)
         self.prev_action.triggered.connect(self.prev_frame)
         self.prev_action.setShortcut(S_.controls.video_prev)
         self.addAction(self.prev_action)
 
         self.marker_its = []
 
-        self.vbox = QtGui.QVBoxLayout()
+        self.vbox = QtWidgets.QVBoxLayout()
         self.layout().addLayout(self.vbox)
 
-        self.close_b = QtGui.QPushButton('close')
+        self.close_b = QtWidgets.QPushButton('close')
         self.close_b.clicked.connect(self.close_callback)
         self.vbox.addWidget(self.close_b)
         self.vbox.addWidget(self.view)

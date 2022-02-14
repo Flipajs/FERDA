@@ -3,7 +3,7 @@ import sys
 import numpy as np
 import os
 import warnings
-from PyQt4 import QtGui, QtCore
+from PyQt5 import QtCore, QtGui, QtWidgets
 
 from core.id_detection.learning_process import LearningProcess
 from core.project.project import Project
@@ -12,9 +12,15 @@ from gui.settings import Settings as S_
 from utils.img_manager import ImgManager
 
 
-class QCustomTableWidgetItem (QtGui.QTableWidgetItem):
+try:
+    QString = unicode
+except NameError:
+    # Python 3
+    QString = str
+
+class QCustomTableWidgetItem (QtWidgets.QTableWidgetItem):
     def __init__ (self, value=''):
-        super(QCustomTableWidgetItem, self).__init__(QtCore.QString('%s' % value))
+        super(QCustomTableWidgetItem, self).__init__(QString('%s' % value))
 
     def __lt__ (self, other):
         if (isinstance(other, QCustomTableWidgetItem)):
@@ -30,9 +36,9 @@ class QCustomTableWidgetItem (QtGui.QTableWidgetItem):
             except:
                 return self.data(QtCore.Qt.EditRole).toString() < other.data(QtCore.Qt.EditRole).toString()
         else:
-            return QtGui.QTableWidgetItem.__lt__(self, other)
+            return QtWidgets.QTableWidgetItem.__lt__(self, other)
 
-class QCustomTableWidget (QtGui.QTableWidget):
+class QCustomTableWidget (QtWidgets.QTableWidget):
     def __init__ (self, parent=None):
         super(QCustomTableWidget, self).__init__(parent)
         # self.setColumnCount(2)
@@ -62,15 +68,15 @@ class Filter(QtCore.QObject):
             return False
 
 
-class LearningWidget(QtGui.QWidget):
+class LearningWidget(QtWidgets.QWidget):
     def __init__(self, project=None, show_tracklet_callback=None, progressbar_callback=None):
         super(LearningWidget, self).__init__()
 
         self.project = project
         self.progressbar_callback = progressbar_callback
         self.show_tracklet_callback = show_tracklet_callback
-        self.vbox = QtGui.QVBoxLayout()
-        self.hbox = QtGui.QHBoxLayout()
+        self.vbox = QtWidgets.QVBoxLayout()
+        self.hbox = QtWidgets.QHBoxLayout()
         self.top_stripe_layout = FlowLayout()
         self.setLayout(self.vbox)
 
@@ -79,13 +85,13 @@ class LearningWidget(QtGui.QWidget):
 
         self.lp = None
         if not self.project:
-            self.load_project_button = QtGui.QPushButton('load project')
+            self.load_project_button = QtWidgets.QPushButton('load project')
             self.load_project_button.clicked.connect(self.load_project)
             self.top_stripe_layout.addWidget(self.load_project_button)
         else:
             self.lp = LearningProcess(self.project, ghost=False, progressbar_callback=progressbar_callback)
 
-        self.start_button = QtGui.QPushButton('start')
+        self.start_button = QtWidgets.QPushButton('start')
         self.start_button.clicked.connect(self.lp.run_learning)
         # self.top_stripe_layout.addWidget(self.start_button)
 
@@ -97,14 +103,14 @@ class LearningWidget(QtGui.QWidget):
         self.info_table.setFixedWidth(220)
         self.hbox.addWidget(self.info_table)
 
-        self.next_step_button = QtGui.QPushButton('next step')
+        self.next_step_button = QtWidgets.QPushButton('next step')
         # self.lp will change...
         self.next_step_button.clicked.connect(lambda x: self.lp.next_step())
         # self.top_stripe_layout.addWidget(self.next_step_button)
 
         # self.top_stripe_layout.addWidget(QtGui.QLabel('min examples to retrain:'))
 
-        self.min_examples_to_retrain_i = QtGui.QLineEdit()
+        self.min_examples_to_retrain_i = QtWidgets.QLineEdit()
         if self.lp is not None:
             self.min_examples_to_retrain_i.setText(str(self.lp.min_new_samples_to_retrain))
         self.min_examples_to_retrain_i.adjustSize()
@@ -117,47 +123,47 @@ class LearningWidget(QtGui.QWidget):
         # self.load_classifier_b.clicked.connect(self.load_classifier)
         # self.top_stripe_layout.addWidget(self.load_classifier_b)
 
-        self.load_features_b = QtGui.QPushButton('load features')
+        self.load_features_b = QtWidgets.QPushButton('load features')
         self.load_features_b.clicked.connect(self.load_features)
         self.top_stripe_layout.addWidget(self.load_features_b)
 
-        self.compute_features_b = QtGui.QPushButton('compute features')
+        self.compute_features_b = QtWidgets.QPushButton('compute features')
         self.compute_features_b.clicked.connect(self.recompute_features)
         self.top_stripe_layout.addWidget(self.compute_features_b)
 
-        self.auto_init_method_cb = QtGui.QComboBox()
+        self.auto_init_method_cb = QtWidgets.QComboBox()
         self.auto_init_method_cb.addItem("max min")
         self.auto_init_method_cb.addItem("max sum")
         self.top_stripe_layout.addWidget(self.auto_init_method_cb)
 
-        self.auto_init_b = QtGui.QPushButton('auto_init')
+        self.auto_init_b = QtWidgets.QPushButton('auto_init')
         self.auto_init_b.clicked.connect(self.auto_init)
         self.top_stripe_layout.addWidget(self.auto_init_b)
 
-        self.reset_learning_button = QtGui.QPushButton('learn/restart classifier')
+        self.reset_learning_button = QtWidgets.QPushButton('learn/restart classifier')
         self.reset_learning_button.clicked.connect(self.reset_learning)
         self.top_stripe_layout.addWidget(self.reset_learning_button)
 
-        self.prepare_unassigned_cs_b = QtGui.QPushButton('prepare unassigned CS')
+        self.prepare_unassigned_cs_b = QtWidgets.QPushButton('prepare unassigned CS')
         self.prepare_unassigned_cs_b.clicked.connect(self.prepare_unassigned_cs)
         self.top_stripe_layout.addWidget(self.prepare_unassigned_cs_b)
 
-        self.label_tracklet_min_length = QtGui.QLabel('tracklet min len: ')
+        self.label_tracklet_min_length = QtWidgets.QLabel('tracklet min len: ')
         self.top_stripe_layout.addWidget(self.label_tracklet_min_length)
 
-        self.tracklet_min_length_sb = QtGui.QSpinBox()
+        self.tracklet_min_length_sb = QtWidgets.QSpinBox()
         self.tracklet_min_length_sb.setValue(20)
         self.tracklet_min_length_sb.setMinimum(0)
         self.tracklet_min_length_sb.setMaximum(10000)
         self.top_stripe_layout.addWidget(self.tracklet_min_length_sb)
-        self.update_tracklet_len_b = QtGui.QPushButton('apply')
+        self.update_tracklet_len_b = QtWidgets.QPushButton('apply')
         self.update_tracklet_len_b.clicked.connect(self.tracklet_min_length_changed)
         self.top_stripe_layout.addWidget(self.update_tracklet_len_b)
 
-        self.label_certainty_eps = QtGui.QLabel('certainty eps:')
+        self.label_certainty_eps = QtWidgets.QLabel('certainty eps:')
         self.top_stripe_layout.addWidget(self.label_certainty_eps)
 
-        self.certainty_eps_spinbox = QtGui.QDoubleSpinBox()
+        self.certainty_eps_spinbox = QtWidgets.QDoubleSpinBox()
         self.certainty_eps_spinbox.setSingleStep(0.01)
         self.certainty_eps_spinbox.setValue(0.7)
         self.certainty_eps_spinbox.setMaximum(1)
@@ -166,56 +172,56 @@ class LearningWidget(QtGui.QWidget):
         self.certainty_eps_spinbox.valueChanged.connect(self.certainty_eps_changed)
         self.top_stripe_layout.addWidget(self.certainty_eps_spinbox)
 
-        self.num_next_step = QtGui.QLineEdit()
+        self.num_next_step = QtWidgets.QLineEdit()
         self.num_next_step.setText('10')
         self.top_stripe_layout.addWidget(self.num_next_step)
-        self.n_next_steps_button = QtGui.QPushButton('do N steps')
+        self.n_next_steps_button = QtWidgets.QPushButton('do N steps')
         self.n_next_steps_button.clicked.connect(self.do_n_steps)
         self.top_stripe_layout.addWidget(self.n_next_steps_button)
 
-        self.show_tracklet_button = QtGui.QPushButton('show selected tracklet')
+        self.show_tracklet_button = QtWidgets.QPushButton('show selected tracklet')
         self.show_tracklet_button.clicked.connect(self.show_tracklet)
         self.top_stripe_layout.addWidget(self.show_tracklet_button)
 
 
-        self.save_button = QtGui.QPushButton('save')
+        self.save_button = QtWidgets.QPushButton('save')
         self.save_button.clicked.connect(self.save)
         self.top_stripe_layout.addWidget(self.save_button)
 
         # TODO: last info label
         # TODO: update callback... info about decisions...
 
-        self.update_b = QtGui.QPushButton('update table')
+        self.update_b = QtWidgets.QPushButton('update table')
         self.update_b.clicked.connect(self.update_callback)
         self.top_stripe_layout.addWidget(self.update_b)
 
-        self.delete_user_decisions_b = QtGui.QPushButton('delete user decisions')
+        self.delete_user_decisions_b = QtWidgets.QPushButton('delete user decisions')
         self.delete_user_decisions_b.clicked.connect(self.clear_user_decisions)
         self.top_stripe_layout.addWidget(self.delete_user_decisions_b)
 
-        self.use_xgboost_ch = QtGui.QCheckBox("use XGBoost")
+        self.use_xgboost_ch = QtWidgets.QCheckBox("use XGBoost")
         self.use_xgboost_ch.setChecked(False)
         self.top_stripe_layout.addWidget(self.use_xgboost_ch)
 
-        self.use_idcr_ch = QtGui.QCheckBox("use IDCR")
+        self.use_idcr_ch = QtWidgets.QCheckBox("use IDCR")
         self.use_idcr_ch.setChecked(True)
         self.use_idcr_ch.stateChanged.connect(self.use_idcr_update)
         self.top_stripe_layout.addWidget(self.use_idcr_ch)
 
-        self.show_init_summary_b = QtGui.QPushButton('show init summary')
+        self.show_init_summary_b = QtWidgets.QPushButton('show init summary')
         self.show_init_summary_b.clicked.connect(self.show_init_summary)
         self.top_stripe_layout.addWidget(self.show_init_summary_b)
 
-        self.compute_distinguishability_b = QtGui.QPushButton('debug: comp. disting.')
+        self.compute_distinguishability_b = QtWidgets.QPushButton('debug: comp. disting.')
         # self.lp will change...
         self.compute_distinguishability_b.clicked.connect(lambda x: self.lp.compute_distinguishability())
         self.top_stripe_layout.addWidget(self.compute_distinguishability_b)
 
-        self.update_undecided_tracklets_b = QtGui.QPushButton('debug: update undecided')
+        self.update_undecided_tracklets_b = QtWidgets.QPushButton('debug: update undecided')
         self.update_undecided_tracklets_b.clicked.connect(self.update_undecided_tracklets)
         self.top_stripe_layout.addWidget(self.update_undecided_tracklets_b)
 
-        self.tracklet_debug_info_b = QtGui.QPushButton("debug: tracklet info")
+        self.tracklet_debug_info_b = QtWidgets.QPushButton("debug: tracklet info")
         self.tracklet_debug_info_b.clicked.connect(self.tracklet_debug_info)
         self.top_stripe_layout.addWidget(self.tracklet_debug_info_b)
 
@@ -321,7 +327,7 @@ class LearningWidget(QtGui.QWidget):
 
     def add_tracklet_table(self):
         if not hasattr(self, 'tracklets_table') or self.tracklets_table is None:
-            self.tracklets_table = QtGui.QTableWidget()
+            self.tracklets_table = QtWidgets.QTableWidget()
 
             self.tracklets_table.setRowCount(len(self.lp.undecided_tracklets))
             num_animals = len(self.project.animals)
@@ -385,7 +391,7 @@ class LearningWidget(QtGui.QWidget):
         try:
             num = int(self.num_next_step.text())
         except:
-            QtGui.QMessageBox('not a valid number!')
+            QtWidgets.QMessageBox('not a valid number!')
 
         for i in range(num):
             print_progress(i, num, "deciding {} most certain tracklets".format(num))
@@ -544,7 +550,7 @@ class LearningWidget(QtGui.QWidget):
         if os.path.isdir(S_.temp.last_wd_path):
             path = S_.temp.last_wd_path
 
-        working_directory = str(QtGui.QFileDialog.getExistingDirectory(self, "Select working directory", path, QtGui.QFileDialog.ShowDirsOnly))
+        working_directory = str(QtWidgets.QFileDialog.getExistingDirectory(self, "Select working directory", path, QtWidgets.QFileDialog.ShowDirsOnly))
         # TODO: load project...
         # self.project = ...
         # TODO: use_feature_cache...
@@ -564,7 +570,7 @@ class LearningWidget(QtGui.QWidget):
             items = list(map(str, self.lp.all_ids - tracklet.N))
             items = sorted(items)
 
-            item, ok = QtGui.QInputDialog.getItem(self, "select animal ID for tracklet ID: "+str(tracklet.id()),
+            item, ok = QtWidgets.QInputDialog.getItem(self, "select animal ID for tracklet ID: "+str(tracklet.id()),
                                                   "list of ids", items, 0, False)
         else:
             ok = True
@@ -578,10 +584,10 @@ class LearningWidget(QtGui.QWidget):
 
     def clear_user_decisions(self):
         msg = "Do you really want to delete all USERs decisions?"
-        reply = QtGui.QMessageBox.question(self, 'Message',
-                                           msg, QtGui.QMessageBox.Yes, QtGui.QMessageBox.No)
+        reply = QtWidgets.QMessageBox.question(self, 'Message',
+                                           msg, QtWidgets.QMessageBox.Yes, QtWidgets.QMessageBox.No)
 
-        if reply == QtGui.QMessageBox.Yes:
+        if reply == QtWidgets.QMessageBox.Yes:
             self.lp.user_decisions = []
 
         self.update_callback()
@@ -687,7 +693,7 @@ class LearningWidget(QtGui.QWidget):
                 item = make_item(img_representants[aid][i], region_representants[aid][i], HH, WW)
                 w.add_item(item)
 
-        win = QtGui.QMainWindow()
+        win = QtWidgets.QMainWindow()
         win.setCentralWidget(w)
         win.show()
         self.w = win
@@ -722,7 +728,7 @@ def draw_region(p, vm, v):
     return im
 
 def make_item(im, id_, HH, WW):
-    from PyQt4 import QtGui
+    from PyQt5 import QtGui, QtWidgets
     from gui.gui_utils import SelectableQLabel
     from PIL import ImageQt
     im_ = np.zeros((max(im.shape[0], HH), max(im.shape[1], WW), 3), dtype=np.uint8)
@@ -743,7 +749,7 @@ def make_item(im, id_, HH, WW):
     return item
 
 if __name__ == '__main__':
-    app = QtGui.QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
 
     p = Project()
     p.load('/Users/flipajs/Documents/wd/GT/Cam1 copy/cam1.fproj')

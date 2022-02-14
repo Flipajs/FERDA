@@ -5,8 +5,8 @@ import sys
 import cv2
 import numpy as np
 
-from PyQt4 import QtGui
-from PyQt4 import QtCore
+from PyQt5 import QtGui, QtWidgets
+from PyQt5 import QtCore, QtWidgets
 from skimage.transform import resize
 from core.region.mser import get_regions_in_img
 from core.project.project import Project
@@ -20,40 +20,40 @@ import time
 from core.graph.region_chunk import RegionChunk
 
 
-class RegionReconstruction(QtGui.QWidget):
+class RegionReconstruction(QtWidgets.QWidget):
     def __init__(self, project, solver=None):
         super(RegionReconstruction, self).__init__()
         self.project = project
 
-        self.setLayout(QtGui.QVBoxLayout())
+        self.setLayout(QtWidgets.QVBoxLayout())
 
-        self.groupBox = QtGui.QGroupBox('Reconstruct and export regions in given frames.')
+        self.groupBox = QtWidgets.QGroupBox('Reconstruct and export regions in given frames.')
         self.layout().addWidget(self.groupBox)
-        self.vbox = QtGui.QVBoxLayout()
+        self.vbox = QtWidgets.QVBoxLayout()
         self.groupBox.setLayout(self.vbox)
 
-        self.fbox = QtGui.QFormLayout()
+        self.fbox = QtWidgets.QFormLayout()
         self.vbox.addLayout(self.fbox)
 
-        self.out_name = QtGui.QLineEdit('out_regions')
+        self.out_name = QtWidgets.QLineEdit('out_regions')
         self.fbox.addRow('output name: ', self.out_name)
 
-        self.query = QtGui.QLineEdit('1 2')
+        self.query = QtWidgets.QLineEdit('1 2')
         self.fbox.addRow('query in following format:\n1 2 3 4 \n1, 2, 3, 4 \n1,2,3,4\n1:1000 (returns list of 1, 2, 3,..., 999, 1000\n1:3:1000 (returns list of 1, 4, 7, .... )', self.query)
 
-        self.add_whole_regions = QtGui.QCheckBox()
+        self.add_whole_regions = QtWidgets.QCheckBox()
         self.add_whole_regions.setChecked(True)
         self.fbox.addRow('add whole regions', self.add_whole_regions)
 
-        self.add_convex_hull = QtGui.QCheckBox()
+        self.add_convex_hull = QtWidgets.QCheckBox()
         self.fbox.addRow('add convex hull', self.add_convex_hull)
 
-        self.save_gt = QtGui.QCheckBox()
+        self.save_gt = QtWidgets.QCheckBox()
         self.save_gt.setChecked(True)
 
         self.fbox.addRow('save as GT to .pkl file', self.save_gt)
 
-        self.export_results = QtGui.QPushButton('export')
+        self.export_results = QtWidgets.QPushButton('export')
         self.export_results.clicked.connect(self.export)
         self.fbox.addRow('', self.export_results)
 
@@ -221,7 +221,7 @@ def get_trajectories(project, frames):
 
 
 if __name__ == "__main__":
-    app = QtGui.QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
 
     p = Project()
     p.load('/Users/flipajs/Documents/wd/eight_22/eight22.fproj')

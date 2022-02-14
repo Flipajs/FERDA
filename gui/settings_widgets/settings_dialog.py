@@ -1,10 +1,10 @@
-from PyQt4 import QtGui, QtCore
+from PyQt5 import QtCore, QtGui, QtWidgets
 from gui.settings_widgets.parameters_tab import ParametersTab
 from gui.settings_widgets.visualisation_tab import VisualisationTab
 from gui.settings import Settings as S_
 
 
-class SettingsDialog(QtGui.QDialog):
+class SettingsDialog(QtWidgets.QDialog):
     """A dialog used for settings of almost everything in the ants results tool. Note that the QSettings name is
     'Ants results tool'. When you need to add a settings, add it onto tab you want or add a new tab. The method
     populate of each tab is used to set initial values, the method restore_defaults populates the dialog with settings
@@ -26,12 +26,12 @@ class SettingsDialog(QtGui.QDialog):
 
         self.setWindowTitle("Settings")
 
-        self.buttonBox = QtGui.QDialogButtonBox(QtGui.QDialogButtonBox.Ok | QtGui.QDialogButtonBox.Cancel | QtGui.QDialogButtonBox.RestoreDefaults)
+        self.buttonBox = QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel | QtWidgets.QDialogButtonBox.RestoreDefaults)
         self.buttonBox.accepted.connect(self.accept)
         self.buttonBox.rejected.connect(self.reject)
-        self.buttonBox.button(QtGui.QDialogButtonBox.RestoreDefaults).clicked.connect(self.restore_defaults)
+        self.buttonBox.button(QtWidgets.QDialogButtonBox.RestoreDefaults).clicked.connect(self.restore_defaults)
 
-        self.tabWidget = QtGui.QTabWidget()
+        self.tabWidget = QtWidgets.QTabWidget()
 
         # self.appearance_tab = AppearanceTab()
         # self.tabWidget.addTab(self.appearance_tab, "Appearance")
@@ -49,8 +49,8 @@ class SettingsDialog(QtGui.QDialog):
         self.tabWidget.addTab(self.visualisation_tab, "Visualisation")
         # self.tabWidget.setCurrentWidget(self.parameters_tab)
 
-        self.layout = QtGui.QVBoxLayout()
-        self.layout.setSizeConstraint(QtGui.QLayout.SetNoConstraint)
+        self.layout = QtWidgets.QVBoxLayout()
+        self.layout.setSizeConstraint(QtWidgets.QLayout.SetNoConstraint)
         self.layout.addWidget(self.tabWidget)
         self.layout.addWidget(self.buttonBox)
         self.setLayout(self.layout)
@@ -75,12 +75,12 @@ class SettingsDialog(QtGui.QDialog):
         self.tabWidget.currentWidget().restore_defaults()
 
     def done(self, p_int):
-        if p_int == QtGui.QDialog.Accepted:
+        if p_int == QtWidgets.QDialog.Accepted:
             self.harvest_results()
         super(SettingsDialog, self).done(p_int)
 
 
-class KeyBindingDialog(QtGui.QDialog):
+class KeyBindingDialog(QtWidgets.QDialog):
 
     def __init__(self, parent=None):
         super(KeyBindingDialog, self).__init__(parent, QtCore.Qt.WindowTitleHint | QtCore.Qt.WindowSystemMenuHint)
@@ -89,13 +89,13 @@ class KeyBindingDialog(QtGui.QDialog):
 
         self.shortcut = None
 
-        self.main_layout = QtGui.QVBoxLayout(self)
+        self.main_layout = QtWidgets.QVBoxLayout(self)
         self.setLayout(self.main_layout)
 
-        self.button_box = QtGui.QDialogButtonBox(QtGui.QDialogButtonBox.Cancel)
+        self.button_box = QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.Cancel)
         self.button_box.rejected.connect(self.reject)
 
-        self.main_layout.addWidget(QtGui.QLabel("Press the shortcut you want to bind."))
+        self.main_layout.addWidget(QtWidgets.QLabel("Press the shortcut you want to bind."))
 
         self.main_layout.addWidget(self.button_box)
 
@@ -116,7 +116,7 @@ class KeyBindingDialog(QtGui.QDialog):
             super(KeyBindingDialog, self).keyPressEvent(event)
 
 
-class KeyBindingsTab(QtGui.QWidget):
+class KeyBindingsTab(QtWidgets.QWidget):
 
     def __init__(self, settable_buttons=[], parent=None):
         settable_buttons = [
@@ -150,16 +150,16 @@ class KeyBindingsTab(QtGui.QWidget):
 
         super(KeyBindingsTab, self).__init__(parent)
         self.buttons = settable_buttons
-        self.main_layout = QtGui.QVBoxLayout(self)
+        self.main_layout = QtWidgets.QVBoxLayout(self)
         self.setLayout(self.main_layout)
-        self.table = QtGui.QTableWidget(len(settable_buttons), 2, self)
+        self.table = QtWidgets.QTableWidget(len(settable_buttons), 2, self)
         self.main_layout.addWidget(self.table)
         self.table.horizontalHeader().setVisible(False)
         self.table.verticalHeader().setVisible(False)
         self.restore_defaults()
         self.table.itemDoubleClicked.connect(self.bind_new_key)
 
-        self.main_layout.addWidget(QtGui.QLabel('To guarantee the functionality of new shortcuts, please restart \
+        self.main_layout.addWidget(QtWidgets.QLabel('To guarantee the functionality of new shortcuts, please restart \
         application after hitting OK button.'))
 
     def bind_new_key(self, item):
@@ -171,10 +171,10 @@ class KeyBindingsTab(QtGui.QWidget):
 
     def restore_defaults(self):
         for i in range(len(self.buttons)):
-            self.table.setItem(i, 0, QtGui.QTableWidgetItem(self.translate(self.buttons[i])))
+            self.table.setItem(i, 0, QtWidgets.QTableWidgetItem(self.translate(self.buttons[i])))
             self.table.item(i, 0).setFlags(QtCore.Qt.NoItemFlags)
             s = eval('S_.controls.'+self.buttons[i]).toString()
-            self.table.setItem(i, 1, QtGui.QTableWidgetItem(s))
+            self.table.setItem(i, 1, QtWidgets.QTableWidgetItem(s))
             self.table.item(i, 1).setFlags(QtCore.Qt.NoItemFlags | QtCore.Qt.ItemIsEnabled)
 
     def harvest(self):
@@ -184,7 +184,7 @@ class KeyBindingsTab(QtGui.QWidget):
         if len(conflicts) > 0:
             for shortcut, id in conflicts:
                 self.restore_defaults()
-                QtGui.QMessageBox.about(self, "Invalid shortcuts", "Sorry, the shortcut for '%s' in %s can't be set to %s. That key is already used in %s" % (shortcut.usage, shortcut.parent.name, shortcut.value, id))
+                QtWidgets.QMessageBox.about(self, "Invalid shortcuts", "Sorry, the shortcut for '%s' in %s can't be set to %s. That key is already used in %s" % (shortcut.usage, shortcut.parent.name, shortcut.value, id))
                 return False
         else:
             for i in range(len(self.buttons)):

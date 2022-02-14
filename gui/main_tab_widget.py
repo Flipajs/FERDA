@@ -3,7 +3,7 @@ from collections import OrderedDict
 from functools import partial
 import os.path
 
-from PyQt4 import QtGui, QtCore
+from PyQt5 import QtCore, QtGui, QtWidgets
 from gui.tracking_widget import TrackingWidget
 from gui.results.results_widget import ResultsWidget
 from gui.statistics.statistics_widget import StatisticsWidget
@@ -18,7 +18,7 @@ from gui.settings import Settings as S_
 from gui.generated.ui_landing_tab import Ui_landingForm
 
 
-class LandingTab(QtGui.QWidget):
+class LandingTab(QtWidgets.QWidget):
     project_ready = QtCore.pyqtSignal(object)
 
     def __init__(self):
@@ -32,7 +32,7 @@ class LandingTab(QtGui.QWidget):
 
     def show_new_project_wizard(self):
         wizard = NewProjectWizard(self)
-        if wizard.exec_() == QtGui.QDialog.Accepted:
+        if wizard.exec_() == QtWidgets.QDialog.Accepted:
             self.project_ready.emit(wizard.project)
 
     def show_settings_dialog(self):
@@ -47,7 +47,7 @@ class LandingTab(QtGui.QWidget):
             else:
                 path = ''
 
-            project_dir = str(QtGui.QFileDialog.getExistingDirectory(self, 'Select a project folder', directory=path))
+            project_dir = str(QtWidgets.QFileDialog.getExistingDirectory(self, 'Select a project folder', directory=path))
             if not project_dir:
                 return
 
@@ -60,12 +60,12 @@ class LandingTab(QtGui.QWidget):
                              regions_optional=True, graph_optional=True, tracklets_optional=True)
                 break
             except ProjectNotFoundError as e:
-                QtGui.QMessageBox.critical(self, 'No project found!', str(e), QtGui.QMessageBox.Ok)
+                QtWidgets.QMessageBox.critical(self, 'No project found!', str(e), QtWidgets.QMessageBox.Ok)
                 return
             except VideoFileError:
-                video_file = str(QtGui.QFileDialog.getOpenFileName(
+                video_file = str(QtWidgets.QFileDialog.getOpenFileName(
                     self, 'Project video file not found or can\'t be opened. Select new video location.',
-                    '.', filter='Videos (*.mp4 *.avi *.mkv *.webm *.mpg *.mpeg *.mov);;All Files (*.*)'))
+                    '.', filter='Videos (*.mp4 *.avi *.mkv *.webm *.mpg *.mpeg *.mov);;All Files (*.*)'))[0]
                 if not video_file:
                     return
 
@@ -73,7 +73,7 @@ class LandingTab(QtGui.QWidget):
         self.project_ready.emit(project)
 
 
-class MainTabWidget(QtGui.QWidget):
+class MainTabWidget(QtWidgets.QWidget):
     def __init__(self):
         super(MainTabWidget, self).__init__()
 
@@ -86,9 +86,9 @@ class MainTabWidget(QtGui.QWidget):
         self.setWindowTitle('FERDA')
         # self.setGeometry(100, 100, 700, 400)
 
-        self.vbox = QtGui.QVBoxLayout()
+        self.vbox = QtWidgets.QVBoxLayout()
         self.setLayout(self.vbox)
-        self.tabs = QtGui.QTabWidget(self)
+        self.tabs = QtWidgets.QTabWidget(self)
 
         # # TODO: takes too much space
         # self.undock_button = QtGui.QPushButton("Undock")
@@ -106,8 +106,8 @@ class MainTabWidget(QtGui.QWidget):
             ('main', LandingTab()),
             ('tracking', None),
             ('results', None),
-            # ('id_detection', QtGui.QWidget()),
-            # ('stats', QtGui.QWidget()),
+            # ('id_detection', QtWidgets.QWidget()),
+            # ('stats', QtWidgets.QWidget()),
             ('graph', None),
         ])
 
@@ -126,17 +126,17 @@ class MainTabWidget(QtGui.QWidget):
         self.tabs.currentChanged.connect(self.tab_changed)
         self.widgets['main'].project_ready.connect(self.update_project)
 
-        self.switch_to_tracking_window_action = QtGui.QAction('switch tab to tracking', self)
+        self.switch_to_tracking_window_action = QtWidgets.QAction('switch tab to tracking', self)
         self.switch_to_tracking_window_action.triggered.connect(partial(self.tabs.setCurrentIndex, 0))
         self.switch_to_tracking_window_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_T))
         self.addAction(self.switch_to_tracking_window_action)
 
-        self.reload_id_data = QtGui.QAction('reload', self)
+        self.reload_id_data = QtWidgets.QAction('reload', self)
         self.reload_id_data.triggered.connect(self.reload_ids)
         self.reload_id_data.setShortcut(QtGui.QKeySequence(QtCore.Qt.ShiftModifier + QtCore.Qt.Key_R))
         self.addAction(self.reload_id_data)
 
-        self.update_undecided_a = QtGui.QAction('update undecided', self)
+        self.update_undecided_a = QtWidgets.QAction('update undecided', self)
         self.update_undecided_a.triggered.connect(self.learning_widget_update_undecided)
         self.update_undecided_a.setShortcut(QtGui.QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.Key_U))
         self.addAction(self.update_undecided_a)
@@ -166,7 +166,7 @@ class MainTabWidget(QtGui.QWidget):
                 self.tabs.addTab(widget, self.widgets_info[name])
                 self.tabs.setTabEnabled(i, True)
             else:
-                self.tabs.addTab(QtGui.QWidget(), self.widgets_info[name])
+                self.tabs.addTab(QtWidgets.QWidget(), self.widgets_info[name])
                 self.tabs.setTabEnabled(i, False)
 
     def reload_ids(self):
@@ -294,18 +294,18 @@ class MainTabWidget(QtGui.QWidget):
             self.widgets['id_detection'].update_undecided_tracklets()
 
 
-class DetachedWindow(QtGui.QMainWindow):
+class DetachedWindow(QtWidgets.QMainWindow):
     def __init__(self, parent, widget, widget_callback, number):
         super(DetachedWindow, self).__init__(parent)
-        content = QtGui.QWidget()
-        content.setLayout(QtGui.QVBoxLayout())
-        self.dock_widget = QtGui.QWidget()
-        dock_button = QtGui.QPushButton("Dock")
-        dock_button.setSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Minimum)
+        content = QtWidgets.QWidget()
+        content.setLayout(QtWidgets.QVBoxLayout())
+        self.dock_widget = QtWidgets.QWidget()
+        dock_button = QtWidgets.QPushButton("Dock")
+        dock_button.setSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum)
         dock_button.pressed.connect(self.close)
-        self.dock_widget.setLayout(QtGui.QHBoxLayout())
-        spacer = QtGui.QWidget()
-        spacer.setSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
+        self.dock_widget.setLayout(QtWidgets.QHBoxLayout())
+        spacer = QtWidgets.QWidget()
+        spacer.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.dock_widget.layout().addWidget(spacer)
         self.dock_widget.layout().addWidget(dock_button)
         self.widget_callback = widget_callback

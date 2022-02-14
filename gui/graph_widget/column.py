@@ -1,5 +1,5 @@
 import copy
-from PyQt4 import QtGui
+from PyQt5 import QtGui, QtWidgets
 
 import numpy as np
 
@@ -32,7 +32,7 @@ class Column:
         self.items_nodes = {}
         self.regions_images = {}
 
-        self.compress_marker = QtGui.QGraphicsTextItem()
+        self.compress_marker = QtWidgets.QGraphicsTextItem()
         self.objects.append(0)
         self.compress_marker.setDefaultTextColor(QtGui.QColor(0, 0, 0, 120))
         self.scene.addItem(self.compress_marker)
@@ -274,7 +274,7 @@ class Column:
 
     def show_frame_number(self, vertically, compress_axis=True, empty=False):
         text = str(self.frame)
-        text_obj = QtGui.QGraphicsTextItem(text) if self.frame_sign is None else self.frame_sign
+        text_obj = QtWidgets.QGraphicsTextItem(text) if self.frame_sign is None else self.frame_sign
         y = FROM_TOP
         if empty:
             text_obj.setDefaultTextColor(QtGui.QColor(0, 0, 0, 120))

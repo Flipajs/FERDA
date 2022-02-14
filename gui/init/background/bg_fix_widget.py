@@ -1,4 +1,4 @@
-from PyQt4 import QtGui, QtCore
+from PyQt5 import QtCore, QtGui, QtWidgets
 from gui.img_controls.my_view import MyView
 import cv2
 import os
@@ -9,7 +9,7 @@ import math
 import _thread
 import numpy as np
 
-class BgFixWidget(QtGui.QWidget):
+class BgFixWidget(QtWidgets.QWidget):
     """A tool for correcting detected background of a video. Let's users to select a part of image they want to copy onto
     and than a part of image they want to copy from"""
 
@@ -26,8 +26,8 @@ class BgFixWidget(QtGui.QWidget):
         self.copy_marker = None
         self.action_list = []
 
-        self.central_layout = QtGui.QVBoxLayout()
-        self.central_layout.setMargin(0)
+        self.central_layout = QtWidgets.QVBoxLayout()
+        self.central_layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(self.central_layout)
 
         # self.setStatusBar(QtGui.QStatusBar())
@@ -37,14 +37,14 @@ class BgFixWidget(QtGui.QWidget):
 
         # self.toolbar = self.addToolBar('Test')
 
-        self.open_action = QtGui.QAction("Open image", self)
-        self.save_action = QtGui.QAction("Save image", self)
-        self.fix_action = QtGui.QAction("Fix image", self)
-        self.settings_action = QtGui.QAction("Settings", self)
-        self.restore_action = QtGui.QAction("Reset image", self)
-        self.finish_action = QtGui.QAction("Finish", self)
-        self.cancel_action = QtGui.QAction("Cancel fixing", self)
-        self.undo_action = QtGui.QAction("Undo", self)
+        self.open_action = QtWidgets.QAction("Open image", self)
+        self.save_action = QtWidgets.QAction("Save image", self)
+        self.fix_action = QtWidgets.QAction("Fix image", self)
+        self.settings_action = QtWidgets.QAction("Settings", self)
+        self.restore_action = QtWidgets.QAction("Reset image", self)
+        self.finish_action = QtWidgets.QAction("Finish", self)
+        self.cancel_action = QtWidgets.QAction("Cancel fixing", self)
+        self.undo_action = QtWidgets.QAction("Undo", self)
 
         self.addAction(self.fix_action)
         self.addAction(self.finish_action)
@@ -59,7 +59,7 @@ class BgFixWidget(QtGui.QWidget):
 
         self.init_actions()
 
-        self.scene = QtGui.QGraphicsScene()
+        self.scene = QtWidgets.QGraphicsScene()
         self.graphics_view = MyView(self)
         self.central_layout.addWidget(self.graphics_view)
         self.graphics_view.setScene(self.scene)
@@ -141,7 +141,7 @@ class BgFixWidget(QtGui.QWidget):
                 self.add_copy_marker(mouse_coords.x() - self.pos_marker.rect().width()/2, mouse_coords.y() - self.pos_marker.rect().height()/2, self.pos_marker.rect().width(), self.pos_marker.rect().height())
 
     def open_image(self):
-        filename = QtGui.QFileDialog.getOpenFileName(self, "Open image", "", "Images(*.*)")
+        filename = QtWidgets.QFileDialog.getOpenFileName(self, "Open image", "", "Images(*.*)")[0]
         if filename != "":
             filename = str(filename)
             self.load_image(filename)
@@ -163,7 +163,7 @@ class BgFixWidget(QtGui.QWidget):
 
     def save_image(self):
         if self.image is not None:
-            filename = QtGui.QFileDialog.getSaveFileName(self, "Save image", "", "Images(*.jpg	)")
+            filename = QtWidgets.QFileDialog.getSaveFileName(self, "Save image", "", "Images(*.jpg	)")[0]
             if filename != "":
                 image = self.pix_map.toImage()
                 image.save(filename, quality=100)
@@ -191,7 +191,7 @@ class BgFixWidget(QtGui.QWidget):
         pen.setColor(settings.value('position_square_color', settingsdialog.get_default('position_square_color'), QtGui.QColor))
         brush = QtGui.QBrush()
         brush.setStyle(QtCore.Qt.NoBrush)
-        self.pos_marker = QtGui.QGraphicsRectItem(0, 0, width, height)
+        self.pos_marker = QtWidgets.QGraphicsRectItem(0, 0, width, height)
         self.pos_marker.setPos(point_one)
         self.pos_marker.setBrush(brush)
         self.pos_marker.setPen(pen)
@@ -207,12 +207,12 @@ class BgFixWidget(QtGui.QWidget):
         pen.setColor(settings.value('copy_square_color', settingsdialog.get_default('copy_square_color'), QtGui.QColor))
         brush = QtGui.QBrush()
         brush.setStyle(QtCore.Qt.NoBrush)
-        self.copy_marker = QtGui.QGraphicsRectItem(0, 0, width, height)
+        self.copy_marker = QtWidgets.QGraphicsRectItem(0, 0, width, height)
         self.copy_marker.setPos(x, y)
         self.copy_marker.setBrush(brush)
         self.copy_marker.setPen(pen)
         self.copy_marker.setZValue(.6)
-        self.copy_marker.setFlag(QtGui.QGraphicsItem.ItemIsMovable, True)
+        self.copy_marker.setFlag(QtWidgets.QGraphicsItem.ItemIsMovable, True)
         self.scene.addItem(self.copy_marker)
 
     def remove_pos_marker(self):

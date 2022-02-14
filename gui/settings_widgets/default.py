@@ -1,6 +1,6 @@
 __author__ = 'fnaiser'
 
-from PyQt4 import QtGui, QtCore
+from PyQt5 import QtCore, QtGui
 
 #meaning of these parameters can be found in tooltips
 default_settings = {

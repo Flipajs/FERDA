@@ -1,11 +1,11 @@
 __author__ = 'simon'
 
-from PyQt4 import QtGui, QtCore
+from PyQt5 import QtCore, QtGui, QtWidgets
 
 SCALE_FACTOR = 1.01
 
 
-class MyViewZoomable(QtGui.QGraphicsView):
+class MyViewZoomable(QtWidgets.QGraphicsView):
     
     def __init__(self, ngv):
         super(MyViewZoomable, self).__init__()
@@ -19,9 +19,9 @@ class MyViewZoomable(QtGui.QGraphicsView):
 
     def mouseDoubleClickEvent(self, QMouseEvent):
         if self.drag:
-            self.setDragMode(QtGui.QGraphicsView.NoDrag)
+            self.setDragMode(QtWidgets.QGraphicsView.NoDrag)
         else:
-            self.setDragMode(QtGui.QGraphicsView.ScrollHandDrag)
+            self.setDragMode(QtWidgets.QGraphicsView.ScrollHandDrag)
         self.drag = False if self.drag else True
         self.last_event_go_to = False
 
@@ -45,9 +45,9 @@ class MyViewZoomable(QtGui.QGraphicsView):
             super(MyViewZoomable, self).keyPressEvent(event)
 
     def wheelEvent(self, event):
-        if QtGui.QApplication.keyboardModifiers() == QtCore.Qt.ControlModifier:
+        if QtWidgets.QApplication.keyboardModifiers() == QtCore.Qt.ControlModifier:
             # if CTRL is pressed while scrolling
-            if event.delta() > 0:
+            if event.angleDelta().y() > 0:
                 self.zoom(True)
                 self.zoom(True)
             else:
@@ -58,7 +58,7 @@ class MyViewZoomable(QtGui.QGraphicsView):
             super(MyViewZoomable, self).wheelEvent(event)
 
     def zoom (self, in_out):
-        self.setTransformationAnchor(QtGui.QGraphicsView.AnchorUnderMouse)
+        self.setTransformationAnchor(QtWidgets.QGraphicsView.AnchorUnderMouse)
         m11 = self.transform().m11()
         m22 = self.transform().m22()
         time_line = QtCore.QTimeLine(100, self)

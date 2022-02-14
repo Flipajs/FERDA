@@ -1,12 +1,12 @@
 __author__ = 'simon'
 
-from PyQt4 import QtGui, QtCore
-from PyQt4.QtCore import Qt
+from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5.QtCore import Qt
 import math
 
 SELECTION_LINE_WIDTH = 2
 
-class Pixmap_Selectable(QtGui.QGraphicsPixmapItem):
+class Pixmap_Selectable(QtWidgets.QGraphicsPixmapItem):
 
     def __init__(self, parent_pixmap, size):
         super(Pixmap_Selectable, self).__init__(parent_pixmap)
@@ -14,7 +14,7 @@ class Pixmap_Selectable(QtGui.QGraphicsPixmapItem):
         self.x = self.parent_pixmap.offset().x()
         self.y = self.parent_pixmap.offset().y()
         self.size = size
-        self.setFlags(QtGui.QGraphicsItem.ItemIsSelectable)
+        self.setFlags(QtWidgets.QGraphicsItem.ItemIsSelectable)
         self.selection_polygon = self.create_selection_polygon()
 
         self.clipped = False

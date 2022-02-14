@@ -1,9 +1,9 @@
 __author__ = 'fnaiser'
 
-from PyQt4 import QtGui, QtCore
+from PyQt5 import QtCore, QtGui, QtWidgets
 from gui.init.arena.arena_circle import ArenaCircle
 
-class MyScene(QtGui.QGraphicsScene):
+class MyScene(QtWidgets.QGraphicsScene):
     clicked = QtCore.pyqtSignal("PyQt_PyObject")
     double_clicked = QtCore.pyqtSignal("PyQt_PyObject", "PyQt_PyObject")
     mouse_moved = QtCore.pyqtSignal("PyQt_PyObject")

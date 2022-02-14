@@ -1,9 +1,9 @@
 import threading
-from PyQt4 import QtGui, QtCore
+from PyQt5 import QtCore, QtGui, QtWidgets
 
-from PyQt4.QtCore import Qt
-from PyQt4.QtGui import QApplication, QLabel, QSizePolicy
-from PyQt4.QtGui import QWidget
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QApplication, QLabel, QSizePolicy
+from PyQt5.QtWidgets import QWidget
 
 from . import computer as comp
 from gui.graph_widget.control_panel import ControlPanel
@@ -21,7 +21,7 @@ from gui.img_controls.my_view_zoomable import MyViewZoomable
 __author__ = 'Simon Mandlik'
 
 
-class GraphVisualizer(QtGui.QWidget):
+class GraphVisualizer(QtWidgets.QWidget):
     """
     Requires list of regions and list of edge-tuples (node1, node2, type - chunk, line or partial, sureness).
     Those can be passed in constructor or using a method add_objects
@@ -50,11 +50,11 @@ class GraphVisualizer(QtGui.QWidget):
         self.info_manager = InfoManager(loader)
 
         self.setWindowTitle("graph")
-        self.setLayout(QtGui.QVBoxLayout())
+        self.setLayout(QtWidgets.QVBoxLayout())
         self.layout().setContentsMargins(0, 11, 0, 11)
 
-        self.chunk_detail_scroll_horizontal = QtGui.QScrollArea()
-        self.chunk_detail_scroll_vertical = QtGui.QScrollArea()
+        self.chunk_detail_scroll_horizontal = QtWidgets.QScrollArea()
+        self.chunk_detail_scroll_vertical = QtWidgets.QScrollArea()
         self.chunk_detail_scroll_horizontal.setWidgetResizable(True)
         self.chunk_detail_scroll_vertical.setWidgetResizable(True)
 
@@ -63,18 +63,18 @@ class GraphVisualizer(QtGui.QWidget):
         # vscroll_shint = self.chunk_detail_scroll_vertical.verticalScrollBar().sizeHint()
         self.chunk_detail_scroll_vertical.setFixedWidth(self.width * 2)
 
-        self.chunk_detail_widget_horizontal = QtGui.QWidget()
-        self.chunk_detail_widget_horizontal.setLayout(QtGui.QHBoxLayout())
-        self.chunk_detail_widget_vertical = QtGui.QWidget()
-        self.chunk_detail_widget_vertical.setLayout(QtGui.QVBoxLayout())
+        self.chunk_detail_widget_horizontal = QtWidgets.QWidget()
+        self.chunk_detail_widget_horizontal.setLayout(QtWidgets.QHBoxLayout())
+        self.chunk_detail_widget_vertical = QtWidgets.QWidget()
+        self.chunk_detail_widget_vertical.setLayout(QtWidgets.QVBoxLayout())
         self.chunk_detail_scroll_horizontal.setContentsMargins(0, 0, 0, 0)
         self.chunk_detail_scroll_vertical.setContentsMargins(0, 0, 0, 0)
 
         self.chunk_detail_scroll_horizontal.setWidget(self.chunk_detail_widget_horizontal)
         self.chunk_detail_scroll_vertical.setWidget(self.chunk_detail_widget_vertical)
 
-        self.upper_part = QtGui.QWidget()
-        self.upper_part.setLayout(QtGui.QHBoxLayout())
+        self.upper_part = QtWidgets.QWidget()
+        self.upper_part.setLayout(QtWidgets.QHBoxLayout())
         self.upper_part.setContentsMargins(0, 0, 0, 0)
 
         self.view = MyViewZoomable(self)
@@ -84,7 +84,7 @@ class GraphVisualizer(QtGui.QWidget):
         self.scene = MyScene()
         self.scene_width = 0
         self.view.setScene(self.scene)
-        self.view.setLayout(QtGui.QHBoxLayout())
+        self.view.setLayout(QtWidgets.QHBoxLayout())
         self.scene.clicked.connect(self.scene_clicked)
         self.view.setStyleSheet("QGraphicsView { border-style: none;}")
 
@@ -100,7 +100,7 @@ class GraphVisualizer(QtGui.QWidget):
         self.chunk_detail_scroll_horizontal.hide()
         self.chunk_detail_scroll_vertical.hide()
 
-        self.load_ind = QtGui.QLabel()
+        self.load_ind = QtWidgets.QLabel()
         self.load_ind.setAlignment(QtCore.Qt.AlignCenter)
         stylesheet = "font: 18px"
         self.load_ind.setStyleSheet(stylesheet)
@@ -113,19 +113,19 @@ class GraphVisualizer(QtGui.QWidget):
         self.loaded = set()
 
         self.selected_in_menu = None
-        self.menu_node = QtGui.QMenu(self)
-        self.menu_edge = QtGui.QMenu(self)
-        self.show_info_menu_action = QtGui.QAction('Show Info', self)
+        self.menu_node = QtWidgets.QMenu(self)
+        self.menu_edge = QtWidgets.QMenu(self)
+        self.show_info_menu_action = QtWidgets.QAction('Show Info', self)
         self.show_info_menu_action.triggered.connect(self.show_info_action_method)
-        self.show_zoom_menu_action = QtGui.QAction('Show Zoom', self)
+        self.show_zoom_menu_action = QtWidgets.QAction('Show Zoom', self)
         self.show_zoom_menu_action.triggered.connect(self.show_zoom_action_method)
-        self.hide_zoom_menu_action = QtGui.QAction('Hide Zoom', self)
+        self.hide_zoom_menu_action = QtWidgets.QAction('Hide Zoom', self)
         self.hide_zoom_menu_action.triggered.connect(self.hide_zoom_action_method)
-        self.hide_info_menu_action = QtGui.QAction('Hide Info', self)
+        self.hide_info_menu_action = QtWidgets.QAction('Hide Info', self)
         self.hide_info_menu_action.triggered.connect(self.hide_info_action_method)
-        self.show_detail_menu_action = QtGui.QAction('Show detail', self)
+        self.show_detail_menu_action = QtWidgets.QAction('Show detail', self)
         self.show_detail_menu_action.triggered.connect(self.show_chunk_pictures_label)
-        self.view_results_menu_action = QtGui.QAction('View results', self)
+        self.view_results_menu_action = QtWidgets.QAction('View results', self)
         self.view_results_menu_action.triggered.connect(self.view_results_tracklet)
         self.menu_node.addAction(self.show_info_menu_action)
         self.menu_node.addAction(self.hide_info_menu_action)
@@ -136,7 +136,7 @@ class GraphVisualizer(QtGui.QWidget):
         self.menu_edge.addAction(self.show_detail_menu_action)
         self.menu_edge.addAction(self.view_results_menu_action)
         self.view.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
-        self.connect(self.view, QtCore.SIGNAL('customContextMenuRequested(const QPoint&)'), self.menu)
+        self.view.customContextMenuRequested[QPoint].connect(self.menu)
 
         if len(self.loader.edges) + len(self.loader.regions) > 0:
             self.add_objects(self.loader.regions, self.loader.edges)
@@ -177,14 +177,14 @@ class GraphVisualizer(QtGui.QWidget):
 
         region_chunk = self.loader.chunks_region_chunks[chunk]
         frames = list(range(chunk.region_from.frame_, chunk.region_to.frame_ + 1))
-        freq, none  = QtGui.QInputDialog.getInt(self, 'Chunk Detail',
+        freq, none  = QtWidgets.QInputDialog.getInt(self, 'Chunk Detail',
             'Enter frequency:', value=1, min=1)
 
         for frame in frames[::freq]:
             img = self.img_manager.get_crop(frame, region_chunk[frame - region_chunk.start_frame()], width=self.width,
                                             height=self.height, relative_margin=self.relative_margin)
             pixmap = cvimg2qtpixmap(img)
-            label = QtGui.QLabel()
+            label = QtWidgets.QLabel()
             label.setPixmap(pixmap)
             label.setAlignment(Qt.AlignCenter)
             widget.layout().addWidget(label)
@@ -244,16 +244,16 @@ class GraphVisualizer(QtGui.QWidget):
         self.redraw()
 
     def zoom_to_chunk_event(self):
-        ch_id, ok = QtGui.QInputDialog.getInt(self, 'Zoom to chunk',
+        ch_id, ok = QtWidgets.QInputDialog.getInt(self, 'Zoom to chunk',
             'Enter chunk\'s id:', value=0, min=0)
 
         if ok:
             try:
                 self.zoom_to_chunk(ch_id)
             except AttributeError as e:
-                dialog = QtGui.QDialog(self)
-                dialog.setLayout(QtGui.QVBoxLayout())
-                dialog.layout().addWidget(QtGui.QLabel(str(e)))
+                dialog = QtWidgets.QDialog(self)
+                dialog.setLayout(QtWidgets.QVBoxLayout())
+                dialog.layout().addWidget(QtWidgets.QLabel(str(e)))
                 dialog.show()
             else:
                 pass
@@ -276,9 +276,9 @@ class GraphVisualizer(QtGui.QWidget):
             position = col.get_position_with_chunk_id(ch_id)
             y = GAP + FROM_TOP + position * self.height + SPACE_BETWEEN_VER * position
             if self.show_vertically:
-                self.view.centerOn(y, x + QtGui.QWidget.normalGeometry(self).width() / 2)
+                self.view.centerOn(y, x + QtWidgets.QWidget.normalGeometry(self).width() / 2)
             else:
-                self.view.centerOn(x + QtGui.QWidget.normalGeometry(self).width() / 2, y)
+                self.view.centerOn(x + QtWidgets.QWidget.normalGeometry(self).width() / 2, y)
             x += WIDTH
             y += HEIGHT / 2
             if self.show_vertically:
@@ -650,7 +650,7 @@ class GraphVisualizer(QtGui.QWidget):
         height = self.compute_height()
         if self.show_vertically:
             width, height = height, width
-        rect = QtGui.QGraphicsRectItem(QtCore.QRectF(QtCore.QPointF(0, 0), QtCore.QPointF(width, height)))
+        rect = QtWidgets.QGraphicsRectItem(QtCore.QRectF(QtCore.QPointF(0, 0), QtCore.QPointF(width, height)))
         rect.setBrush(QtCore.Qt.transparent)
         rect.setPen(QtCore.Qt.transparent)
         self.scene.addItem(rect)

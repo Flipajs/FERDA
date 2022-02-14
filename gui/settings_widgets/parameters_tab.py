@@ -1,22 +1,22 @@
 __author__ = 'fnaiser'
 
-from PyQt4 import QtGui, QtCore
+from PyQt5 import QtCore, QtGui, QtWidgets
 
 from gui import gui_utils
 from gui.settings import Settings as S_
 
 
-class ParametersTab(QtGui.QWidget):
+class ParametersTab(QtWidgets.QWidget):
     def __init__(self):
         super(ParametersTab, self).__init__()
 
-        self.vbox = QtGui.QVBoxLayout()
+        self.vbox = QtWidgets.QVBoxLayout()
         self.setLayout(self.vbox)
 
-        self.frame_layout = QtGui.QFormLayout()
+        self.frame_layout = QtWidgets.QFormLayout()
         self.vbox.addLayout(self.frame_layout)
 
-        self.blur_kernel_size = QtGui.QDoubleSpinBox()
+        self.blur_kernel_size = QtWidgets.QDoubleSpinBox()
         self.blur_kernel_size.setMinimum(0.0)
         self.blur_kernel_size.setMaximum(5.0)
         self.blur_kernel_size.setSingleStep(0.1)

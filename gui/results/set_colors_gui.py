@@ -1,18 +1,18 @@
-from PyQt4 import QtGui
+from PyQt5 import QtGui, QtWidgets
 
-class SetColorsGui(QtGui.QWidget):
+class SetColorsGui(QtWidgets.QWidget):
     def __init__(self, project):
         super(SetColorsGui, self).__init__()
 
         self.project = project
 
-        self.fbox = QtGui.QFormLayout()
+        self.fbox = QtWidgets.QFormLayout()
         self.setLayout(self.fbox)
 
         self.buttons = []
         from functools import partial
         for i, a in enumerate(project.animals):
-            button = QtGui.QPushButton('change color')
+            button = QtWidgets.QPushButton('change color')
             b, g, r = project.animals[i].color_
             button.setStyleSheet("background-color: rgb({}, {}, {});".format(r, g, b))
             button.clicked.connect(partial(self.change_color, i))
@@ -20,13 +20,13 @@ class SetColorsGui(QtGui.QWidget):
 
             self.fbox.addRow(str(i), button)
 
-        self.save_b = QtGui.QPushButton('save')
+        self.save_b = QtWidgets.QPushButton('save')
         self.save_b.clicked.connect(self.save)
 
         self.fbox.addRow(self.save_b)
 
     def change_color(self, i):
-        color = QtGui.QColorDialog.getColor()
+        color = QtWidgets.QColorDialog.getColor()
 
         self.project.animals[i].color_ = (color.blue(), color.green(), color.red())
         self.buttons[i].setStyleSheet("background-color: %s;" % color.name())

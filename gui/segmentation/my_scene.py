@@ -1,6 +1,6 @@
-from PyQt4 import QtGui, QtCore
+from PyQt5 import QtCore, QtGui, QtWidgets
 
-class MyScene(QtGui.QGraphicsScene):
+class MyScene(QtWidgets.QGraphicsScene):
     def __init__(self, update_callback_release=None):
         super(MyScene, self).__init__()
         self.update_callback_release = update_callback_release

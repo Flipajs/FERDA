@@ -1,5 +1,5 @@
-from PyQt4 import QtGui, QtCore
-from PyQt4.QtCore import Qt
+from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5.QtCore import Qt
 import math
 
 from gui.graph_widget.graph_line import LineType
@@ -39,13 +39,13 @@ class Edge:
         self.core_obj = graph_line
 
 
-class EdgeGraphical(QtGui.QGraphicsLineItem):
+class EdgeGraphical(QtWidgets.QGraphicsLineItem):
 
     def __init__(self, parent_line, core_obj, scene, color=None):
         super(EdgeGraphical, self).__init__(parent_line)
         self.graph_line = core_obj
         self.parent_line = parent_line
-        self.setFlags(QtGui.QGraphicsItem.ItemIsSelectable)
+        self.setFlags(QtWidgets.QGraphicsItem.ItemIsSelectable)
         self.selection_polygon = self.create_selection_polygon()
         self.pick_polygon = self.create_pick_polygon()
         self.scene = scene
@@ -81,8 +81,8 @@ class EdgeGraphical(QtGui.QGraphicsLineItem):
         height = metrics.height() * (rows + 0.5)
         x, y = self.compute_rect_pos()
         self.info_item = TextInfoItem(text, x, y, width, height, self.color, self)
-        self.info_item.setFlag(QtGui.QGraphicsItem.ItemIsMovable)
-        self.info_item.setFlag(QtGui.QGraphicsItem.ItemSendsScenePositionChanges)
+        self.info_item.setFlag(QtWidgets.QGraphicsItem.ItemIsMovable)
+        self.info_item.setFlag(QtWidgets.QGraphicsItem.ItemSendsScenePositionChanges)
 
     def compute_rect_pos(self):
         x = (self.parent_line.x2() + self.parent_line.x1()) / 2

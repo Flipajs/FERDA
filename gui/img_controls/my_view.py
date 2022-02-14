@@ -1,11 +1,11 @@
-from PyQt4 import Qt
+from PyQt5 import Qt, QtWidgets
 
 __author__ = 'filip@naiser.cz'
 
-from PyQt4 import QtGui, QtCore
+from PyQt5 import QtCore, QtGui, QtWidgets
 
 
-class MyView(QtGui.QGraphicsView, object):
+class MyView(QtWidgets.QGraphicsView, object):
     areaSelected = QtCore.pyqtSignal("PyQt_PyObject", "PyQt_PyObject")
     clicked = QtCore.pyqtSignal("PyQt_PyObject")
     double_clicked = QtCore.pyqtSignal("PyQt_PyObject")
@@ -18,7 +18,7 @@ class MyView(QtGui.QGraphicsView, object):
         self.start_pos = None
         self.mouse_pressed = False
         self.start_position = (0, 0)
-        self.setDragMode(QtGui.QGraphicsView.RubberBandDrag)
+        self.setDragMode(QtWidgets.QGraphicsView.RubberBandDrag)
         self._isPanning = False
         self._mousePressed = False
         self._drag_pos = None
@@ -58,7 +58,7 @@ class MyView(QtGui.QGraphicsView, object):
             self._isPanning = False
         else:
             if self.last_ == "Click":
-                QtCore.QTimer.singleShot(QtGui.QApplication.instance().doubleClickInterval(), self.perform_single_click_action)
+                QtCore.QTimer.singleShot(QtWidgets.QApplication.instance().doubleClickInterval(), self.perform_single_click_action)
 
         super(MyView, self).mouseReleaseEvent(event)
 
@@ -85,16 +85,16 @@ class MyView(QtGui.QGraphicsView, object):
         event.accept()
 
     def wheelEvent(self, event):
-        modifiers = QtGui.QApplication.keyboardModifiers()
+        modifiers = QtWidgets.QApplication.keyboardModifiers()
         if modifiers == QtCore.Qt.ControlModifier:
             scale_factor = 1.06
 
-            self.setTransformationAnchor(QtGui.QGraphicsView.AnchorUnderMouse)
+            self.setTransformationAnchor(QtWidgets.QGraphicsView.AnchorUnderMouse)
 
             m11 = self.transform().m11()
             m22 = self.transform().m22()
 
-            if event.delta() > 0:
+            if event.angleDelta().y() > 0:
                 # max zoom-out restriction
                 if m11 > 10 or m22 > 10:
                     return

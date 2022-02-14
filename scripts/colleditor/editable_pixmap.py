@@ -1,6 +1,7 @@
 __author__ = 'filip@naiser.cz'
 
-from PyQt4.QtGui import *
+from PyQt5.QtGui import *
+from PyQt5.QtWidgets import *
 import numpy as np
 import math
 from utils import geometry
@@ -13,7 +14,7 @@ class EditablePixmap:
         self.pts = list(pts)
         self.color = color
         self.pixmap = None  # QPixmap
-        self.scene = scene  # QtGui.QGraphicsScene
+        self.scene = scene  # QtWidgets.QGraphicsScene
 
         self.img_width = img_width
         self.img_height = img_height

@@ -1,8 +1,8 @@
 __author__ = 'filip@naiser.cz'
 
 from gui.img_controls.my_view import MyView
-from PyQt4.QtCore import *
-from PyQt4 import QtGui, QtCore
+from PyQt5.QtCore import *
+from PyQt5 import QtCore, QtGui, QtWidgets
 
 
 class CollisionView(MyView):
@@ -27,10 +27,10 @@ class CollisionView(MyView):
         self.drawing = not self.drawing
 
         if self.drawing:
-            QtGui.QApplication.setOverrideCursor(QtGui.QCursor(Qt.CrossCursor))
+            QtWidgets.QApplication.setOverrideCursor(QtGui.QCursor(Qt.CrossCursor))
             self.drawing_handler = drawing_handler
         else:
-            QtGui.QApplication.restoreOverrideCursor()
+            QtWidgets.QApplication.restoreOverrideCursor()
 
     def mouseMoveEvent(self, event):
         super(CollisionView, self).mouseMoveEvent(event)
@@ -47,7 +47,7 @@ class CollisionView(MyView):
             self.mouse_move_last_pos = pos
 
     def draw(self, event, pts):
-        modifiers = QtGui.QApplication.keyboardModifiers()
+        modifiers = QtWidgets.QApplication.keyboardModifiers()
 
         if event.buttons() == Qt.LeftButton:
             if modifiers == QtCore.Qt.ControlModifier:

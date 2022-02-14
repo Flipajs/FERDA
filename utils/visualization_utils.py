@@ -9,7 +9,7 @@ def generate_colors(count):
 
 
 def get_q_color(id, ant_num):
-    from PyQt4 import QtGui
+    from PyQt5 import QtGui
     r, g, b = get_color(id, ant_num)
     return QtGui.QColor(r, g, b)
 

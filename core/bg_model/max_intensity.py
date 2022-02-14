@@ -5,7 +5,7 @@ import pickle
 
 import cv2
 import numpy as np
-from PyQt4 import QtCore
+from PyQt5 import QtCore
 
 from .model import Model
 from core.bg_model.bg_model import BGModel
@@ -38,7 +38,7 @@ class MaxIntensity(Model):
                 im, _ = self.video.seek_frame(frame_i)
 
             self.iteration(im)
-            self.emit(QtCore.SIGNAL('update(int)'), int(100*(i+1)/float(self.iterations)))
+            self.update.emit(int(100*(i+1)/float(self.iterations)))
             # self.call_update_callback(i)
             self.step = i
             frame_i += step

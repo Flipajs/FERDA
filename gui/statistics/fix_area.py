@@ -5,8 +5,8 @@ import sys
 import cv2
 import numpy as np
 
-from PyQt4 import QtGui
-from PyQt4 import QtCore
+from PyQt5 import QtGui, QtWidgets
+from PyQt5 import QtCore, QtWidgets
 from skimage.transform import resize
 from core.region.mser import get_regions_in_img
 from core.project.project import Project
@@ -78,25 +78,25 @@ class AreaUpdatingThread(QtCore.QThread):
         return register
 
 
-class FixArea(QtGui.QWidget):
+class FixArea(QtWidgets.QWidget):
     def __init__(self, project, solver):
         super(FixArea, self).__init__()
         self.project = project
         self.solver = solver
 
-        self.setLayout(QtGui.QVBoxLayout())
+        self.setLayout(QtWidgets.QVBoxLayout())
 
-        self.groupBox = QtGui.QGroupBox('Fix area.')
+        self.groupBox = QtWidgets.QGroupBox('Fix area.')
         self.layout().addWidget(self.groupBox)
-        self.vbox = QtGui.QVBoxLayout()
+        self.vbox = QtWidgets.QVBoxLayout()
         self.groupBox.setLayout(self.vbox)
 
-        self.fbox = QtGui.QFormLayout()
-        self.form = QtGui.QWidget()
+        self.fbox = QtWidgets.QFormLayout()
+        self.form = QtWidgets.QWidget()
         self.form.setLayout(self.fbox)
         self.vbox.addWidget(self.form)
 
-        self.step = QtGui.QSpinBox()
+        self.step = QtWidgets.QSpinBox()
         self.step.setMinimum(1)
         self.step.setMaximum(10000)
         self.step.setSingleStep(1)
@@ -104,7 +104,7 @@ class FixArea(QtGui.QWidget):
 
         self.fbox.addRow('sets the sampling step', self.step)
 
-        self.fix_b = QtGui.QPushButton('fix')
+        self.fix_b = QtWidgets.QPushButton('fix')
         self.fix_b.clicked.connect(self.fix)
         self.fbox.addRow('', self.fix_b)
 
@@ -116,7 +116,7 @@ class FixArea(QtGui.QWidget):
         loading_w = LoadingWidget(text='Updating area info...')
         self.loading_w = loading_w
         self.vbox.addWidget(loading_w)
-        QtGui.QApplication.processEvents()
+        QtWidgets.QApplication.processEvents()
 
         self.area_updating_thread = AreaUpdatingThread(self.project, self.solver, self.step.value())
         self.area_updating_thread.proc_done.connect(self.updating_finished)
@@ -127,12 +127,12 @@ class FixArea(QtGui.QWidget):
         self.solver = solver
         self.loading_w.hide()
         self.solver.save()
-        self.vbox.addWidget(QtGui.QLabel('AREA info is updated now... Project and progress was saved.'))
+        self.vbox.addWidget(QtWidgets.QLabel('AREA info is updated now... Project and progress was saved.'))
         self.project.version = "2.2.10"
         self.project.save()
 
 if __name__ == "__main__":
-    app = QtGui.QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
 
     p = Project()
     p.load('/Users/flipajs/Documents/wd/eight_22/eight22.fproj')

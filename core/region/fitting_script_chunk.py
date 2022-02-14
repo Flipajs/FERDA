@@ -6,7 +6,7 @@ sys.path.append(baseDir)
 from .fitting import Fitting
 from core.region.region import Region
 import pickle as pickle
-from PyQt4 import QtCore
+from PyQt5 import QtCore
 
 
 s_id = sys.argv[1]

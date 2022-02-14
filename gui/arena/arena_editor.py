@@ -1,6 +1,6 @@
 __author__ = 'dita'
 
-from PyQt4 import QtGui, QtCore
+from PyQt5 import QtCore, QtGui, QtWidgets
 import cv2
 import sys
 import math
@@ -11,7 +11,7 @@ from gui.arena.my_ellipse import MyEllipse
 from gui.arena.my_view    import MyView
 
 
-class ArenaEditor(QtGui.QDialog):
+class ArenaEditor(QtWidgets.QDialog):
     DEBUG = True
 
     def __init__(self, img, project, finish_callback=None):
@@ -27,7 +27,7 @@ class ArenaEditor(QtGui.QDialog):
         self.project = project
 
         self.view = MyView(update_callback_move=self.mouse_moving, update_callback_press=self.mouse_press_event)
-        self.scene = QtGui.QGraphicsScene()
+        self.scene = QtWidgets.QGraphicsScene()
 
         self.view.setScene(self.scene)
 
@@ -588,60 +588,60 @@ class ArenaEditor(QtGui.QDialog):
         #          GUI           #
         ##########################
 
-        self.setLayout(QtGui.QHBoxLayout())
+        self.setLayout(QtWidgets.QHBoxLayout())
         self.layout().setAlignment(QtCore.Qt.AlignBottom)
 
         # left panel widget
-        widget = QtGui.QWidget()
-        widget.setLayout(QtGui.QVBoxLayout())
+        widget = QtWidgets.QWidget()
+        widget.setLayout(QtWidgets.QVBoxLayout())
         widget.layout().setAlignment(QtCore.Qt.AlignTop)
         # set left panel widget width to 300px
         widget.setMaximumWidth(300)
         widget.setMinimumWidth(300)
 
-        label = QtGui.QLabel()
+        label = QtWidgets.QLabel()
         label.setWordWrap(True)
         label.setText("Welcome to arena editor! Paint the outside of the arena with red and use blue to mark possible"
                       " hiding places. Unresolvable colors will be considered red.")
         widget.layout().addWidget(label)
 
         # SWITCH button and key shortcut
-        mode_switch_group = QtGui.QButtonGroup(widget)
+        mode_switch_group = QtWidgets.QButtonGroup(widget)
 
-        polymode_button = QtGui.QRadioButton("Polygon mode")
+        polymode_button = QtWidgets.QRadioButton("Polygon mode")
         mode_switch_group.addButton(polymode_button)
         polymode_button.toggled.connect(self.switch_mode)
         widget.layout().addWidget(polymode_button)
 
-        paintmode_button = QtGui.QRadioButton("Paint mode")
+        paintmode_button = QtWidgets.QRadioButton("Paint mode")
         mode_switch_group.addButton(paintmode_button)
         paintmode_button.toggled.connect(self.switch_mode)
         widget.layout().addWidget(paintmode_button)
 
-        circlemode_button = QtGui.QRadioButton("Circles mode")
+        circlemode_button = QtWidgets.QRadioButton("Circles mode")
         mode_switch_group.addButton(circlemode_button)
         circlemode_button.toggled.connect(self.switch_mode)
         widget.layout().addWidget(circlemode_button)
 
         # color switcher widget
-        color_widget = QtGui.QWidget()
-        color_widget.setLayout(QtGui.QHBoxLayout())
+        color_widget = QtWidgets.QWidget()
+        color_widget.setLayout(QtWidgets.QHBoxLayout())
 
         self.color_buttons = []
-        blue_button = QtGui.QPushButton("Hiding\nplaces")
+        blue_button = QtWidgets.QPushButton("Hiding\nplaces")
         blue_button.setCheckable(True)
         blue_button.setChecked(True)
         blue_button.clicked.connect(self.switch_color)
         color_widget.layout().addWidget(blue_button)
         self.color_buttons.append(blue_button)
 
-        red_button = QtGui.QPushButton("Outside of\nthe arena")
+        red_button = QtWidgets.QPushButton("Outside of\nthe arena")
         red_button.setCheckable(True)
         red_button.clicked.connect(self.switch_color)
         color_widget.layout().addWidget(red_button)
         self.color_buttons.append(red_button)
 
-        eraser_button = QtGui.QPushButton("Eraser")
+        eraser_button = QtWidgets.QPushButton("Eraser")
         eraser_button.setCheckable(True)
         eraser_button.clicked.connect(self.switch_color)
         color_widget.layout().addWidget(eraser_button)
@@ -649,59 +649,59 @@ class ArenaEditor(QtGui.QDialog):
 
         widget.layout().addWidget(color_widget)
 
-        self.pen_label = QtGui.QLabel()
+        self.pen_label = QtWidgets.QLabel()
         self.pen_label.setWordWrap(True)
         self.pen_label.setText("")
         widget.layout().addWidget(self.pen_label)
 
-        self.circle_label = QtGui.QLabel()
+        self.circle_label = QtWidgets.QLabel()
         self.circle_label.setWordWrap(True)
         self.circle_label.setText("Sorry, not supported yet")
         widget.layout().addWidget(self.circle_label)
 
         # PEN SIZE slider
-        self.slider = QtGui.QSlider(QtCore.Qt.Horizontal, self)
+        self.slider = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
         self.slider.setFocusPolicy(QtCore.Qt.NoFocus)
         self.slider.setGeometry(30, 40, 50, 30)
         self.slider.setRange(3, 50)
         self.slider.setTickInterval(3)
         self.slider.setValue(30)
-        self.slider.setTickPosition(QtGui.QSlider.TicksBelow)
+        self.slider.setTickPosition(QtWidgets.QSlider.TicksBelow)
         self.slider.valueChanged[int].connect(self.change_pen_size)
         self.slider.setVisible(False)
         widget.layout().addWidget(self.slider)
 
         # UNDO key shortcut
-        self.action_undo = QtGui.QAction('undo', self)
+        self.action_undo = QtWidgets.QAction('undo', self)
         self.action_undo.triggered.connect(self.undo)
         self.action_undo.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Z))
         self.addAction(self.action_undo)
 
-        self.undo_button = QtGui.QPushButton("Undo\n(key Z)")
+        self.undo_button = QtWidgets.QPushButton("Undo\n(key Z)")
         self.undo_button.clicked.connect(self.undo)
         widget.layout().addWidget(self.undo_button)
 
         # DRAW button and key shortcut
-        self.action_paint_polygon = QtGui.QAction('paint_polygon', self)
+        self.action_paint_polygon = QtWidgets.QAction('paint_polygon', self)
         self.action_paint_polygon.triggered.connect(self.paint_polygon)
         self.action_paint_polygon.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_D))
         self.addAction(self.action_paint_polygon)
 
-        self.poly_button = QtGui.QPushButton("Draw polygons\n(key D)")
+        self.poly_button = QtWidgets.QPushButton("Draw polygons\n(key D)")
         self.poly_button.clicked.connect(self.paint_polygon)
         widget.layout().addWidget(self.poly_button)
 
         # CLEAR button and key shortcut
-        self.action_clear = QtGui.QAction('clear', self)
+        self.action_clear = QtWidgets.QAction('clear', self)
         self.action_clear.triggered.connect(self.reset)
         self.action_clear.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_C))
         self.addAction(self.action_clear)
 
-        self.clear_button = QtGui.QPushButton("Clear paint area\n(key C)")
+        self.clear_button = QtWidgets.QPushButton("Clear paint area\n(key C)")
         self.clear_button.clicked.connect(self.reset)
         widget.layout().addWidget(self.clear_button)
 
-        self.popup_button = QtGui.QPushButton("Done!")
+        self.popup_button = QtWidgets.QPushButton("Done!")
         self.popup_button.clicked.connect(self.popup)
         widget.layout().addWidget(self.popup_button)
 
@@ -715,7 +715,7 @@ class ArenaEditor(QtGui.QDialog):
 
 
 if __name__ == "__main__":
-    app = QtGui.QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
 
     # im = cv2.imread('/home/dita/PycharmProjects/sample2.png')
     im = cv2.imread('/Users/flipajs/Desktop/red_vid.png')

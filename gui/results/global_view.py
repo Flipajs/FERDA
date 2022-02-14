@@ -4,7 +4,7 @@ from gui.results.noise_filter_computer import NoiseFilterComputer
 from gui.gui_utils import get_img_qlabel
 from utils.video_manager import get_auto_video_manager
 import sys
-from PyQt4 import QtGui, QtCore
+from PyQt5 import QtCore, QtGui, QtWidgets
 import numpy as np
 import pickle
 from functools import partial
@@ -22,11 +22,11 @@ from gui.loading_widget import LoadingWidget
 
 
 
-class GlobalView(QtGui.QWidget):
+class GlobalView(QtWidgets.QWidget):
     def __init__(self, project, solver, show_in_visualizer_callback=None):
         super(GlobalView, self).__init__()
 
-        self.setLayout(QtGui.QVBoxLayout())
+        self.setLayout(QtWidgets.QVBoxLayout())
         self.show_in_visualizer_callback = show_in_visualizer_callback
         self.project = project
         self.solver = solver
@@ -43,53 +43,53 @@ class GlobalView(QtGui.QWidget):
         self.last_node_size = -1
 
     def create_tool_w(self):
-        w = QtGui.QWidget()
-        w.setLayout(QtGui.QHBoxLayout())
+        w = QtWidgets.QWidget()
+        w.setLayout(QtWidgets.QHBoxLayout())
 
         vid = get_auto_video_manager(self.project)
 
-        self.chunk_len_threshold = QtGui.QSpinBox()
+        self.chunk_len_threshold = QtWidgets.QSpinBox()
         self.chunk_len_threshold.setMinimum(0)
         self.chunk_len_threshold.setMaximum(100000)
         self.chunk_len_threshold.setValue(10)
-        w.layout().addWidget(QtGui.QLabel('min chunk length: '))
+        w.layout().addWidget(QtWidgets.QLabel('min chunk length: '))
         w.layout().addWidget(self.chunk_len_threshold)
 
-        self.start_t = QtGui.QSpinBox()
+        self.start_t = QtWidgets.QSpinBox()
         self.start_t.setMinimum(-1)
         self.start_t.setMaximum(vid.total_frame_count()-1)
         self.start_t.setValue(0)
-        w.layout().addWidget(QtGui.QLabel('start t:'))
+        w.layout().addWidget(QtWidgets.QLabel('start t:'))
         w.layout().addWidget(self.start_t)
 
-        self.end_t = QtGui.QSpinBox()
+        self.end_t = QtWidgets.QSpinBox()
         self.end_t.setMinimum(-1)
         self.end_t.setMaximum(vid.total_frame_count())
         self.end_t.setValue(vid.total_frame_count())
-        w.layout().addWidget(QtGui.QLabel('end t:'))
+        w.layout().addWidget(QtWidgets.QLabel('end t:'))
         w.layout().addWidget(self.end_t)
 
-        self.node_size = QtGui.QSpinBox()
+        self.node_size = QtWidgets.QSpinBox()
         self.node_size.setMinimum(5)
         self.node_size.setMaximum(500)
         self.node_size.setValue(100)
-        w.layout().addWidget(QtGui.QLabel('node size: '))
+        w.layout().addWidget(QtWidgets.QLabel('node size: '))
         w.layout().addWidget(self.node_size)
 
-        self.relative_margin = QtGui.QDoubleSpinBox()
+        self.relative_margin = QtWidgets.QDoubleSpinBox()
         self.relative_margin.setMinimum(0)
         self.relative_margin.setMaximum(5)
         self.relative_margin.setSingleStep(0.05)
         self.relative_margin.setValue(1.7)
-        w.layout().addWidget(QtGui.QLabel('node relative margin: '))
+        w.layout().addWidget(QtWidgets.QLabel('node relative margin: '))
         w.layout().addWidget(self.relative_margin)
 
-        self.show_vertically = QtGui.QCheckBox()
+        self.show_vertically = QtWidgets.QCheckBox()
         self.show_vertically.setChecked(False)
-        w.layout().addWidget(QtGui.QLabel('show vertically:'))
+        w.layout().addWidget(QtWidgets.QLabel('show vertically:'))
         w.layout().addWidget(self.show_vertically)
 
-        self.show_b = QtGui.QPushButton('show')
+        self.show_b = QtWidgets.QPushButton('show')
         self.show_b.clicked.connect(self.start_preparation)
         w.layout().addWidget(self.show_b)
 
@@ -106,7 +106,7 @@ class GlobalView(QtGui.QWidget):
 
         w_loading = LoadingWidget()
         self.layout().addWidget(w_loading)
-        QtGui.QApplication.processEvents()
+        QtWidgets.QApplication.processEvents()
 
         start_t = self.start_t.value()
         end_t = self.end_t.value()

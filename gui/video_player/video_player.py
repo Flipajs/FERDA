@@ -1,7 +1,7 @@
 import operator
 
 import warnings
-from PyQt4 import QtCore, QtGui
+from PyQt5 import QtCore, QtGui, QtWidgets
 
 from gui.gui_utils import SelectAllLineEdit
 from gui.img_controls.gui_utils import cvimg2qtpixmap
@@ -10,7 +10,7 @@ from gui.settings import Settings as S_
 from utils.video_manager import get_auto_video_manager
 
 
-class VideoPlayer(QtGui.QWidget):
+class VideoPlayer(QtWidgets.QWidget):
     # TODO:
     _play_forward = True
     _scene = None
@@ -29,14 +29,14 @@ class VideoPlayer(QtGui.QWidget):
         """
         super(VideoPlayer, self).__init__()
 
-        self.setLayout(QtGui.QVBoxLayout())
+        self.setLayout(QtWidgets.QVBoxLayout())
 
         self._vm = get_auto_video_manager(project)
         self._frame_change_callback = frame_change_callback
         self._image_processor_callback = image_processor_callback
 
         self._view = MyView()
-        self._scene = QtGui.QGraphicsScene(self._view)
+        self._scene = QtWidgets.QGraphicsScene(self._view)
         self._view.setScene(self._scene)
         self.layout().addWidget(self._view)
 
@@ -61,14 +61,14 @@ class VideoPlayer(QtGui.QWidget):
     def _video_controls(self):
         from .video_slider import VideoSlider
 
-        self.video_control_widget = QtGui.QWidget()
-        self.video_control_layout = QtGui.QVBoxLayout()
+        self.video_control_widget = QtWidgets.QWidget()
+        self.video_control_layout = QtWidgets.QVBoxLayout()
         self.video_control_widget.setLayout(self.video_control_layout)
         self.video_control_widget.setMaximumHeight(70)
         self.video_control_widget.setContentsMargins(0, 0, 0, 0)
 
-        self.video_control_buttons_widget = QtGui.QWidget()
-        self.video_control_buttons_layout = QtGui.QHBoxLayout()
+        self.video_control_buttons_widget = QtWidgets.QWidget()
+        self.video_control_buttons_layout = QtWidgets.QHBoxLayout()
         self.video_control_buttons_layout.setContentsMargins(0, 0, 0, 0)
         self.video_control_buttons_widget.setLayout(self.video_control_buttons_layout)
 
@@ -83,34 +83,34 @@ class VideoPlayer(QtGui.QWidget):
 
         self.layout().addWidget(self.video_control_widget)
 
-        self.speedSlider = QtGui.QSlider()
+        self.speedSlider = QtWidgets.QSlider()
         self.speedSlider.setOrientation(QtCore.Qt.Horizontal)
         self.speedSlider.setMinimum(0)
         self.speedSlider.setMaximum(99)
 
-        self.backward = QtGui.QPushButton('<')
+        self.backward = QtWidgets.QPushButton('<')
         self.backward.setShortcut(S_.controls.video_prev)
-        self.playPause = QtGui.QPushButton('play')
+        self.playPause = QtWidgets.QPushButton('play')
         self.playPause.setShortcut(S_.controls.video_play_pause)
-        self.forward = QtGui.QPushButton('>')
+        self.forward = QtWidgets.QPushButton('>')
         self.forward.setShortcut(S_.controls.video_next)
         self.frame_edit = SelectAllLineEdit()
         self.frame_edit.returnPressed.connect(self.goto)
         self.frame_edit.setFixedHeight(30)
 
-        self.fpsLabel = QtGui.QLabel()
+        self.fpsLabel = QtWidgets.QLabel()
         self.fpsLabel.setAlignment(QtCore.Qt.AlignRight)
 
-        self.frame_jump_button = QtGui.QPushButton('go')
+        self.frame_jump_button = QtWidgets.QPushButton('go')
         self.frame_jump_button.clicked.connect(self.goto)
 
         self.frame_jump_button.setFocusPolicy(QtCore.Qt.StrongFocus)
 
-        self.visu_controls_layout = QtGui.QHBoxLayout()
+        self.visu_controls_layout = QtWidgets.QHBoxLayout()
         self.video_control_buttons_layout.addLayout(self.visu_controls_layout)
         self.video_control_buttons_layout.addWidget(self.speedSlider)
 
-        self.video_step_label = QtGui.QLabel('1')
+        self.video_step_label = QtWidgets.QLabel('1')
 
         self.video_control_buttons_layout.addWidget(self.speedSlider)
         self.video_control_buttons_layout.addWidget(self.fpsLabel)
@@ -126,42 +126,42 @@ class VideoPlayer(QtGui.QWidget):
 
     def _add_actions(self):
         #   video step
-        self.increase_video_step_a = QtGui.QAction('increase video step', self)
+        self.increase_video_step_a = QtWidgets.QAction('increase video step', self)
         self.increase_video_step_a.triggered.connect(lambda x: self.increase_video_step())
         self.increase_video_step_a.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_2))
         self.addAction(self.increase_video_step_a)
 
-        self.decrease_video_step_a = QtGui.QAction('decrease video step', self)
+        self.decrease_video_step_a = QtWidgets.QAction('decrease video step', self)
         self.decrease_video_step_a.triggered.connect(lambda x: self.decrease_video_step())
         self.decrease_video_step_a.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_1))
         self.addAction(self.decrease_video_step_a)
 
-        self.small_video_forward_a = QtGui.QAction('small next', self)
+        self.small_video_forward_a = QtWidgets.QAction('small next', self)
         self.small_video_forward_a.triggered.connect(lambda x: self.goto(self._vm.frame_number() + 3))
         self.small_video_forward_a.setShortcut(QtGui.QKeySequence(QtCore.Qt.ALT + QtCore.Qt.Key_N))
         self.addAction(self.small_video_forward_a)
 
-        self.small_video_backward_a = QtGui.QAction('small back', self)
+        self.small_video_backward_a = QtWidgets.QAction('small back', self)
         self.small_video_backward_a.triggered.connect(lambda x: self.goto(self._vm.frame_number() - 3))
         self.small_video_backward_a.setShortcut(QtGui.QKeySequence(QtCore.Qt.ALT + QtCore.Qt.Key_B))
         self.addAction(self.small_video_backward_a)
 
-        self.middle_video_forward_a = QtGui.QAction('middle next', self)
+        self.middle_video_forward_a = QtWidgets.QAction('middle next', self)
         self.middle_video_forward_a.triggered.connect(lambda x: self.goto(self._vm.frame_number() + 10))
         self.middle_video_forward_a.setShortcut(QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.Key_N))
         self.addAction(self.middle_video_forward_a)
 
-        self.middle_video_backward_a = QtGui.QAction('middle back', self)
+        self.middle_video_backward_a = QtWidgets.QAction('middle back', self)
         self.middle_video_backward_a.triggered.connect(lambda x: self.goto(self._vm.frame_number() - 10))
         self.middle_video_backward_a.setShortcut(QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.Key_B))
         self.addAction(self.middle_video_backward_a)
 
-        self.big_video_forward_a = QtGui.QAction('big next', self)
+        self.big_video_forward_a = QtWidgets.QAction('big next', self)
         self.big_video_forward_a.triggered.connect(lambda x: self.goto(self._vm.frame_number() + 50))
         self.big_video_forward_a.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_0))
         self.addAction(self.big_video_forward_a)
 
-        self.big_video_backward_a = QtGui.QAction('big back', self)
+        self.big_video_backward_a = QtWidgets.QAction('big back', self)
         self.big_video_backward_a.triggered.connect(lambda x: self.goto(self._vm.frame_number() - 50))
         self.big_video_backward_a.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_9))
         self.addAction(self.big_video_backward_a)
@@ -266,7 +266,7 @@ class VideoPlayer(QtGui.QWidget):
 
         self.clear_all_temp_visualisations()
         pixmap = cvimg2qtpixmap(img)
-        self.visualise_temp(QtGui.QGraphicsPixmapItem(pixmap), 'bg')
+        self.visualise_temp(QtWidgets.QGraphicsPixmapItem(pixmap), 'bg')
 
     def __next__(self):
         self._change_frame(self._get_next_operator())

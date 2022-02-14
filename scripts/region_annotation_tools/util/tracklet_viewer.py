@@ -1,12 +1,12 @@
-from PyQt4 import QtCore
-from PyQt4 import QtGui
+from PyQt5 import QtCore, QtWidgets
+from PyQt5 import QtGui, QtWidgets
 
 from core.graph.region_chunk import RegionChunk
 from gui.gui_utils import cvimg2qtpixmap
 from scripts.region_annotation_tools import TrackletTypes
 
 
-class TrackletViewer(QtGui.QWidget):
+class TrackletViewer(QtWidgets.QWidget):
     """
     This class serves for only purpose to view tracklets and extracting them to ground truth
     """
@@ -19,19 +19,19 @@ class TrackletViewer(QtGui.QWidget):
         self.gm = project.gm
         self.rm = project.rm
 
-        self.setLayout(QtGui.QVBoxLayout())
-        self.labels = QtGui.QHBoxLayout()
-        self.current_id_label = QtGui.QLabel()
-        self.current_region_label = QtGui.QLabel()
-        self.previous_id_label = QtGui.QLabel()
-        self.buttons = QtGui.QHBoxLayout()
-        self.next_b = QtGui.QPushButton('next frame (n)')
-        self.prev_b = QtGui.QPushButton('prev frame (p)')
-        self.blob_b = QtGui.QPushButton('blob')
-        self.single_b = QtGui.QPushButton('single')
-        self.other_b = QtGui.QPushButton('other')
-        self.save_b = QtGui.QPushButton('save and exit')
-        self.img = QtGui.QLabel()
+        self.setLayout(QtWidgets.QVBoxLayout())
+        self.labels = QtWidgets.QHBoxLayout()
+        self.current_id_label = QtWidgets.QLabel()
+        self.current_region_label = QtWidgets.QLabel()
+        self.previous_id_label = QtWidgets.QLabel()
+        self.buttons = QtWidgets.QHBoxLayout()
+        self.next_b = QtWidgets.QPushButton('next frame (n)')
+        self.prev_b = QtWidgets.QPushButton('prev frame (p)')
+        self.blob_b = QtWidgets.QPushButton('blob')
+        self.single_b = QtWidgets.QPushButton('single')
+        self.other_b = QtWidgets.QPushButton('other')
+        self.save_b = QtWidgets.QPushButton('save and exit')
+        self.img = QtWidgets.QLabel()
         self.current_frame = -1
         self.tracklets = tracklets
         self.current_tracklet = None
@@ -54,16 +54,14 @@ class TrackletViewer(QtGui.QWidget):
         self.buttons.addWidget(self.single_b)
         self.buttons.addWidget(self.other_b)
         self.buttons.addWidget(self.save_b)
-        self.connect(self.prev_b, QtCore.SIGNAL('clicked()'), self.prev_action)
-        self.connect(self.next_b, QtCore.SIGNAL('clicked()'), self.next_action)
-        self.connect(self.blob_b, QtCore.SIGNAL('clicked()'), self.blob_action)
-        self.connect(self.single_b, QtCore.SIGNAL('clicked()'), self.single_action)
-        self.connect(self.other_b, QtCore.SIGNAL('clicked()'), self.other_action)
-        self.connect(self.save_b, QtCore.SIGNAL('clicked()'), self.save_callback)
-        self.connect(QtGui.QShortcut(QtGui.QKeySequence(QtCore.Qt.Key_N), self), QtCore.SIGNAL('activated()'),
-                     self.next_action)
-        self.connect(QtGui.QShortcut(QtGui.QKeySequence(QtCore.Qt.Key_P), self), QtCore.SIGNAL('activated()'),
-                     self.prev_action)
+        self.prev_b.clicked.connect(self.prev_action)
+        self.next_b.clicked.connect(self.next_action)
+        self.blob_b.clicked.connect(self.blob_action)
+        self.single_b.clicked.connect(self.single_action)
+        self.other_b.clicked.connect(self.other_action)
+        self.save_b.clicked.connect(self.save_callback)
+        QtWidgets.QShortcut(QtGui.QKeySequence(QtCore.Qt.Key_N), self).activated.connect(self.next_action)
+        QtWidgets.QShortcut(QtGui.QKeySequence(QtCore.Qt.Key_P), self).activated.connect(self.prev_action)
         # self.connect(QtGui.QShortcut(QtGui.QKeySequence(QtCore.Qt.Key_B), self), QtCore.SIGNAL('activated()'),
         #              self.blob_action)
         # self.connect(QtGui.QShortcut(QtGui.QKeySequence(QtCore.Qt.Key_S), self), QtCore.SIGNAL('activated()'),

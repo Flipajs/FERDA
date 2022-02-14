@@ -5,7 +5,7 @@ from functools import partial
 
 import cv2
 import numpy as np
-from PyQt4 import QtGui, QtCore
+from PyQt5 import QtCore, QtGui, QtWidgets
 
 from gui.img_controls.my_scene import MyScene
 from gui.init.arena.arena_circle import ArenaCircle as Circle
@@ -13,17 +13,17 @@ from gui.init.arena.arena_mark import ArenaMark as Mark
 from gui.settings import Settings as S_
 
 
-class NewRegionWidget(QtGui.QWidget):
+class NewRegionWidget(QtWidgets.QWidget):
     def __init__(self, im, offset, frame, callback):
         super(NewRegionWidget, self).__init__()
 
-        self.setLayout(QtGui.QVBoxLayout())
+        self.setLayout(QtWidgets.QVBoxLayout())
         self.im = im
         self.offset = offset
         self.frame = frame
         self.callback = callback
 
-        self.view = QtGui.QGraphicsView()
+        self.view = QtWidgets.QGraphicsView()
         self.view.setMouseTracking(True)
         self.scene = MyScene()
         self.scene.clicked.connect(self.scene_clicked)
@@ -32,11 +32,11 @@ class NewRegionWidget(QtGui.QWidget):
 
         self.scene.addPixmap(im)
         self.layout().addWidget(self.view)
-        self.confirm_button = QtGui.QPushButton('confirm')
+        self.confirm_button = QtWidgets.QPushButton('confirm')
         self.confirm_button.clicked.connect(self.confirm)
-        self.cancel_button = QtGui.QPushButton('cancel')
+        self.cancel_button = QtWidgets.QPushButton('cancel')
         self.cancel_button.clicked.connect(partial(self.callback, False, None))
-        self.hbox = QtGui.QHBoxLayout()
+        self.hbox = QtWidgets.QHBoxLayout()
         self.hbox.addWidget(self.confirm_button)
         self.hbox.addWidget(self.cancel_button)
         self.layout().addLayout(self.hbox)
@@ -78,7 +78,7 @@ class NewRegionWidget(QtGui.QWidget):
         self.callback(True, data)
 
     def scene_clicked(self, pos):
-        modifiers = QtGui.QApplication.keyboardModifiers()
+        modifiers = QtWidgets.QApplication.keyboardModifiers()
 
         if self.put_mark_active:
             self.put_mark_active = False

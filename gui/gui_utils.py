@@ -4,22 +4,22 @@ from utils.drawing.points import get_contour, draw_points_crop
 
 __author__ = 'fnaiser'
 
-from PyQt4 import QtGui, QtCore
-from PyQt4.QtGui import QImage
+from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5.QtGui import QImage
 from gui.settings_widgets.default import get_tooltip, get_default
 import numpy as np
 
 
-class IdButton(QtGui.QPushButton):
+class IdButton(QtWidgets.QPushButton):
     def __init__(self, text, id):
         super(IdButton, self).__init__()
         self.id = id
         self.setText(text)
 
 
-class SelectableQLabel(QtGui.QLabel):
+class SelectableQLabel(QtWidgets.QLabel):
     def __init__(self, parent=None, selected_callback=None, id=-1):
-        QtGui.QLabel.__init__(self, parent)
+        QtWidgets.QLabel.__init__(self, parent)
         self.id_ = id
         self.selected_callback = selected_callback
         self.selected = False
@@ -35,7 +35,7 @@ class SelectableQLabel(QtGui.QLabel):
                 self.selected_callback(self, self.id_)
 
     def mouseMoveEvent(self, event):
-        modifiers = QtGui.QApplication.keyboardModifiers()
+        modifiers = QtWidgets.QApplication.keyboardModifiers()
         # mbutt = QtGui.QApplication.mouseButtons()
         if modifiers == QtCore.Qt.ControlModifier:
             self.set_selected(True)
@@ -63,11 +63,11 @@ def set_input_field_bg_valid(input_widget, valid=True):
 
 
 def file_name_dialog(window, text='Select files', path='', filter_=''):
-    return str(QtGui.QFileDialog.getOpenFileName(window, text, path, filter=filter_))
+    return str(QtWidgets.QFileDialog.getOpenFileName(window, text, path, filter=filter_))[0]
 
 
 def file_names_dialog(window, text='Select files', path='', filter_=''):
-    file_names_qstr = QtGui.QFileDialog.getOpenFileNames(window, text, path, filter=filter_)
+    file_names_qstr = QtWidgets.QFileDialog.getOpenFileNames(window, text, path, filter=filter_)[0]
     return [str(s) for s in file_names_qstr]
 
 
@@ -92,7 +92,7 @@ def reconnect(signal, newhandler=None, oldhandler=None):
 
 
 def get_spin_box(from_=0, to=100, step=1, key=None):
-    sb = QtGui.QSpinBox()
+    sb = QtWidgets.QSpinBox()
     sb.setRange(from_, to)
     sb.setSingleStep(step)
     if key:
@@ -103,7 +103,7 @@ def get_spin_box(from_=0, to=100, step=1, key=None):
 
 
 def get_double_spin_box(from_=0, to=1, step=0.01, key=None):
-    sb = QtGui.QDoubleSpinBox()
+    sb = QtWidgets.QDoubleSpinBox()
     sb.setRange(from_, to)
     sb.setSingleStep(step)
     if key:
@@ -114,7 +114,7 @@ def get_double_spin_box(from_=0, to=1, step=0.01, key=None):
 
 
 def get_checkbox(text, key=None):
-    ch = QtGui.QCheckBox(text)
+    ch = QtWidgets.QCheckBox(text)
     if key:
         ch.setToolTip(get_tooltip(key))
         ch.setChecked(get_settings(key, bool))
@@ -126,7 +126,7 @@ def get_image_label(im):
     h = im.shape[0]
     w = im.shape[1]
 
-    item = QtGui.QLabel()
+    item = QtWidgets.QLabel()
     item.setScaledContents(True)
     item.setFixedWidth(w)
     item.setFixedHeight(h)
@@ -161,10 +161,10 @@ def get_img_qlabel(pts, img, id, height=100, width=100, filled=False):
     return item
 
 
-class ClickableQGraphicsPixmapItem(QtGui.QGraphicsPixmapItem):
+class ClickableQGraphicsPixmapItem(QtWidgets.QGraphicsPixmapItem):
     def __init__(self, pixmap, id_, callback):
         super(ClickableQGraphicsPixmapItem, self).__init__(pixmap)
-        self.setFlag(QtGui.QGraphicsItem.ItemIsSelectable, True)
+        self.setFlag(QtWidgets.QGraphicsItem.ItemIsSelectable, True)
         self.id_ = id_
         self.callback = callback
 
@@ -173,7 +173,7 @@ class ClickableQGraphicsPixmapItem(QtGui.QGraphicsPixmapItem):
         self.callback(self.id_)
 
 
-class SelectAllLineEdit(QtGui.QLineEdit):
+class SelectAllLineEdit(QtWidgets.QLineEdit):
     def __init__(self, parent=None):
         super(SelectAllLineEdit, self).__init__(parent)
         self.readyToEdit = True

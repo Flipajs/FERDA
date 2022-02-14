@@ -1,9 +1,9 @@
 import threading
-from PyQt4 import QtGui, QtCore
+from PyQt5 import QtCore, QtGui, QtWidgets
 import cv2, sys
 import time
-from PyQt4.QtCore import Qt
-from PyQt4.QtGui import QApplication
+from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QApplication
 import numpy as np
 
 from core.project.project import Project
@@ -18,7 +18,7 @@ TEXT = "Press Space to proceed\nS for change of step\nD for change of ROI\n\n\n\
        "Frame: {0}\nStep: {1}\nRoi: {2}\n\n\n\nChunk:\nId: {3}\nLength: {4}\n\n\n\n" \
        "Region:\nId: {5}\nCentroid: {6}"
 
-class CropWidget(QtGui.QWidget):
+class CropWidget(QtWidgets.QWidget):
 
     def __init__(self, project, ft=None, roi=RELATIVE_MARGIN, start_frame=0, end_frame=200, step=1):
         super(CropWidget, self).__init__()
@@ -37,20 +37,20 @@ class CropWidget(QtGui.QWidget):
         self.step = step
         self.roi = roi
 
-        self.h_layout = QtGui.QHBoxLayout()
+        self.h_layout = QtWidgets.QHBoxLayout()
         self.setLayout(self.h_layout)
 
-        self.info_widget = QtGui.QWidget()
-        self.info_widget.setLayout(QtGui.QVBoxLayout())
+        self.info_widget = QtWidgets.QWidget()
+        self.info_widget.setLayout(QtWidgets.QVBoxLayout())
 
-        self.info_label = QtGui.QLabel()
+        self.info_label = QtWidgets.QLabel()
         self.info_label.setAlignment(Qt.AlignCenter)
         stylesheet = "font: 30px"
         self.info_label.setStyleSheet(stylesheet)
-        self.button_start = QtGui.QPushButton('Start (I)', self)
+        self.button_start = QtWidgets.QPushButton('Start (I)', self)
         self.button_start.clicked.connect(self.handle_start)
         self.button_start.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_I))
-        self.button_stop = QtGui.QPushButton('Stop (O)', self)
+        self.button_stop = QtWidgets.QPushButton('Stop (O)', self)
         self.button_stop.clicked.connect(self.handle_stop)
         self.button_stop.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_O))
         self._running = False
@@ -61,21 +61,21 @@ class CropWidget(QtGui.QWidget):
 
         self.layout().addWidget(self.info_widget)
 
-        self.img_label = QtGui.QLabel()
+        self.img_label = QtWidgets.QLabel()
         self.img_label.setAlignment(Qt.AlignCenter)
         self.layout().addWidget(self.img_label)
 
-        self.next_frame_action = QtGui.QAction('next_frame', self)
+        self.next_frame_action = QtWidgets.QAction('next_frame', self)
         self.next_frame_action.triggered.connect(self.next_frame)
         self.next_frame_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Space))
         self.addAction(self.next_frame_action)
 
-        self.change_step_action = QtGui.QAction('change_step', self)
+        self.change_step_action = QtWidgets.QAction('change_step', self)
         self.change_step_action.triggered.connect(self.change_step)
         self.change_step_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_S))
         self.addAction(self.change_step_action)
 
-        self.change_roi_action = QtGui.QAction('change_roi', self)
+        self.change_roi_action = QtWidgets.QAction('change_roi', self)
         self.change_roi_action.triggered.connect(self.change_roi)
         self.change_roi_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_D))
         self.addAction(self.change_roi_action)
@@ -102,11 +102,11 @@ class CropWidget(QtGui.QWidget):
         self._running = False
 
     def change_step(self):
-        step, none = QtGui.QInputDialog.getInt(self, 'Change of step', 'Enter new step:', value=1)
+        step, none = QtWidgets.QInputDialog.getInt(self, 'Change of step', 'Enter new step:', value=1)
         self.step = step
 
     def change_roi(self):
-        roi, none = QtGui.QInputDialog.getDouble(self, 'Change of ROI', 'Enter new ROI:', value=0.1)
+        roi, none = QtWidgets.QInputDialog.getDouble(self, 'Change of ROI', 'Enter new ROI:', value=0.1)
         self.roi = roi
 
     def next_frame(self):
@@ -245,7 +245,7 @@ if __name__ == '__main__':
                 minCompSize=minCompSize,
                 keypointTypes=keypointTypes)
 
-    app = QtGui.QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
     widget = CropWidget(project, ft)
     widget.showMaximized()
     app.exec_()

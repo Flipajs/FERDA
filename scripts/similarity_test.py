@@ -6,7 +6,7 @@ from utils.video_manager import get_auto_video_manager
 from utils.drawing.points import draw_points, draw_points_crop
 import cv2
 from math import sin, cos
-from PyQt4 import QtGui, QtCore
+from PyQt5 import QtCore, QtGui, QtWidgets
 import sys
 from gui.img_grid.img_grid_widget import ImgGridWidget
 from gui.gui_utils import get_image_label
@@ -59,7 +59,7 @@ if __name__ == '__main__':
     # chunks = load_chunks()
     vid = get_auto_video_manager(WORKING_DIR+'/eight.m4v')
 
-    app = QtGui.QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
     w = ImgGridWidget()
     w.reshape(cols=15, element_width=70)
     #

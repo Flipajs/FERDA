@@ -6,53 +6,47 @@
 #
 # WARNING! All changes made in this file will be lost!
 
-from PyQt4 import QtCore, QtGui
+from PyQt5 import QtCore, QtGui, QtWidgets
 
 try:
-    _fromUtf8 = QtCore.QString.fromUtf8
-except AttributeError:
-    def _fromUtf8(s):
-        return s
-
-try:
-    _encoding = QtGui.QApplication.UnicodeUTF8
+    _encoding = QtWidgets.QApplication.UnicodeUTF8
     def _translate(context, text, disambig):
-        return QtGui.QApplication.translate(context, text, disambig, _encoding)
+        return QtCore.QCoreApplication.translate(context, text, disambig, _encoding)
 except AttributeError:
     def _translate(context, text, disambig):
-        return QtGui.QApplication.translate(context, text, disambig)
+        return QtCore.QCoreApplication.translate(context, text, disambig)
 
 class Ui_landingForm(object):
     def setupUi(self, landingForm):
-        landingForm.setObjectName(_fromUtf8("landingForm"))
+        landingForm.setObjectName("landingForm")
         landingForm.resize(400, 300)
-        self.horizontalLayout = QtGui.QHBoxLayout(landingForm)
-        self.horizontalLayout.setObjectName(_fromUtf8("horizontalLayout"))
-        self.verticalLayout = QtGui.QVBoxLayout()
-        self.verticalLayout.setObjectName(_fromUtf8("verticalLayout"))
-        self.newProjectButton = QtGui.QPushButton(landingForm)
-        self.newProjectButton.setObjectName(_fromUtf8("newProjectButton"))
+        self.horizontalLayout = QtWidgets.QHBoxLayout(landingForm)
+        self.horizontalLayout.setObjectName("horizontalLayout")
+        self.verticalLayout = QtWidgets.QVBoxLayout()
+        self.verticalLayout.setObjectName("verticalLayout")
+        self.newProjectButton = QtWidgets.QPushButton(landingForm)
+        self.newProjectButton.setObjectName("newProjectButton")
         self.verticalLayout.addWidget(self.newProjectButton)
-        spacerItem = QtGui.QSpacerItem(20, 20, QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Preferred)
+        spacerItem = QtWidgets.QSpacerItem(20, 20, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Preferred)
         self.verticalLayout.addItem(spacerItem)
-        self.loadProjectButton = QtGui.QPushButton(landingForm)
-        self.loadProjectButton.setObjectName(_fromUtf8("loadProjectButton"))
+        self.loadProjectButton = QtWidgets.QPushButton(landingForm)
+        self.loadProjectButton.setObjectName("loadProjectButton")
         self.verticalLayout.addWidget(self.loadProjectButton)
-        spacerItem1 = QtGui.QSpacerItem(20, 20, QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Preferred)
+        spacerItem1 = QtWidgets.QSpacerItem(20, 20, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Preferred)
         self.verticalLayout.addItem(spacerItem1)
-        self.settingsButton = QtGui.QPushButton(landingForm)
-        self.settingsButton.setObjectName(_fromUtf8("settingsButton"))
+        self.settingsButton = QtWidgets.QPushButton(landingForm)
+        self.settingsButton.setObjectName("settingsButton")
         self.verticalLayout.addWidget(self.settingsButton)
-        spacerItem2 = QtGui.QSpacerItem(20, 40, QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Expanding)
+        spacerItem2 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
         self.verticalLayout.addItem(spacerItem2)
         self.horizontalLayout.addLayout(self.verticalLayout)
-        self.verticalLayout_2 = QtGui.QVBoxLayout()
-        self.verticalLayout_2.setObjectName(_fromUtf8("verticalLayout_2"))
-        self.label = QtGui.QLabel(landingForm)
-        self.label.setObjectName(_fromUtf8("label"))
+        self.verticalLayout_2 = QtWidgets.QVBoxLayout()
+        self.verticalLayout_2.setObjectName("verticalLayout_2")
+        self.label = QtWidgets.QLabel(landingForm)
+        self.label.setObjectName("label")
         self.verticalLayout_2.addWidget(self.label)
-        self.recentProjectsList = QtGui.QListWidget(landingForm)
-        self.recentProjectsList.setObjectName(_fromUtf8("recentProjectsList"))
+        self.recentProjectsList = QtWidgets.QListWidget(landingForm)
+        self.recentProjectsList.setObjectName("recentProjectsList")
         self.verticalLayout_2.addWidget(self.recentProjectsList)
         self.horizontalLayout.addLayout(self.verticalLayout_2)
 

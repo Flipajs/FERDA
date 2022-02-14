@@ -1,5 +1,5 @@
 import sys
-from PyQt4 import QtGui, QtCore
+from PyQt5 import QtCore, QtGui, QtWidgets
 from . import painter
 from .utils import *
 
@@ -8,7 +8,7 @@ from sklearn.ensemble import RandomForestClassifier
 __author__ = 'dita'
 
 
-class SegmentationPicker(QtGui.QWidget):
+class SegmentationPicker(QtWidgets.QWidget):
 
     def __init__(self, img, done_callback=None, pen_size=10, undo_len=10, debug=False, paint_r=255, paint_g=0, paint_b=238, paint_a=255):
 
@@ -179,7 +179,7 @@ class SegmentationPicker(QtGui.QWidget):
         #          GUI           #
         ##########################
 
-        self.setLayout(QtGui.QHBoxLayout())
+        self.setLayout(QtWidgets.QHBoxLayout())
         self.layout().setAlignment(QtCore.Qt.AlignBottom)
 
         # drawing area
@@ -187,49 +187,49 @@ class SegmentationPicker(QtGui.QWidget):
         self.view.add_color("GREEN", 0, 255, 0, 255)
 
         # left panel widget
-        self.left_panel = QtGui.QWidget()
-        self.left_panel.setLayout(QtGui.QVBoxLayout())
+        self.left_panel = QtWidgets.QWidget()
+        self.left_panel.setLayout(QtWidgets.QVBoxLayout())
         self.left_panel.layout().setAlignment(QtCore.Qt.AlignTop)
         # set left panel widget width to 300px
         self.left_panel.setMaximumWidth(300)
         self.left_panel.setMinimumWidth(300)
 
-        self.pen_label = QtGui.QLabel()
+        self.pen_label = QtWidgets.QLabel()
         self.pen_label.setWordWrap(True)
         self.pen_label.setText("")
         self.left_panel.layout().addWidget(self.pen_label)
 
         # PEN SIZE slider
-        self.slider = QtGui.QSlider(QtCore.Qt.Horizontal, self)
+        self.slider = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
         self.slider.setFocusPolicy(QtCore.Qt.NoFocus)
         self.slider.setGeometry(30, 40, 50, 30)
         self.slider.setRange(2, 30)
         self.slider.setTickInterval(1)
         self.slider.setValue(self.pen_size)
-        self.slider.setTickPosition(QtGui.QSlider.TicksBelow)
+        self.slider.setTickPosition(QtWidgets.QSlider.TicksBelow)
         self.slider.valueChanged[int].connect(self.view.set_pen_size)
         self.slider.setVisible(True)
         self.left_panel.layout().addWidget(self.slider)
 
         # color switcher widget
-        color_widget = QtGui.QWidget()
-        color_widget.setLayout(QtGui.QHBoxLayout())
+        color_widget = QtWidgets.QWidget()
+        color_widget.setLayout(QtWidgets.QHBoxLayout())
 
         self.color_buttons = {}
-        pink_button = QtGui.QPushButton("Pink")
+        pink_button = QtWidgets.QPushButton("Pink")
         pink_button.setCheckable(True)
         pink_button.setChecked(True)
         pink_button.clicked.connect(self.pink)
         color_widget.layout().addWidget(pink_button)
         self.color_buttons["pink"] = pink_button
 
-        green_button = QtGui.QPushButton("Green")
+        green_button = QtWidgets.QPushButton("Green")
         green_button.setCheckable(True)
         green_button.clicked.connect(self.green)
         color_widget.layout().addWidget(green_button)
         self.color_buttons["green"] = green_button
 
-        eraser_button = QtGui.QPushButton("Eraser")
+        eraser_button = QtWidgets.QPushButton("Eraser")
         eraser_button.setCheckable(True)
         eraser_button.clicked.connect(self.set_eraser)
         color_widget.layout().addWidget(eraser_button)
@@ -237,39 +237,39 @@ class SegmentationPicker(QtGui.QWidget):
         self.color_buttons["eraser"] = eraser_button
 
         # UNDO key shortcut
-        self.action_undo = QtGui.QAction('undo', self)
+        self.action_undo = QtWidgets.QAction('undo', self)
         self.action_undo.triggered.connect(self.view.undo)
         self.action_undo.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Z))
         self.addAction(self.action_undo)
 
-        self.undo_button = QtGui.QPushButton("Undo \n (key_Z)")
+        self.undo_button = QtWidgets.QPushButton("Undo \n (key_Z)")
         self.undo_button.clicked.connect(self.view.undo)
         self.left_panel.layout().addWidget(self.undo_button)
 
-        self.popup_button = QtGui.QPushButton("Done!")
+        self.popup_button = QtWidgets.QPushButton("Done!")
         self.popup_button.clicked.connect(self.done)
         self.left_panel.layout().addWidget(self.popup_button)
 
-        self.edge_button = QtGui.QPushButton("Show edges")
+        self.edge_button = QtWidgets.QPushButton("Show edges")
         self.edge_button.clicked.connect(self.show_edges)
         self.left_panel.layout().addWidget(self.edge_button)
 
-        self.color_label = QtGui.QLabel()
+        self.color_label = QtWidgets.QLabel()
         self.color_label.setWordWrap(True)
         self.color_label.setText("")
         self.left_panel.layout().addWidget(self.color_label)
 
-        self.check_bg = QtGui.QCheckBox("Background image")
+        self.check_bg = QtWidgets.QCheckBox("Background image")
         self.check_bg.setChecked(True)
         self.check_bg.toggled.connect(self.checkbox)
         self.left_panel.layout().addWidget(self.check_bg)
 
-        self.check_prob = QtGui.QCheckBox("Probability mask")
+        self.check_prob = QtWidgets.QCheckBox("Probability mask")
         self.check_prob.setChecked(True)
         self.check_prob.toggled.connect(self.checkbox)
         self.left_panel.layout().addWidget(self.check_prob)
 
-        self.check_paint = QtGui.QCheckBox("Paint data")
+        self.check_paint = QtWidgets.QCheckBox("Paint data")
         self.check_paint.setChecked(True)
         self.check_paint.toggled.connect(self.checkbox)
         self.left_panel.layout().addWidget(self.check_paint)
@@ -294,7 +294,7 @@ class SegmentationPicker(QtGui.QWidget):
 
 
 if __name__ == "__main__":
-    app = QtGui.QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
 
     # ex = SegmentationPicker('/home/dita/vlcsnap-2016-08-16-17h28m57s150.png')
     ex = SegmentationPicker('/Users/flipajs/Pictures/vlcsnap-2016-08-31-15h33m56s683.png')

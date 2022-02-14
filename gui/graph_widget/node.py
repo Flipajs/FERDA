@@ -1,6 +1,6 @@
-from PyQt4 import QtGui, QtCore
+from PyQt5 import QtCore, QtGui, QtWidgets
 import numpy as np
-from PyQt4.QtCore import Qt
+from PyQt5.QtCore import Qt
 
 from gui.graph_widget_loader import WIDTH, HEIGHT
 from gui.img_controls.gui_utils import cvimg2qtpixmap
@@ -11,7 +11,7 @@ DEFAULT_INFO_TEXT_OPACITY = 150
 __author__ = 'Simon Mandlik'
 
 
-class Node(QtGui.QGraphicsPixmapItem):
+class Node(QtWidgets.QGraphicsPixmapItem):
 
     def __init__(self, parent_pixmap, scene, region, img_manager, relative_margin, width, height):
         super(Node, self).__init__(parent_pixmap)
@@ -25,7 +25,7 @@ class Node(QtGui.QGraphicsPixmapItem):
         self.relative_margin = relative_margin
         self.x = self.parent_pixmap.offset().x()
         self.y = self.parent_pixmap.offset().y()
-        self.setFlags(QtGui.QGraphicsItem.ItemIsSelectable)
+        self.setFlags(QtWidgets.QGraphicsItem.ItemIsSelectable)
         self.selection_polygon = self.create_selection_polygon()
 
         self.pixmapped = False
@@ -75,8 +75,8 @@ class Node(QtGui.QGraphicsPixmapItem):
         y = parent_y + multiplier_y * height
         self.info_item = TextInfoItem(text, x, y, width, height, self.color, self)
         self.info_item.set_parent_point(parent_x, parent_y)
-        self.info_item.setFlag(QtGui.QGraphicsItem.ItemIsMovable)
-        self.info_item.setFlag(QtGui.QGraphicsItem.ItemSendsScenePositionChanges)
+        self.info_item.setFlag(QtWidgets.QGraphicsItem.ItemIsMovable)
+        self.info_item.setFlag(QtWidgets.QGraphicsItem.ItemSendsScenePositionChanges)
 
     def set_color(self, color):
         self.color = color
@@ -91,7 +91,7 @@ class Node(QtGui.QGraphicsPixmapItem):
         self.pixmap_toggled = self.scene.addPixmap(pixmap)
         x, y = self.compute_toggle_rectangle_pos()
         self.pixmap_toggled.setPos(x, y)
-        self.pixmap_toggled.setFlags(QtGui.QGraphicsItem.ItemIsMovable)
+        self.pixmap_toggled.setFlags(QtWidgets.QGraphicsItem.ItemIsMovable)
 
     def create_pixmap(self):
         if not self.pixmapped:
@@ -160,7 +160,7 @@ class Node(QtGui.QGraphicsPixmapItem):
         return path
 
 
-class TextInfoItem(QtGui.QGraphicsItem):
+class TextInfoItem(QtWidgets.QGraphicsItem):
 
     def __init__(self, text, x, y, width, height, color, node):
         super(TextInfoItem, self).__init__()
@@ -197,10 +197,10 @@ class TextInfoItem(QtGui.QGraphicsItem):
         return ConnectingLine(QtCore.QLineF(self.parent_x, self.parent_y, self.x, self.y), self.rect, self.color)
 
     def create_rectangle(self):
-        return QtGui.QGraphicsRectItem(self.bounding_rect, self)
+        return QtWidgets.QGraphicsRectItem(self.bounding_rect, self)
 
     def create_text(self):
-        text_item = QtGui.QGraphicsTextItem()
+        text_item = QtWidgets.QGraphicsTextItem()
         text_item.setPos(self.x, self.y)
         text_item.setPlainText(self.text)
         text_item.setParentItem(self.rect)
@@ -219,14 +219,14 @@ class TextInfoItem(QtGui.QGraphicsItem):
         self.parent_x, self.parent_y = x, y
 
     def itemChange(self, change, value):
-        if change == QtGui.QGraphicsItem.ItemPositionHasChanged:
+        if change == QtWidgets.QGraphicsItem.ItemPositionHasChanged:
             p1 = QtCore.QPoint(self.parent_x, self.parent_y)
             p2 = p1 - value.toPointF()
             self.connecting_line.setLine(QtCore.QLineF(p1, p2))
         return super(TextInfoItem, self).itemChange(change, value)
 
 
-class ConnectingLine(QtGui.QGraphicsLineItem):
+class ConnectingLine(QtWidgets.QGraphicsLineItem):
     
     def __init__(self, line, parent_obj, color):
         super(ConnectingLine, self).__init__(line, parent_obj)

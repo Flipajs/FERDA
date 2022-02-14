@@ -1,6 +1,6 @@
 __author__ = 'fnaiser'
 
-from PyQt4 import QtCore
+from PyQt5 import QtCore
 
 class Model(QtCore.QThread):
     def __init__(self):

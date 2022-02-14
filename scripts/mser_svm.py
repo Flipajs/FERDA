@@ -1,6 +1,6 @@
 __author__ = 'fnaiser'
 
-from PyQt4 import QtCore, QtGui
+from PyQt5 import QtCore, QtGui, QtWidgets
 import sys
 from sklearn import svm
 from core.region.mser_operations import get_region_groups, margin_filter, area_filter, children_filter
@@ -80,7 +80,7 @@ def select_msers_cached(frame):
 
 
 def init():
-    app = QtGui.QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
 
     dial = ImgGridDialog()
     vid = get_auto_video_manager(vid_path)
@@ -149,7 +149,7 @@ if __name__ == '__main__':
     if False:
         init()
     else:
-        app = QtGui.QApplication(sys.argv)
+        app = QtWidgets.QApplication(sys.argv)
 
         dial = ImgGridDialog()
         vid = get_auto_video_manager(vid_path)

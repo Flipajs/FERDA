@@ -1,9 +1,9 @@
 # source: https://gist.github.com/Cysu/7461066
 
-from PyQt4 import QtCore, QtGui
+from PyQt5 import QtCore, QtGui, QtWidgets
 
 
-class FlowLayout(QtGui.QLayout):
+class FlowLayout(QtWidgets.QLayout):
     def __init__(self, parent=None, margin=0, spacing=-1):
         super(FlowLayout, self).__init__(parent)
 
@@ -71,13 +71,13 @@ class FlowLayout(QtGui.QLayout):
         for item in self.itemList:
             wid = item.widget()
             spaceX = self.spacing() + wid.style().layoutSpacing(
-                QtGui.QSizePolicy.PushButton,
-                QtGui.QSizePolicy.PushButton,
+                QtWidgets.QSizePolicy.PushButton,
+                QtWidgets.QSizePolicy.PushButton,
                 QtCore.Qt.Horizontal)
 
             spaceY = self.spacing() + wid.style().layoutSpacing(
-                QtGui.QSizePolicy.PushButton,
-                QtGui.QSizePolicy.PushButton,
+                QtWidgets.QSizePolicy.PushButton,
+                QtWidgets.QSizePolicy.PushButton,
                 QtCore.Qt.Vertical)
 
             nextX = x + item.sizeHint().width() + spaceX

@@ -2,7 +2,7 @@ __author__ = 'filip@naiser.cz'
 import sys
 from random import randint
 
-from PyQt4 import QtGui
+from PyQt5 import QtGui, QtWidgets
 from PIL import ImageQt
 from numpy import *
 import cv2
@@ -11,9 +11,9 @@ from utils import video_manager, visualization_utils
 from viewer.identity_manager import IdentityManager
 
 
-class SelectableImageQLabel(QtGui.QLabel):
+class SelectableImageQLabel(QtWidgets.QLabel):
     def __init__(self, parent=None, selected_callback=None, frame=-1):
-        QtGui.QLabel.__init__(self, parent)
+        QtWidgets.QLabel.__init__(self, parent)
         self.frame_number = frame
         self.selected_callback = selected_callback
 
@@ -25,27 +25,27 @@ class SelectableImageQLabel(QtGui.QLabel):
         self.setStyleSheet("border: 0px;")
 
 
-class ImgSequenceWidget(QtGui.QWidget):
+class ImgSequenceWidget(QtWidgets.QWidget):
     def __init__(self, video_manager):
         super(ImgSequenceWidget, self).__init__()
         self.video = video_manager
         self.crop_width = 100
         self.crop_height = 100
 
-        self.main_layout = QtGui.QVBoxLayout()
+        self.main_layout = QtWidgets.QVBoxLayout()
         self.setLayout(self.main_layout)
 
-        self.scroll_area = QtGui.QScrollArea()
+        self.scroll_area = QtWidgets.QScrollArea()
         self.scroll_area.setWidgetResizable(True)
 
-        self.scroll_area_content = QtGui.QWidget()
+        self.scroll_area_content = QtWidgets.QWidget()
 
-        self.scroll_area_content_vlayout = QtGui.QVBoxLayout(self.scroll_area_content)
+        self.scroll_area_content_vlayout = QtWidgets.QVBoxLayout(self.scroll_area_content)
         self.scroll_area_content_vlayout.setSpacing(0)
-        self.scroll_area_content_vlayout.setMargin(0)
+        self.scroll_area_content_vlayout.setContentsMargins(0, 0, 0, 0)
 
-        self.grid = QtGui.QGridLayout()
-        self.grid.setSizeConstraint(QtGui.QLayout.SetNoConstraint)
+        self.grid = QtWidgets.QGridLayout()
+        self.grid.setSizeConstraint(QtWidgets.QLayout.SetNoConstraint)
         self.grid.setSpacing(1)
 
         self.scroll_area_content_vlayout.addLayout(self.grid)
@@ -54,7 +54,7 @@ class ImgSequenceWidget(QtGui.QWidget):
         self.main_layout.addWidget(self.scroll_area)
 
         # apply button
-        self.apply_new_positions_button = QtGui.QPushButton()
+        self.apply_new_positions_button = QtWidgets.QPushButton()
         self.apply_new_positions_button.setText('apply changes selected included')
         self.apply_new_positions_button.clicked.connect(self.apply_new_positions_clicked)
 
@@ -92,7 +92,7 @@ class ImgSequenceWidget(QtGui.QWidget):
             #TODO: add scroll_callback
             # prepare grid with blank images (so there is no blinking during rewriting or adding more rows...
 
-            gui = QtGui.QApplication.processEvents
+            gui = QtWidgets.QApplication.processEvents
 
             img = self.local_vid.seek_frame(self.frame + 1)
             for f in range(self.frame + 1, self.frame + length):
@@ -119,7 +119,7 @@ class ImgSequenceWidget(QtGui.QWidget):
                 img_q = ImageQt.QImage(crop.data, crop.shape[1], crop.shape[0], crop.shape[1] * 3, 13)
                 pix_map = QtGui.QPixmap.fromImage(img_q.rgbSwapped())
 
-                item = QtGui.QLabel()
+                item = QtWidgets.QLabel()
 
                 item.setScaledContents(True)
                 item.setFixedself.im_width_(pix_map.self.im_width_())
@@ -183,7 +183,7 @@ class ImgSequenceWidget(QtGui.QWidget):
         return
 
     def visualize_new_data(self, frame, ant_id, id_manager, new_data, width=200, height=200):
-        gui = QtGui.QApplication.processEvents
+        gui = QtWidgets.QApplication.processEvents
 
         #store this for case of apply changes button click
         self.new_data = new_data
@@ -247,7 +247,7 @@ class ImgSequenceWidget(QtGui.QWidget):
         self.im_width_ = width
         self.im_height_ = height
 
-        gui = QtGui.QApplication.processEvents
+        gui = QtWidgets.QApplication.processEvents
 
         self.changes = self.get_changes(self.frame, self.id_manager, self.ant_id)
 
@@ -280,7 +280,7 @@ class ImgSequenceWidget(QtGui.QWidget):
             img_q = ImageQt.QImage(crop.data, crop.shape[1], crop.shape[0], crop.shape[1] * 3, 13)
             pix_map = QtGui.QPixmap.fromImage(img_q.rgbSwapped())
 
-            item = QtGui.QLabel()
+            item = QtWidgets.QLabel()
 
             item.setScaledContents(True)
             item.setFixedself.im_width_(pix_map.self.im_width_())
@@ -323,7 +323,7 @@ def give_me_data(frame, ant_id):
 
 if __name__ == "__main__":
     print("TEST")
-    app = QtGui.QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
 
     vid = video_manager.VideoManager('/Volumes/Seagate Expansion Drive/IST - videos/share/c_bigLense_colormarks3_corrected.avi')
     id_manager = IdentityManager('/Volumes/Seagate Expansion Drive/IST - videos/share/c_bigLense_colormarks3.arr')

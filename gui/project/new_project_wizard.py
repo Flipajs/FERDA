@@ -1,4 +1,4 @@
-from PyQt4 import QtGui
+from PyQt5 import QtGui, QtWidgets
 
 from core.project.project import Project
 from gui.init.create_project_wizard_page import CreateProjectPage
@@ -8,7 +8,7 @@ from gui.init.setup_msers_wizard_page import SetupMSERsWizardPage
 from gui.region_classifier_tool import RegionClassifierTool
 
 
-class NewProjectWizard(QtGui.QWizard):
+class NewProjectWizard(QtWidgets.QWizard):
     def __init__(self,  *args, **kwargs):
         super(NewProjectWizard, self).__init__(*args, **kwargs)
 
@@ -38,7 +38,7 @@ class NewProjectWizard(QtGui.QWizard):
 
 if __name__ == '__main__':
     import sys
-    app = QtGui.QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
     wizard = NewProjectWizard()
     wizard.show()
     sys.exit(app.exec_())

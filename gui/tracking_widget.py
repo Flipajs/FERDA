@@ -1,4 +1,4 @@
-from PyQt4 import QtGui, QtCore
+from PyQt5 import QtCore, QtGui, QtWidgets
 # regenerate the ui_tracking_widget code with `pyuic4 tracking_widget.ui -o ui_tracking_widget.py -x`
 from gui.generated.ui_tracking_widget import Ui_tracking_widget
 import core.segmentation
@@ -11,9 +11,9 @@ from core.id_detection.complete_set_matching import do_complete_set_matching
 # - do per frame progress bar updates
 
 
-class TrackingWidget(QtGui.QWidget):
+class TrackingWidget(QtWidgets.QWidget):
     def __init__(self, project):
-        QtGui.QWidget.__init__(self)
+        QtWidgets.QWidget.__init__(self)
 
         self.project = project
 

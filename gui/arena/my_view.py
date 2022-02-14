@@ -1,9 +1,9 @@
-from PyQt4.QtGui import QMatrix
+from PyQt5.QtGui import QTransform
 
 __author__ = 'filip@naiser.cz'
-from PyQt4 import QtGui, QtCore
+from PyQt5 import QtCore, QtGui, QtWidgets
 
-class MyView(QtGui.QGraphicsView):
+class MyView(QtWidgets.QGraphicsView):
     def __init__(self, update_callback_move=None, update_callback_press=None, update_callback_release=None):
         super(MyView, self).__init__()
         self.setMouseTracking(True)
@@ -14,7 +14,7 @@ class MyView(QtGui.QGraphicsView):
         self.scale_step = 0
         self.scene = None
 
-        self.matrix = QtGui.QMatrix()
+        self.matrix = QtGui.QTransform()
         self.setMatrix(self.matrix)
 
     def mouseMoveEvent(self, e):
@@ -37,11 +37,11 @@ class MyView(QtGui.QGraphicsView):
 
 
     def wheelEvent(self, event):
-        if QtGui.QApplication.keyboardModifiers() == QtCore.Qt.ControlModifier:
+        if QtWidgets.QApplication.keyboardModifiers() == QtCore.Qt.ControlModifier:
             # if CTRL is pressed while scrolling
 
             # modify scale level (step)
-            if event.delta() > 0:
+            if event.angleDelta().y() > 0:
                 self.scale_step += 1
             else:
                 self.scale_step -= 1
@@ -50,11 +50,11 @@ class MyView(QtGui.QGraphicsView):
             self.scale = self.get_scale()
 
             # create a new matrix with proper scale (for some reason, modifying self.matrix doesn't work)
-            matrix = QtGui.QMatrix()
+            matrix = QtGui.QTransform()
             matrix.scale(self.scale, self.scale)
 
             # center on mouse
-            self.setTransformationAnchor(QtGui.QGraphicsView.AnchorUnderMouse)
+            self.setTransformationAnchor(QtWidgets.QGraphicsView.AnchorUnderMouse)
 
             self.setMatrix(matrix)
         else:
@@ -83,7 +83,7 @@ class MyView(QtGui.QGraphicsView):
 
     def update_scale(self):
         # create a new matrix with proper scale (for some reason, modifying self.matrix doesn't work)
-        matrix = QtGui.QMatrix()
+        matrix = QtGui.QTransform()
         matrix.scale(self.scale, self.scale)
 
         self.setMatrix(matrix)

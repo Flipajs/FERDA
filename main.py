@@ -1,7 +1,7 @@
 import argparse
 import sys
 import time
-from PyQt4 import QtGui
+from PyQt5 import QtGui, QtWidgets
 
 from core.project.project import Project
 from core.config import config
@@ -11,7 +11,7 @@ parser = argparse.ArgumentParser(description='FERDA laboratory animal tracking s
 parser.add_argument('project', nargs='?', help='project directory or file')
 args = parser.parse_args()
 
-app = QtGui.QApplication(sys.argv)
+app = QtWidgets.QApplication(sys.argv)
 main_window = MainTabWidget()
 main_window.show()
 

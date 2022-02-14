@@ -1,7 +1,7 @@
 import sys
 from .my_view import MyView
 from .my_scene import MyScene
-from PyQt4 import QtGui, QtCore
+from PyQt5 import QtCore, QtGui, QtWidgets
 import numpy as np
 import cv2
 # warning: qimage2ndarray could get confused with multiple Qt versions installed (PyQt, PySide, ...) and end with
@@ -12,7 +12,7 @@ from qimage2ndarray import array2qimage
 __author__ = 'dita'
 
 
-class Painter(QtGui.QWidget):
+class Painter(QtWidgets.QWidget):
     """ Painter widget that can be used in all painting applications"""
 
     def __init__(self, image, pen_size=10, undo_len=10, debug=False, update_callback=None, paint_name="PINK", paint_r=255, paint_g=0, paint_b=238, paint_a=100):
@@ -319,11 +319,11 @@ class Painter(QtGui.QWidget):
         #          GUI           #
         ##########################
 
-        self.setLayout(QtGui.QHBoxLayout())
+        self.setLayout(QtWidgets.QHBoxLayout())
         self.layout().setAlignment(QtCore.Qt.AlignBottom)
 
         # UNDO key shortcut
-        self.action_undo = QtGui.QAction('undo', self)
+        self.action_undo = QtWidgets.QAction('undo', self)
         self.action_undo.triggered.connect(self.undo)
         self.action_undo.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Z))
         self.addAction(self.action_undo)
@@ -371,7 +371,7 @@ def mask2qimage(mask, color):
 
 
 if __name__ == "__main__":
-    app = QtGui.QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
 
     image = cv2.imread('/home/dita/vlcsnap-2016-08-16-17h28m57s150.png')
     image = numpy2qimage(image)

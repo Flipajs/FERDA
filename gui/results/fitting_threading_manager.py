@@ -1,9 +1,9 @@
 from .fitting_thread import FittingThread, FittingThreadChunk
 from copy import deepcopy
-from PyQt4.QtCore import QProcess
+from PyQt5.QtCore import QProcess
 import sys, os
 from functools import partial
-from PyQt4 import QtCore
+from PyQt5 import QtCore
 import pickle as pickle
 from core.region.fitting import Fitting
 

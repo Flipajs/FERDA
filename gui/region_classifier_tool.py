@@ -1,4 +1,4 @@
-from PyQt4 import QtGui, QtCore
+from PyQt5 import QtCore, QtGui, QtWidgets
 import sys
 import core.region.clustering
 import numpy as np
@@ -7,7 +7,7 @@ from functools import partial
 from core.config import config
 
 
-class RegionClassifierTool(QtGui.QWizardPage):
+class RegionClassifierTool(QtWidgets.QWizardPage):
 
     def __init__(self):
         super(RegionClassifierTool, self).__init__()
@@ -18,9 +18,9 @@ class RegionClassifierTool(QtGui.QWizardPage):
         self.gather_samples_thread = None
 
         # build UI
-        self.vbox = QtGui.QVBoxLayout()
+        self.vbox = QtWidgets.QVBoxLayout()
         self.setLayout(self.vbox)
-        self.hbox = QtGui.QHBoxLayout()
+        self.hbox = QtWidgets.QHBoxLayout()
         self.vbox.addLayout(self.hbox)
 
         self.GRID_ITEM_WH = (120, 120)
@@ -41,21 +41,21 @@ class RegionClassifierTool(QtGui.QWizardPage):
         self.grids = {}
         for desc in grids_desc:
             self.grids[desc['key']] = ImgGridWidget(cols=2, element_width=self.GRID_ITEM_WH[0])
-            widget = QtGui.QWidget()
-            widget.setLayout(QtGui.QVBoxLayout())
-            widget.layout().addWidget(QtGui.QLabel(desc['label']))
+            widget = QtWidgets.QWidget()
+            widget.setLayout(QtWidgets.QVBoxLayout())
+            widget.layout().addWidget(QtWidgets.QLabel(desc['label']))
             widget.layout().addWidget(self.grids[desc['key']])
             self.hbox.addWidget(widget)
 
-        self.hbox_check = QtGui.QHBoxLayout()
+        self.hbox_check = QtWidgets.QHBoxLayout()
         self.vbox.addLayout(self.hbox_check)
         # self.hbox_load_controls = QtGui.QHBoxLayout()
         # self.vbox.addLayout(self.hbox_load_controls)
 
-        self.hbox_buttons = QtGui.QHBoxLayout()
+        self.hbox_buttons = QtWidgets.QHBoxLayout()
         self.vbox.addLayout(self.hbox_buttons)
 
-        self.progress_bar = QtGui.QProgressBar()
+        self.progress_bar = QtWidgets.QProgressBar()
         self.progress_bar.setMaximum(config['region_classifier']['samples_preselection_num'])
         self.vbox.addWidget(self.progress_bar)
 
@@ -108,31 +108,31 @@ class RegionClassifierTool(QtGui.QWizardPage):
         ]
 
         for a in actions:
-            action = QtGui.QAction(self)
+            action = QtWidgets.QAction(self)
             action.triggered.connect(a['trigger'])
             action.setShortcut(QtGui.QKeySequence(a['shortcut']))
             self.addAction(action)
             if 'text' in a:
-                button = QtGui.QPushButton(a['text'])
+                button = QtWidgets.QPushButton(a['text'])
                 button.clicked.connect(a['trigger'])
                 button.setToolTip(action.shortcut().toString())
                 self.hbox_buttons.addWidget(button)
 
         # CHECKBOXES
-        self.show_decided = QtGui.QCheckBox('show decided')
+        self.show_decided = QtWidgets.QCheckBox('show decided')
         self.show_decided.setChecked(False)
         self.show_decided.stateChanged.connect(self.redraw_grids)
         self.hbox_buttons.addWidget(self.show_decided)
 
-        self.show_undecided = QtGui.QCheckBox('show undecided')
+        self.show_undecided = QtWidgets.QCheckBox('show undecided')
         self.show_undecided.setChecked(True)
         self.show_undecided.stateChanged.connect(self.redraw_grids)
         self.hbox_buttons.addWidget(self.show_undecided)
 
-        self.hbox_check.addWidget(QtGui.QLabel('feature space: '))
+        self.hbox_check.addWidget(QtWidgets.QLabel('feature space: '))
         self.feature_checkboxes = []
         for i, description in enumerate(core.region.clustering.region_features.keys()):
-            w = QtGui.QCheckBox(description)
+            w = QtWidgets.QCheckBox(description)
             if description in config['region_classifier']['default_features']:
                 w.setChecked(True)
             else:
@@ -256,7 +256,7 @@ class RegionClassifierTool(QtGui.QWizardPage):
                 self.grids[label].add_item(s)
 
     def make_item(self, im, item_id):
-        from PyQt4 import QtGui
+        from PyQt5 import QtGui, QtWidgets
         from gui.gui_utils import SelectableQLabel
         from PIL import ImageQt
 
@@ -274,7 +274,7 @@ class RegionClassifierTool(QtGui.QWizardPage):
 
 
 if __name__ == '__main__':
-    app = QtGui.QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
     from core.project.project import Project
 
     p = Project()

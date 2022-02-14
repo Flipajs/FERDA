@@ -1,4 +1,4 @@
-from PyQt4 import QtGui, QtCore
+from PyQt5 import QtCore, QtGui, QtWidgets
 import os
 import time
 
@@ -8,7 +8,7 @@ from gui.generated.ui_create_project_page import Ui_createProjectPage
 from utils.video_manager import get_auto_video_manager
 
 
-class CreateProjectPage(QtGui.QWizardPage):
+class CreateProjectPage(QtWidgets.QWizardPage):
     def __init__(self):
         super(CreateProjectPage, self).__init__()
 
@@ -69,8 +69,8 @@ class CreateProjectPage(QtGui.QWizardPage):
             path = S_.temp.last_wd_path
         else:
             path = ''
-        working_directory = str(QtGui.QFileDialog.getExistingDirectory(self, "Select project folder",
-                                                                       path, QtGui.QFileDialog.ShowDirsOnly))
+        working_directory = str(QtWidgets.QFileDialog.getExistingDirectory(self, "Select project folder",
+                                                                       path, QtWidgets.QFileDialog.ShowDirsOnly))
         if working_directory:
             S_.temp.last_wd_path = os.path.dirname(working_directory)
             tentative_name = working_directory.split('/')[-1]

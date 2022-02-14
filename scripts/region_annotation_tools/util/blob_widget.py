@@ -1,6 +1,6 @@
 import logging
-from PyQt4 import QtCore
-from PyQt4 import QtGui
+from PyQt5 import QtCore, QtWidgets
+from PyQt5 import QtGui, QtWidgets
 
 import sys
 
@@ -39,12 +39,12 @@ def wedge_product(A, B, X):
     return (X[0] - A[0]) * (B[1] - A[1]) - (X[1] - A[1]) * (B[0] - A[0])
 
 
-class BlobWidget(QtGui.QWidget):
+class BlobWidget(QtWidgets.QWidget):
     width = 1000
     height = 1000
 
     def __init__(self, project, tracklets, examples_from_tracklet, save_callback, exit_callback, contains_callback, threshold=.1):
-        QtGui.QWidget.__init__(self)
+        QtWidgets.QWidget.__init__(self)
         self.save_callback = save_callback
         self.exit_callback = exit_callback
         self.contains_callback = contains_callback
@@ -156,47 +156,47 @@ class BlobWidget(QtGui.QWidget):
     def init_gui(self):
         self.showMaximized()
 
-        self.layout = QtGui.QHBoxLayout()
-        self.left_part = QtGui.QWidget()
-        self.left_part.setSizePolicy(QtGui.QSizePolicy.Fixed, QtGui.QSizePolicy.Fixed)
-        self.left_part.setLayout(QtGui.QVBoxLayout())
+        self.layout = QtWidgets.QHBoxLayout()
+        self.left_part = QtWidgets.QWidget()
+        self.left_part.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
+        self.left_part.setLayout(QtWidgets.QVBoxLayout())
         self.left_part.layout().setAlignment(QtCore.Qt.AlignTop)
 
-        self.slider = QtGui.QSlider(QtCore.Qt.Horizontal, self)
+        self.slider = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
         self.slider.setRange(0, 100)
         self.slider.setTickInterval(10)
         self.slider.setValue(self.threshold * 100)
-        self.slider.setTickPosition(QtGui.QSlider.TicksBelow)
+        self.slider.setTickPosition(QtWidgets.QSlider.TicksBelow)
         self.slider.valueChanged[int].connect(self.set_threshold)
 
-        self.roi_tickbox = QtGui.QCheckBox("Roi")
+        self.roi_tickbox = QtWidgets.QCheckBox("Roi")
         self.roi_tickbox.clicked.connect(self.toggle_roi)
         self.roi_tickbox.toggled.connect(self.toggle_roi)
 
-        self.buttons = QtGui.QWidget()
-        self.buttons.setSizePolicy(QtGui.QSizePolicy.Fixed, QtGui.QSizePolicy.Expanding)
-        self.buttons.setLayout(QtGui.QVBoxLayout())
+        self.buttons = QtWidgets.QWidget()
+        self.buttons.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Expanding)
+        self.buttons.setLayout(QtWidgets.QVBoxLayout())
         self.buttons.layout().setAlignment(QtCore.Qt.AlignBottom)
-        self.next_region_button = QtGui.QPushButton('Next Region')
+        self.next_region_button = QtWidgets.QPushButton('Next Region')
         self.next_region_button.clicked.connect(self.next_region)
 
-        self.next_ant_button = QtGui.QPushButton('Next Ant')
+        self.next_ant_button = QtWidgets.QPushButton('Next Ant')
         self.next_ant_button.clicked.connect(self.next_ant)
 
-        self.reset_ant_button = QtGui.QPushButton('Reset Ant')
+        self.reset_ant_button = QtWidgets.QPushButton('Reset Ant')
         self.reset_ant_button.clicked.connect(self.reset_ant)
 
-        self.reset_region_button = QtGui.QPushButton('Reset Region')
+        self.reset_region_button = QtWidgets.QPushButton('Reset Region')
         self.reset_region_button.clicked.connect(self.reset_region)
 
-        self.mode_button = QtGui.QPushButton('RED')
+        self.mode_button = QtWidgets.QPushButton('RED')
         self.mode_button.clicked.connect(self.toggle_mode)
 
-        self.show_selected_button = QtGui.QPushButton('Show selected')
+        self.show_selected_button = QtWidgets.QPushButton('Show selected')
         self.show_selected_button.clicked.connect(self.show_current_selected_ants)
 
-        self.quit = QtGui.QPushButton('save and quit', self)
-        self.connect(self.quit, QtCore.SIGNAL('clicked()'), self.exit_callback)
+        self.quit = QtWidgets.QPushButton('save and quit', self)
+        self.quit.clicked.connect(self.exit_callback)
 
 
         self.buttons.layout().addWidget(self.mode_button)
@@ -207,9 +207,9 @@ class BlobWidget(QtGui.QWidget):
         self.buttons.layout().addWidget(self.reset_region_button)
         self.buttons.layout().addWidget(self.quit)
 
-        self.help = QtGui.QLabel("Scroll to change sensitivity")
-        self.curr_id = QtGui.QLabel("")
-        self.last_id = QtGui.QLabel("")
+        self.help = QtWidgets.QLabel("Scroll to change sensitivity")
+        self.curr_id = QtWidgets.QLabel("")
+        self.last_id = QtWidgets.QLabel("")
 
         self.left_part.layout().addWidget(self.slider)
         self.left_part.layout().addWidget(self.roi_tickbox)
@@ -462,10 +462,10 @@ class ImgPainter(MyView):
         self.draw()
 
     def wheelEvent(self, event):
-        modifiers = QtGui.QApplication.keyboardModifiers()
+        modifiers = QtWidgets.QApplication.keyboardModifiers()
         if modifiers != QtCore.Qt.ControlModifier:
             val = np.sqrt(self.threshold)
-            if event.delta() > 0:
+            if event.angleDelta().y() > 0:
                 val += 0.01
             else:
                 val -= 0.01
@@ -484,7 +484,7 @@ if __name__ == "__main__":
                             67, 69, 73, 75, 78, 81, 84, 87, 90, 93, 94, 96, 99, 102, 105]
     chunks_with_clusters = [chunks[x] for x in chunks_with_clusters]
 
-    app = QtGui.QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
 
     gt = BlobWidget(project, chunks_with_clusters)
     gt.show()

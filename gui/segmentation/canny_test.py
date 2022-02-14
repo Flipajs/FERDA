@@ -1,9 +1,9 @@
-from PyQt4 import QtGui, QtCore
+from PyQt5 import QtCore, QtGui, QtWidgets
 import cv2, sys
 import numpy as np
 from . import painter
 
-class CannyTest(QtGui.QWidget):
+class CannyTest(QtWidgets.QWidget):
     def __init__(self, image):
         super(CannyTest, self).__init__()
         self.v1 = 100
@@ -55,7 +55,7 @@ class CannyTest(QtGui.QWidget):
         #          GUI           #
         ##########################
 
-        self.setLayout(QtGui.QHBoxLayout())
+        self.setLayout(QtWidgets.QHBoxLayout())
         self.layout().setAlignment(QtCore.Qt.AlignBottom)
 
         # drawing area
@@ -63,57 +63,57 @@ class CannyTest(QtGui.QWidget):
         self.view.add_color("GREEN", 0, 255, 0, 255)
 
         # left panel widget
-        self.left_panel = QtGui.QWidget()
-        self.left_panel.setLayout(QtGui.QVBoxLayout())
+        self.left_panel = QtWidgets.QWidget()
+        self.left_panel.setLayout(QtWidgets.QVBoxLayout())
         self.left_panel.layout().setAlignment(QtCore.Qt.AlignTop)
         # set left panel widget width to 300px
         self.left_panel.setMaximumWidth(300)
         self.left_panel.setMinimumWidth(300)
 
-        self.slider1 = QtGui.QSlider(QtCore.Qt.Horizontal, self)
+        self.slider1 = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
         self.slider1.setFocusPolicy(QtCore.Qt.NoFocus)
         self.slider1.setGeometry(30, 40, 50, 30)
         self.slider1.setRange(0, 200)
         self.slider1.setTickInterval(5)
         self.slider1.setValue(self.v1)
-        self.slider1.setTickPosition(QtGui.QSlider.TicksBelow)
+        self.slider1.setTickPosition(QtWidgets.QSlider.TicksBelow)
         self.slider1.valueChanged[int].connect(self.slide1)
         self.slider1.setVisible(True)
         self.left_panel.layout().addWidget(self.slider1)
 
-        self.slider2 = QtGui.QSlider(QtCore.Qt.Horizontal, self)
+        self.slider2 = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
         self.slider2.setFocusPolicy(QtCore.Qt.NoFocus)
         self.slider2.setGeometry(30, 40, 50, 30)
         self.slider2.setRange(0, 200)
         self.slider2.setTickInterval(5)
         self.slider2.setValue(self.v2)
-        self.slider2.setTickPosition(QtGui.QSlider.TicksBelow)
+        self.slider2.setTickPosition(QtWidgets.QSlider.TicksBelow)
         self.slider2.valueChanged[int].connect(self.slide2)
         self.slider2.setVisible(True)
         self.left_panel.layout().addWidget(self.slider2)
 
-        self.slider3 = QtGui.QSlider(QtCore.Qt.Horizontal, self)
+        self.slider3 = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
         self.slider3.setFocusPolicy(QtCore.Qt.NoFocus)
         self.slider3.setGeometry(30, 40, 50, 30)
         self.slider3.setRange(0, 100)
         self.slider3.setTickInterval(5)
         self.slider3.setValue(self.blur)
-        self.slider3.setTickPosition(QtGui.QSlider.TicksBelow)
+        self.slider3.setTickPosition(QtWidgets.QSlider.TicksBelow)
         self.slider3.valueChanged[int].connect(self.slide3)
         self.slider3.setVisible(True)
         self.left_panel.layout().addWidget(self.slider3)
 
-        self.label = QtGui.QLabel()
+        self.label = QtWidgets.QLabel()
         self.label.setWordWrap(True)
         self.label.setText("")
         self.left_panel.layout().addWidget(self.label)
 
-        self.label_blur = QtGui.QLabel()
+        self.label_blur = QtWidgets.QLabel()
         self.label_blur.setWordWrap(True)
         self.label_blur.setText("")
         self.left_panel.layout().addWidget(self.label_blur)
 
-        self.pen_label = QtGui.QLabel()
+        self.pen_label = QtWidgets.QLabel()
         self.pen_label.setWordWrap(True)
         self.pen_label.setText("")
         self.left_panel.layout().addWidget(self.pen_label)
@@ -123,7 +123,7 @@ class CannyTest(QtGui.QWidget):
         self.layout().addWidget(self.view)
 
 if __name__ == "__main__":
-    app = QtGui.QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
 
     ex = CannyTest('/home/dita/vlcsnap-2016-08-16-17h28m57s150.png')
     ex.show()

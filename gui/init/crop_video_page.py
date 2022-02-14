@@ -3,7 +3,7 @@ __author__ = 'flipajs'
 import math
 import sys
 
-from PyQt4 import QtGui, QtCore
+from PyQt5 import QtCore, QtGui, QtWidgets
 
 from core.animal import colors_
 from core.project.project import Project
@@ -18,7 +18,7 @@ import core.config as config
 MARKER_SIZE = 15
 
 
-class VideoSlider(QtGui.QSlider):
+class VideoSlider(QtWidgets.QSlider):
     """A slider that changes it's value directly to the part where it was clicked instead of slowly sliding there.
     Also, it's nice! """
 
@@ -51,9 +51,9 @@ class VideoSlider(QtGui.QSlider):
     def mousePressEvent(self, QMouseEvent):
         super(VideoSlider, self).mousePressEvent(QMouseEvent)
         self.usercontrolled = True
-        opt = QtGui.QStyleOptionSlider()
+        opt = QtWidgets.QStyleOptionSlider()
         self.initStyleOption(opt)
-        sr = self.style().subControlRect(QtGui.QStyle.CC_Slider, opt, QtGui.QStyle.SC_SliderHandle, self)
+        sr = self.style().subControlRect(QtWidgets.QStyle.CC_Slider, opt, QtWidgets.QStyle.SC_SliderHandle, self)
 
         if QMouseEvent.button() == QtCore.Qt.LeftButton and not sr.contains(QMouseEvent.pos()):
             if self.orientation() == QtCore.Qt.Vertical:
@@ -71,7 +71,7 @@ class VideoSlider(QtGui.QSlider):
         super(VideoSlider, self).mouseReleaseEvent(QMouseEvent)
 
 
-class SelectAllLineEdit(QtGui.QLineEdit):
+class SelectAllLineEdit(QtWidgets.QLineEdit):
     def __init__(self, parent=None):
         super(SelectAllLineEdit, self).__init__(parent)
         self.readyToEdit = True
@@ -88,10 +88,10 @@ class SelectAllLineEdit(QtGui.QLineEdit):
         self.readyToEdit = True
 
 
-class CropVideoPage(QtGui.QWizardPage):
+class CropVideoPage(QtWidgets.QWizardPage):
     def __init__(self):
         super(CropVideoPage, self).__init__()
-        self.vbox = QtGui.QVBoxLayout()
+        self.vbox = QtWidgets.QVBoxLayout()
         self.solver = None
         self.video = None
 
@@ -100,37 +100,37 @@ class CropVideoPage(QtGui.QWizardPage):
         self.end_frame = 1
         self.timer = QtCore.QTimer(self)
         self.timer.setInterval(1000 / self.frame_rate)
-        self.scene = QtGui.QGraphicsScene()
+        self.scene = QtWidgets.QGraphicsScene()
         self.pixMap = None
         self.pixMapItem = None
 
         self.setLayout(self.vbox)
 
-        self.vbox.addWidget(QtGui.QLabel('Press <i>Continue</i> to use the whole video or mark start and end of a custom video cut.'))
+        self.vbox.addWidget(QtWidgets.QLabel('Press <i>Continue</i> to use the whole video or mark start and end of a custom video cut.'))
 
-        graphics_view_widget = QtGui.QWidget()
+        graphics_view_widget = QtWidgets.QWidget()
         self.graphics_view = MyView(graphics_view_widget)
         self.graphics_view.setScene(self.scene)
 
-        self.video_widget = QtGui.QWidget()
-        self.video_layout = QtGui.QVBoxLayout()
+        self.video_widget = QtWidgets.QWidget()
+        self.video_layout = QtWidgets.QVBoxLayout()
         self.vbox.addLayout(self.video_layout)
         # self.video_widget.setLayout(self.video_layout)
 
-        self.video_control_widget = QtGui.QWidget()
-        self.video_control_layout = QtGui.QVBoxLayout()
+        self.video_control_widget = QtWidgets.QWidget()
+        self.video_control_layout = QtWidgets.QVBoxLayout()
         self.video_control_widget.setLayout(self.video_control_layout)
 
-        self.video_control_buttons_widget = QtGui.QWidget()
-        self.video_control_buttons_layout = QtGui.QHBoxLayout()
+        self.video_control_buttons_widget = QtWidgets.QWidget()
+        self.video_control_buttons_layout = QtWidgets.QHBoxLayout()
         self.video_control_buttons_widget.setLayout(self.video_control_buttons_layout)
 
-        self.video_crop_buttons_widget = QtGui.QWidget()
-        self.video_crop_buttons_layout = QtGui.QHBoxLayout()
+        self.video_crop_buttons_widget = QtWidgets.QWidget()
+        self.video_crop_buttons_layout = QtWidgets.QHBoxLayout()
         self.video_crop_buttons_widget.setLayout(self.video_crop_buttons_layout)
 
-        self.video_label_widget = QtGui.QWidget()
-        self.video_label_layout = QtGui.QHBoxLayout()
+        self.video_label_widget = QtWidgets.QWidget()
+        self.video_label_layout = QtWidgets.QHBoxLayout()
         self.video_label_layout.setAlignment(QtCore.Qt.AlignLeft)
         self.video_label_layout.setSpacing(0)
 
@@ -142,37 +142,37 @@ class CropVideoPage(QtGui.QWizardPage):
         self.video_layout.addWidget(self.video_label_widget)
         self.video_layout.addWidget(self.video_control_widget)
 
-        self.speedSlider = QtGui.QSlider()
+        self.speedSlider = QtWidgets.QSlider()
         self.speedSlider.setOrientation(QtCore.Qt.Horizontal)
         self.speedSlider.setMinimum(1)
         self.speedSlider.setMaximum(120)
 
-        self.backward = QtGui.QToolButton()
+        self.backward = QtWidgets.QToolButton()
         self.backward.setText('back')
         self.backward.setShortcut(S_.controls.video_prev)
-        self.playPause = QtGui.QToolButton()
+        self.playPause = QtWidgets.QToolButton()
         self.playPause.setText('play')
         self.playPause.setShortcut(S_.controls.video_play_pause)
-        self.forward = QtGui.QToolButton()
+        self.forward = QtWidgets.QToolButton()
         self.forward.setText('forward')
         self.forward.setShortcut(S_.controls.video_next)
 
-        self.mark_start = QtGui.QPushButton('mark start')
-        self.mark_stop = QtGui.QPushButton('mark stop')
-        self.to_start = QtGui.QPushButton('go to start')
-        self.to_stop = QtGui.QPushButton('go to stop')
-        self.clear = QtGui.QPushButton('reset range')
+        self.mark_start = QtWidgets.QPushButton('mark start')
+        self.mark_stop = QtWidgets.QPushButton('mark stop')
+        self.to_start = QtWidgets.QPushButton('go to start')
+        self.to_stop = QtWidgets.QPushButton('go to stop')
+        self.clear = QtWidgets.QPushButton('reset range')
         self.frameEdit = SelectAllLineEdit()
         self.frameEditValidator = QtGui.QIntValidator(0, 1)
         self.frameEdit.setValidator(self.frameEditValidator)
-        self.showFrame = QtGui.QPushButton('go to frame')
-        self.fpsLabel = QtGui.QLabel()
+        self.showFrame = QtWidgets.QPushButton('go to frame')
+        self.fpsLabel = QtWidgets.QLabel()
         self.fpsLabel.setAlignment(QtCore.Qt.AlignRight)
-        self.start_frame_sign = QtGui.QLabel()
+        self.start_frame_sign = QtWidgets.QLabel()
         self.start_frame_sign.setAlignment(QtCore.Qt.AlignCenter)
-        self.end_frame_sign = QtGui.QLabel()
+        self.end_frame_sign = QtWidgets.QLabel()
         self.end_frame_sign.setAlignment(QtCore.Qt.AlignCenter)
-        self.num_frames_sign = QtGui.QLabel()
+        self.num_frames_sign = QtWidgets.QLabel()
         self.update_start_end_num_labels()
         self.videoSlider = VideoSlider()
         self.videoSlider.setOrientation(QtCore.Qt.Horizontal)
@@ -180,7 +180,7 @@ class CropVideoPage(QtGui.QWizardPage):
         self.videoSlider.setMaximumHeight(10)
         self.videoSlider.setMaximum(100)
 
-        self.video_middle_label = QtGui.QLabel()
+        self.video_middle_label = QtWidgets.QLabel()
         self.video_middle_label.setStyleSheet("QLabel { background-color: white; }")
         self.video_middle_label.setFixedWidth(0)
 
@@ -188,12 +188,12 @@ class CropVideoPage(QtGui.QWizardPage):
 
         self.video_middle_label.setFixedHeight(5)
 
-        self.video_first_label = QtGui.QLabel()
+        self.video_first_label = QtWidgets.QLabel()
         self.video_first_label.setStyleSheet("QLabel { background-color: yellow; }")
         self.video_first_label.setFixedWidth(0)
         self.video_first_label.setFixedHeight(5)
 
-        self.video_second_label = QtGui.QLabel()
+        self.video_second_label = QtWidgets.QLabel()
         self.video_second_label.setStyleSheet("QLabel { background-color: yellow; }")
         self.video_second_label.setFixedWidth(0)
         self.video_second_label.setFixedHeight(5)
@@ -483,7 +483,7 @@ def view_add_bg_image(g_view, pix_map):
 
 
 if __name__ == "__main__":
-    app = QtGui.QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
     project = Project()
     project.load('/home/matej/prace/ferda/projects/1_initial_projects_180808_diverse/Cam1_clip (copy)')
 

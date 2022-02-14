@@ -1,6 +1,6 @@
 import sys
 import logging
-from PyQt4 import QtGui
+from PyQt5 import QtGui, QtWidgets
 from collections import namedtuple
 from os.path import exists
 import matplotlib.pylab as plt
@@ -67,7 +67,7 @@ class AntBlobGtManager(object):
 
     def label_tracklets(self):
         # label tracklets first
-        app = QtGui.QApplication(sys.argv)
+        app = QtWidgets.QApplication(sys.argv)
         tracklets = self.tracklet_types.get_unlabeled(self.project.chm.chunk_list())
         viewer = TrackletViewer(self.project, tracklets, self.set_label, self.save_and_exit)
         viewer.show()
@@ -75,7 +75,7 @@ class AntBlobGtManager(object):
 
     def label_blobs(self):
         # then segment these tracklets
-        app = QtGui.QApplication(sys.argv)
+        app = QtWidgets.QApplication(sys.argv)
         tracklets = self.tracklet_types.get_labeled_blobs(self.project.chm.chunk_list())
         filtered = self.ant_blobs.filter_labeled_tracklets(tracklets)
         widget = BlobWidget(self.project, filtered, self.examples_from_tracklet,

@@ -1,10 +1,10 @@
-from PyQt4 import QtGui, QtCore
+from PyQt5 import QtCore, QtGui, QtWidgets
 import cv2, sys
 import numpy as np
 from . import painter
 import matplotlib.pyplot as plt
 
-class LaplacianTest(QtGui.QWidget):
+class LaplacianTest(QtWidgets.QWidget):
     def __init__(self, image):
         super(LaplacianTest, self).__init__()
         self.k1 = 21
@@ -96,7 +96,7 @@ class LaplacianTest(QtGui.QWidget):
         #          GUI           #
         ##########################
 
-        self.setLayout(QtGui.QHBoxLayout())
+        self.setLayout(QtWidgets.QHBoxLayout())
         self.layout().setAlignment(QtCore.Qt.AlignBottom)
 
         # drawing area
@@ -104,66 +104,66 @@ class LaplacianTest(QtGui.QWidget):
         self.view2 = painter.Painter(self.image, paint_name="PINK", paint_r=255, paint_g=0, paint_b=238, paint_a=255)
 
         # left panel widget
-        self.left_panel = QtGui.QWidget()
-        self.left_panel.setLayout(QtGui.QVBoxLayout())
+        self.left_panel = QtWidgets.QWidget()
+        self.left_panel.setLayout(QtWidgets.QVBoxLayout())
         self.left_panel.layout().setAlignment(QtCore.Qt.AlignTop)
         # set left panel widget width to 300px
         self.left_panel.setMaximumWidth(300)
         self.left_panel.setMinimumWidth(300)
 
-        self.slider1 = QtGui.QSlider(QtCore.Qt.Horizontal, self)
+        self.slider1 = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
         self.slider1.setFocusPolicy(QtCore.Qt.NoFocus)
         self.slider1.setGeometry(30, 40, 50, 30)
         self.slider1.setRange(0, 50)
         self.slider1.setTickInterval(2)
         self.slider1.setValue(self.k1)
-        self.slider1.setTickPosition(QtGui.QSlider.TicksBelow)
+        self.slider1.setTickPosition(QtWidgets.QSlider.TicksBelow)
         self.slider1.valueChanged[int].connect(self.slide1)
         self.slider1.setVisible(True)
         self.left_panel.layout().addWidget(self.slider1)
 
-        self.slider2 = QtGui.QSlider(QtCore.Qt.Horizontal, self)
+        self.slider2 = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
         self.slider2.setFocusPolicy(QtCore.Qt.NoFocus)
         self.slider2.setGeometry(30, 40, 50, 30)
         self.slider2.setRange(0, 50)
         self.slider2.setTickInterval(2)
         self.slider2.setValue(self.k2)
-        self.slider2.setTickPosition(QtGui.QSlider.TicksBelow)
+        self.slider2.setTickPosition(QtWidgets.QSlider.TicksBelow)
         self.slider2.valueChanged[int].connect(self.slide2)
         self.slider2.setVisible(True)
         self.left_panel.layout().addWidget(self.slider2)
 
-        self.slider3 = QtGui.QSlider(QtCore.Qt.Horizontal, self)
+        self.slider3 = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
         self.slider3.setFocusPolicy(QtCore.Qt.NoFocus)
         self.slider3.setRange(1, 100)
         self.slider3.setTickInterval(1)
         self.slider3.setValue(self.sigma1)
-        self.slider3.setTickPosition(QtGui.QSlider.TicksBelow)
+        self.slider3.setTickPosition(QtWidgets.QSlider.TicksBelow)
         self.slider3.valueChanged[int].connect(self.slide3)
         self.slider3.setVisible(True)
         self.left_panel.layout().addWidget(self.slider3)
 
-        self.slider4 = QtGui.QSlider(QtCore.Qt.Horizontal, self)
+        self.slider4 = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
         self.slider4.setFocusPolicy(QtCore.Qt.NoFocus)
         self.slider4.setRange(1, 100)
         self.slider4.setTickInterval(1)
         self.slider4.setValue(self.sigma2)
-        self.slider4.setTickPosition(QtGui.QSlider.TicksBelow)
+        self.slider4.setTickPosition(QtWidgets.QSlider.TicksBelow)
         self.slider4.valueChanged[int].connect(self.slide4)
         self.slider4.setVisible(True)
         self.left_panel.layout().addWidget(self.slider4)
 
-        self.label1 = QtGui.QLabel()
+        self.label1 = QtWidgets.QLabel()
         self.label1.setWordWrap(True)
         self.label1.setText("")
         self.left_panel.layout().addWidget(self.label1)
 
-        self.label2 = QtGui.QLabel()
+        self.label2 = QtWidgets.QLabel()
         self.label2.setWordWrap(True)
         self.label2.setText("")
         self.left_panel.layout().addWidget(self.label2)
 
-        self.edge_button = QtGui.QPushButton("Show edges")
+        self.edge_button = QtWidgets.QPushButton("Show edges")
         self.edge_button.clicked.connect(self.show_edges)
         self.left_panel.layout().addWidget(self.edge_button)
 
@@ -173,7 +173,7 @@ class LaplacianTest(QtGui.QWidget):
         self.layout().addWidget(self.view2)
 
 if __name__ == "__main__":
-    app = QtGui.QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
 
     ex = LaplacianTest('/home/dita/img_67.png')
     ex.show()

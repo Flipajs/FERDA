@@ -2,7 +2,7 @@
 In this file all global settings are stored.
 """
 __author__ = 'fnaiser'
-from PyQt4 import QtCore, QtGui
+from PyQt5 import QtCore, QtGui
 
 
 class SettingsType(type):
