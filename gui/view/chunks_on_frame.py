@@ -1,7 +1,7 @@
 __author__ = 'flipajs'
 
 import numpy as np
-from PyQt5 import QtGui, QtWidgets
+from PyQt6 import QtGui, QtWidgets
 from skimage.transform import resize
 
 from gui.img_controls import markers
@@ -33,12 +33,12 @@ class ChunksOnFrame(QtWidgets.QWidget):
         self.vid = get_auto_video_manager(self.project)
         self.frame_it = None
 
-        self.next_action = QtWidgets.QAction('next', self)
+        self.next_action = QtGui.QAction('next', self)
         self.next_action.triggered.connect(self.next_frame)
         self.next_action.setShortcut(S_.controls.video_next)
         self.addAction(self.next_action)
 
-        self.prev_action = QtWidgets.QAction('prev', self)
+        self.prev_action = QtGui.QAction('prev', self)
         self.prev_action.triggered.connect(self.prev_frame)
         self.prev_action.setShortcut(S_.controls.video_prev)
         self.addAction(self.prev_action)

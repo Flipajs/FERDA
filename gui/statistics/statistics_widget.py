@@ -1,6 +1,6 @@
 __author__ = 'fnaiser'
 
-from PyQt5 import QtGui, QtWidgets
+from PyQt6 import QtGui, QtWidgets
 import csv
 import scipy.io as sio
 import numpy as np

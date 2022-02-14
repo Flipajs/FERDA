@@ -1,6 +1,6 @@
 __author__ = 'simon'
 
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt6 import QtCore, QtGui, QtWidgets
 
 SCALE_FACTOR = 1.01
 
@@ -33,8 +33,8 @@ class MyViewZoomable(QtWidgets.QGraphicsView):
             super(MyViewZoomable, self).mousePressEvent(event)
 
     def keyPressEvent(self, event):
-        key_i = QtCore.Qt.Key_I
-        key_o = QtCore.Qt.Key_O
+        key_i = QtCore.Qt.Key.Key_I
+        key_o = QtCore.Qt.Key.Key_O
         event_key = event.key()
 
         if event_key == key_o:
@@ -79,7 +79,7 @@ class MyViewZoomable(QtWidgets.QGraphicsView):
         self.scale(SCALE_FACTOR, SCALE_FACTOR)
 
     def go_to_next(self, event_key, event):
-        key_b = QtCore.Qt.Key_B
+        key_b = QtCore.Qt.Key.Key_B
         self.node_1 = self.ngv.selected_edge.core_obj[0]
         self.node_2 = self.ngv.selected_edge.core_obj[0]
         if event_key == key_b:

@@ -1,6 +1,6 @@
 __author__ = 'fnaiser'
 
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt6 import QtCore, QtGui, QtWidgets
 from gui.img_grid.img_grid_widget import ImgGridWidget
 
 

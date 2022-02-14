@@ -1,4 +1,4 @@
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt6 import QtCore, QtGui, QtWidgets
 from gui.img_controls.my_view import MyView
 from utils.video_manager import get_auto_video_manager
 from gui.img_controls.gui_utils import cvimg2qtpixmap

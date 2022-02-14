@@ -1,4 +1,4 @@
-from PyQt5 import QtGui, QtWidgets
+from PyQt6 import QtGui, QtWidgets
 
 class SetColorsGui(QtWidgets.QWidget):
     def __init__(self, project):

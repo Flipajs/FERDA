@@ -1,8 +1,8 @@
 import threading
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt6 import QtCore, QtGui, QtWidgets
 
-from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QWidget, QApplication, QLabel, QSizePolicy
+from PyQt6.QtCore import Qt
+from PyQt6.QtWidgets import QWidget, QApplication, QLabel, QSizePolicy
 
 from . import computer as comp
 from gui.graph_widget.control_panel import ControlPanel
@@ -114,17 +114,17 @@ class GraphVisualizer(QtWidgets.QWidget):
         self.selected_in_menu = None
         self.menu_node = QtWidgets.QMenu(self)
         self.menu_edge = QtWidgets.QMenu(self)
-        self.show_info_menu_action = QtWidgets.QAction('Show Info', self)
+        self.show_info_menu_action = QtGui.QAction('Show Info', self)
         self.show_info_menu_action.triggered.connect(self.show_info_action_method)
-        self.show_zoom_menu_action = QtWidgets.QAction('Show Zoom', self)
+        self.show_zoom_menu_action = QtGui.QAction('Show Zoom', self)
         self.show_zoom_menu_action.triggered.connect(self.show_zoom_action_method)
-        self.hide_zoom_menu_action = QtWidgets.QAction('Hide Zoom', self)
+        self.hide_zoom_menu_action = QtGui.QAction('Hide Zoom', self)
         self.hide_zoom_menu_action.triggered.connect(self.hide_zoom_action_method)
-        self.hide_info_menu_action = QtWidgets.QAction('Hide Info', self)
+        self.hide_info_menu_action = QtGui.QAction('Hide Info', self)
         self.hide_info_menu_action.triggered.connect(self.hide_info_action_method)
-        self.show_detail_menu_action = QtWidgets.QAction('Show detail', self)
+        self.show_detail_menu_action = QtGui.QAction('Show detail', self)
         self.show_detail_menu_action.triggered.connect(self.show_chunk_pictures_label)
-        self.view_results_menu_action = QtWidgets.QAction('View results', self)
+        self.view_results_menu_action = QtGui.QAction('View results', self)
         self.view_results_menu_action.triggered.connect(self.view_results_tracklet)
         self.menu_node.addAction(self.show_info_menu_action)
         self.menu_node.addAction(self.hide_info_menu_action)

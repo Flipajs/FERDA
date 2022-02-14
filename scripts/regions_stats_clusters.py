@@ -16,7 +16,7 @@ from utils.video_manager import get_auto_video_manager
 import cv2
 from utils.drawing.points import draw_points
 from utils.drawing.collage import create_collage_rows
-from PyQt5.QtGui import QColor
+from PyQt6.QtGui import QColor
 from utils.img import rotate_img, get_bounding_box, centered_crop
 from core.id_detection.features import get_hog_features, get_crop
 from sklearn.cluster import DBSCAN

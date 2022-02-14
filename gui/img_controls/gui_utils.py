@@ -1,7 +1,7 @@
 __author__ = 'filip@naiser.cz'
 
-from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtGui import QImage
+from PyQt6 import QtCore, QtGui, QtWidgets
+from PyQt6.QtGui import QImage
 # import ImageQt
 import math
 import numpy as np

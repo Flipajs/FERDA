@@ -8,7 +8,7 @@ __author__ = 'fnaiser'
 
 import time
 
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt6 import QtCore, QtGui, QtWidgets
 import cv2
 import numpy as np
 

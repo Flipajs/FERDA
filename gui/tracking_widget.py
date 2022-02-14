@@ -1,4 +1,4 @@
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt6 import QtCore, QtGui, QtWidgets
 # regenerate the ui_tracking_widget code with `pyuic4 tracking_widget.ui -o ui_tracking_widget.py -x`
 from gui.generated.ui_tracking_widget import Ui_tracking_widget
 import core.segmentation

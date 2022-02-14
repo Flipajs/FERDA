@@ -1,4 +1,4 @@
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt6 import QtCore, QtGui, QtWidgets
 from gui.settings_widgets.parameters_tab import ParametersTab
 from gui.settings_widgets.visualisation_tab import VisualisationTab
 from gui.settings import Settings as S_

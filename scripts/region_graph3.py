@@ -4,7 +4,7 @@ import random
 
 import matplotlib.colors as colors
 import numpy as np
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt6 import QtCore, QtGui, QtWidgets
 from skimage.transform import resize
 
 from core.log import LogCategories, ActionNames
@@ -108,7 +108,7 @@ class NodeGraphVisualizer(QtWidgets.QWidget):
         self.hide_button.setStyleSheet("background-color: grey; border-style:outset; border-radius: 25px; \
                     border-width: 2px; border-color: beige; font: bold 14px; min-width:10em; padding 6px")
         self.hide_button.setFixedHeight(HEIGHT)
-        self.hide_button.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_H))
+        self.hide_button.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key.Key_H))
         self.hide_button.clicked.connect(self.hide_button_function)
         self.edge_info_layout.addWidget(self.hide_button)
         self.aux_space_upper = QtWidgets.QLabel()
@@ -120,27 +120,27 @@ class NodeGraphVisualizer(QtWidgets.QWidget):
         for label in self.upper_widgets:
             label.setFixedHeight(HEIGHT)
 
-        self.plot_action = QtWidgets.QAction('plot', self)
+        self.plot_action = QtGui.QAction('plot', self)
         self.plot_action.triggered.connect(self.plot_graph)
-        self.plot_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_P))
+        self.plot_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key.Key_P))
         self.addAction(self.plot_action)
 
-        self.connect_action = QtWidgets.QAction('connect', self)
+        self.connect_action = QtGui.QAction('connect', self)
         self.connect_action.triggered.connect(self.connect_chunks)
         self.connect_action.setShortcut(S_.controls.global_view_join_chunks)
         self.addAction(self.connect_action)
 
-        self.remove_action = QtWidgets.QAction('remove', self)
+        self.remove_action = QtGui.QAction('remove', self)
         self.remove_action.triggered.connect(self.remove_chunk)
         self.remove_action.setShortcut(S_.controls.remove_tracklet)
         self.addAction(self.remove_action)
 
-        self.stop_following_action = QtWidgets.QAction('stop following', self)
+        self.stop_following_action = QtGui.QAction('stop following', self)
         self.stop_following_action.triggered.connect(self.stop_following)
         self.stop_following_action.setShortcut(S_.controls.global_view_stop_following)
         self.addAction(self.stop_following_action)
 
-        self.ignore_during_suggestions_action = QtWidgets.QAction('ignore during suggestion', self)
+        self.ignore_during_suggestions_action = QtGui.QAction('ignore during suggestion', self)
         self.ignore_during_suggestions_action.triggered.connect(self.ignore_during_suggestions)
         self.ignore_during_suggestions_action.setShortcut(S_.controls.ignore_case)
         self.addAction(self.ignore_during_suggestions_action)
@@ -171,13 +171,13 @@ class NodeGraphVisualizer(QtWidgets.QWidget):
         self.clear_all_button.setStyleSheet("background-color: grey; border-style:outset; border-width: 2px;\
                             border-color: beige; font: bold 14px;min-width:10em; border-radius:25px; padding 6px")
         self.clear_all_button.setFixedHeight(HEIGHT)
-        self.clear_all_button.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_X))
+        self.clear_all_button.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key.Key_X))
         self.clear_all_button.clicked.connect(self.clear_all_button_function)
         self.clear_all_button.setFixedHeight(HEIGHT)
 
-        self.show_in_visualizer_action = QtWidgets.QAction('show in visualizer', self)
+        self.show_in_visualizer_action = QtGui.QAction('show in visualizer', self)
         self.show_in_visualizer_action.triggered.connect(self.show_in_visualizer)
-        self.show_in_visualizer_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_V))
+        self.show_in_visualizer_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key.Key_V))
         self.addAction(self.show_in_visualizer_action)
 
         self.node_info_layout.addWidget(self.clear_all_button)

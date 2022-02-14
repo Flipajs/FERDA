@@ -1,4 +1,4 @@
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt6 import QtCore, QtGui, QtWidgets
 from gui.img_controls.my_view import MyView
 import cv2
 import os
@@ -37,14 +37,14 @@ class BgFixWidget(QtWidgets.QWidget):
 
         # self.toolbar = self.addToolBar('Test')
 
-        self.open_action = QtWidgets.QAction("Open image", self)
-        self.save_action = QtWidgets.QAction("Save image", self)
-        self.fix_action = QtWidgets.QAction("Fix image", self)
-        self.settings_action = QtWidgets.QAction("Settings", self)
-        self.restore_action = QtWidgets.QAction("Reset image", self)
-        self.finish_action = QtWidgets.QAction("Finish", self)
-        self.cancel_action = QtWidgets.QAction("Cancel fixing", self)
-        self.undo_action = QtWidgets.QAction("Undo", self)
+        self.open_action = QtGui.QAction("Open image", self)
+        self.save_action = QtGui.QAction("Save image", self)
+        self.fix_action = QtGui.QAction("Fix image", self)
+        self.settings_action = QtGui.QAction("Settings", self)
+        self.restore_action = QtGui.QAction("Reset image", self)
+        self.finish_action = QtGui.QAction("Finish", self)
+        self.cancel_action = QtGui.QAction("Cancel fixing", self)
+        self.undo_action = QtGui.QAction("Undo", self)
 
         self.addAction(self.fix_action)
         self.addAction(self.finish_action)
@@ -102,11 +102,11 @@ class BgFixWidget(QtWidgets.QWidget):
 
     def set_shortcuts(self):
         """Sets shortcuts for actions"""
-        self.open_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_O))
-        self.save_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_S))
-        self.fix_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_F))
-        self.cancel_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Escape))
-        self.finish_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Enter))
+        self.open_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key.Key_O))
+        self.save_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key.Key_S))
+        self.fix_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key.Key_F))
+        self.cancel_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key.Key_Escape))
+        self.finish_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key.Key_Enter))
         self.undo_action.setShortcut(QtGui.QKeySequence.Undo)
 
     def init_actions(self):

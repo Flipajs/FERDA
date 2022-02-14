@@ -2,7 +2,7 @@
 In this file all global settings are stored.
 """
 __author__ = 'fnaiser'
-from PyQt5 import QtCore, QtGui
+from PyQt6 import QtCore, QtGui
 
 
 class SettingsType(type):
@@ -89,43 +89,43 @@ class Temp(metaclass=SettingsType):
 
 
 class Controls(metaclass=SettingsType):
-    show_settings = Item('controls/show_settings', QtGui.QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.Key_Comma), 'Show settings tab')
+    show_settings = Item('controls/show_settings', QtGui.QKeySequence("CTRL+,"), 'Show settings tab')
 
     # step by step results
-    next_case = Item('controls/sbs/next_case', QtGui.QKeySequence(QtCore.Qt.Key_N))
-    prev_case = Item('controls/sbs/prev_case', QtGui.QKeySequence(QtCore.Qt.Key_B))
-    confirm = Item('controls/sbs/confirm', QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.Key_Space))
-    partially_confirm = Item('controls/sbs/partially_confirm', QtGui.QKeySequence(QtCore.Qt.Key_C))
-    confirm_path = Item('controls/sbs/confirm_path', QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.Key_C))
-    fitting_from_left = Item('controls/sbs/fitting_from_left', QtGui.QKeySequence(QtCore.Qt.Key_F))
-    fitting_from_right = Item('controls/sbs/fitting_from_right', QtGui.QKeySequence(QtCore.Qt.Key_G))
-    remove_region = Item('controls/sbs/remove_region', QtGui.QKeySequence(QtCore.Qt.Key_Backspace))
-    remove_chunk = Item('controls/remove_chunk', QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.Key_Backspace))
-    join_regions = Item('controls/join_regions', QtGui.QKeySequence(QtCore.Qt.Key_J))
-    new_region = Item('controls/new_region', QtGui.QKeySequence(QtCore.Qt.Key_R))
-    ignore_case = Item('controls/ignore_case', QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.Key_I))
+    next_case = Item('controls/sbs/next_case', QtGui.QKeySequence(QtCore.Qt.Key.Key_N))
+    prev_case = Item('controls/sbs/prev_case', QtGui.QKeySequence(QtCore.Qt.Key.Key_B))
+    confirm = Item('controls/sbs/confirm', QtGui.QKeySequence(QtCore.Qt.Modifier.SHIFT | QtCore.Qt.Key.Key_Space))
+    partially_confirm = Item('controls/sbs/partially_confirm', QtGui.QKeySequence(QtCore.Qt.Key.Key_C))
+    confirm_path = Item('controls/sbs/confirm_path', QtGui.QKeySequence("SHIFT+C"))
+    fitting_from_left = Item('controls/sbs/fitting_from_left', QtGui.QKeySequence(QtCore.Qt.Key.Key_F))
+    fitting_from_right = Item('controls/sbs/fitting_from_right', QtGui.QKeySequence(QtCore.Qt.Key.Key_G))
+    remove_region = Item('controls/sbs/remove_region', QtGui.QKeySequence(QtCore.Qt.Key.Key_Backspace))
+    remove_chunk = Item('controls/remove_chunk', QtGui.QKeySequence(QtCore.Qt.Modifier.SHIFT | QtCore.Qt.Key.Key_Backspace))
+    join_regions = Item('controls/join_regions', QtGui.QKeySequence(QtCore.Qt.Key.Key_J))
+    new_region = Item('controls/new_region', QtGui.QKeySequence(QtCore.Qt.Key.Key_R))
+    ignore_case = Item('controls/ignore_case', QtGui.QKeySequence(QtCore.Qt.Modifier.SHIFT | QtCore.Qt.Key.Key_I))
 
-    undo_fitting = Item('controls/undo_fitting', QtGui.QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.Key_F))
-    undo_whole_fitting = Item('controls/undo_whole_fitting', QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.CTRL + QtCore.Qt.Key_F))
+    undo_fitting = Item('controls/undo_fitting', QtGui.QKeySequence("CTRL+F"))
+    undo_whole_fitting = Item('controls/undo_whole_fitting', QtGui.QKeySequence("SHIFT+CTRL+F"))
 
-    stop_action = Item('controls/stop_action', QtGui.QKeySequence(QtCore.Qt.Key_Escape))
-    save = Item('controls/save', QtGui.QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.Key_S))
-    save_only_long_enough = Item('controls/save_only_long_enough', QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.CTRL + QtCore.Qt.Key_S))
-    undo = Item('controls/undo', QtGui.QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.Key_Z))
-    get_info = Item('controls/get_info', QtGui.QKeySequence(QtCore.Qt.Key_I))
-    hide_show = Item('controls/hide_show', QtGui.QKeySequence(QtCore.Qt.Key_H))
+    stop_action = Item('controls/stop_action', QtGui.QKeySequence(QtCore.Qt.Key.Key_Escape))
+    save = Item('controls/save', QtGui.QKeySequence("CTRL+S"))
+    save_only_long_enough = Item('controls/save_only_long_enough', QtGui.QKeySequence("SHIFT+CTRL+S"))
+    undo = Item('controls/undo', QtGui.QKeySequence("CTRL+Z"))
+    get_info = Item('controls/get_info', QtGui.QKeySequence(QtCore.Qt.Key.Key_I))
+    hide_show = Item('controls/hide_show', QtGui.QKeySequence(QtCore.Qt.Key.Key_H))
 
-    video_next = Item('controls/video_next', QtGui.QKeySequence(QtCore.Qt.Key_N))
-    video_prev = Item('controls/video_prev', QtGui.QKeySequence(QtCore.Qt.Key_B))
-    video_play_pause = Item('controls/video_play_pause', QtGui.QKeySequence(QtCore.Qt.Key_Space))
-    video_random_frame = Item('controls/video_random_frame', QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.Key_R))
+    video_next = Item('controls/video_next', QtGui.QKeySequence(QtCore.Qt.Key.Key_N))
+    video_prev = Item('controls/video_prev', QtGui.QKeySequence(QtCore.Qt.Key.Key_B))
+    video_play_pause = Item('controls/video_play_pause', QtGui.QKeySequence(QtCore.Qt.Key.Key_Space))
+    video_random_frame = Item('controls/video_random_frame', QtGui.QKeySequence("SHIFT+R"))
 
-    chunk_alpha_blending = Item('controls/chunk_alpha_blending', QtGui.QKeySequence(QtCore.Qt.Key_A))
-    chunk_interpolation_fitting = Item('controls/chunk_interpolation_fitting', QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.Key_P))
+    chunk_alpha_blending = Item('controls/chunk_alpha_blending', QtGui.QKeySequence(QtCore.Qt.Key.Key_A))
+    chunk_interpolation_fitting = Item('controls/chunk_interpolation_fitting', QtGui.QKeySequence("SHIFT+P"))
 
     # global view
-    global_view_join_chunks = Item('controls/gv/join_chunks', QtGui.QKeySequence(QtCore.Qt.Key_J))
-    global_view_stop_following = Item('controls/gv/stop_following', QtGui.QKeySequence(QtCore.Qt.Key_S))
+    global_view_join_chunks = Item('controls/gv/join_chunks', QtGui.QKeySequence(QtCore.Qt.Key.Key_J))
+    global_view_stop_following = Item('controls/gv/stop_following', QtGui.QKeySequence(QtCore.Qt.Key.Key_S))
 
 
 class Settings:

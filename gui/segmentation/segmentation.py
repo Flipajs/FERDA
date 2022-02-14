@@ -1,5 +1,5 @@
 import sys
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt6 import QtCore, QtGui, QtWidgets
 from . import painter
 from .utils import *
 
@@ -237,9 +237,9 @@ class SegmentationPicker(QtWidgets.QWidget):
         self.color_buttons["eraser"] = eraser_button
 
         # UNDO key shortcut
-        self.action_undo = QtWidgets.QAction('undo', self)
+        self.action_undo = QtGui.QAction('undo', self)
         self.action_undo.triggered.connect(self.view.undo)
-        self.action_undo.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Z))
+        self.action_undo.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key.Key_Z))
         self.addAction(self.action_undo)
 
         self.undo_button = QtWidgets.QPushButton("Undo \n (key_Z)")

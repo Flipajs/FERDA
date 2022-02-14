@@ -1,4 +1,4 @@
-from PyQt5 import QtCore
+from PyQt6 import QtCore
 from copy import deepcopy
 from core.region.fitting import Fitting
 

@@ -1,4 +1,4 @@
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt6 import QtCore, QtGui, QtWidgets
 
 class VideoSlider(QtWidgets.QSlider):
     """A slider that changes it's value directly to the part where it was clicked instead of slowly sliding there.

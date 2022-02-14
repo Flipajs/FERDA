@@ -1,7 +1,7 @@
-from PyQt5.QtGui import QTransform
+from PyQt6.QtGui import QTransform
 
 __author__ = 'filip@naiser.cz'
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt6 import QtCore, QtGui, QtWidgets
 
 class MyView(QtWidgets.QGraphicsView):
     def __init__(self, update_callback_move=None, update_callback_press=None, update_callback_release=None):

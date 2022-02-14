@@ -6,7 +6,7 @@ from gui.plot.plot_utils import line_picker
 from gui.settings import Settings as S_
 from .my_mpl_canvas import *
 from utils.img import DistinguishableColors
-from PyQt5 import QtGui, QtWidgets
+from PyQt6 import QtGui, QtWidgets
 
 
 class PlotChunks(QtWidgets.QWidget):

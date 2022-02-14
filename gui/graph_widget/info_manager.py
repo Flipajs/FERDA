@@ -1,8 +1,8 @@
 import random
-from PyQt5 import QtGui
+from PyQt6 import QtGui
 from matplotlib import colors
 
-from PyQt5.QtWidgets import QApplication
+from PyQt6.QtWidgets import QApplication
 
 from gui.graph_widget_loader import OPACITY
 

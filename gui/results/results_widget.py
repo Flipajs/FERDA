@@ -2,7 +2,7 @@ __author__ = 'fnaiser'
 import pickle as pickle
 from functools import partial
 import numpy as np
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt6 import QtCore, QtGui, QtWidgets
 from pyqtgraph import makeQImage
 from tqdm import tqdm
 import warnings
@@ -127,9 +127,9 @@ class ResultsWidget(QtWidgets.QWidget):
         self.save_gt_b = QtWidgets.QPushButton('save GT')
         self.save_gt_b.clicked.connect(self.save_gt_file_dialog)
         self.gt_box.layout().addWidget(self.save_gt_b)
-        self.save_gt_a = QtWidgets.QAction('save GT', self)
+        self.save_gt_a = QtGui.QAction('save GT', self)
         self.save_gt_a.triggered.connect(self.save_gt_file_dialog)
-        self.save_gt_a.setShortcut(QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.Key_G))
+        self.save_gt_a.setShortcut(QtGui.QKeySequence(QtCore.Qt.Modifier.SHIFT | QtCore.Qt.Key.Key_G))
         self.addAction(self.save_gt_a)
 
         self.eval_gt_draw_ch = QtWidgets.QCheckBox('draw coverage image')
@@ -147,29 +147,29 @@ class ResultsWidget(QtWidgets.QWidget):
         self.auto_gt_assignment_b.clicked.connect(self.__auto_gt_assignment)
         self.gt_box.layout().addWidget(self.auto_gt_assignment_b)
 
-        self.auto_gt_assignment_action = QtWidgets.QAction('save gt', self)
+        self.auto_gt_assignment_action = QtGui.QAction('save gt', self)
         self.auto_gt_assignment_action.triggered.connect(self.__auto_gt_assignment)
-        self.auto_gt_assignment_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.Key_A))
+        self.auto_gt_assignment_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Modifier.SHIFT | QtCore.Qt.Key.Key_A))
         self.addAction(self.auto_gt_assignment_action)
 
         self.add_gt_markers_b = QtWidgets.QPushButton('add GT markers')
         self.add_gt_markers_b.clicked.connect(self.__add_gt_markers)
         self.gt_box.layout().addWidget(self.add_gt_markers_b)
 
-        self.gt_interpolate_current_frame = QtWidgets.QAction('interpolate current frame GT', self)
+        self.gt_interpolate_current_frame = QtGui.QAction('interpolate current frame GT', self)
         self.gt_interpolate_current_frame.triggered.connect(self.interpolate_gt)
-        self.gt_interpolate_current_frame.setShortcut(QtGui.QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.Key_I))
+        self.gt_interpolate_current_frame.setShortcut(QtGui.QKeySequence(QtCore.Qt.Modifier.CTRL | QtCore.Qt.Key.Key_I))
         self.addAction(self.gt_interpolate_current_frame)
 
-        self.action_delete_gt = QtWidgets.QAction('delete selected object from GT in current frame', self)
+        self.action_delete_gt = QtGui.QAction('delete selected object from GT in current frame', self)
         self.action_delete_gt.triggered.connect(self.delete_gt)
-        self.action_delete_gt.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Delete))
+        self.action_delete_gt.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key.Key_Delete))
         self.addAction(self.action_delete_gt)
 
 
         # self.add_gt_markers_action = QtGui.QAction('add gt markers', self)
         # self.add_gt_markers_action.triggered.connect(self.__add_gt_markers)
-        # self.add_gt_markers_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.Key_D))
+        # self.add_gt_markers_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Modifier.SHIFT | QtCore.Qt.Key.Key_D))
         # self.addAction(self.add_gt_markers_action)
 
         # TRACKLET BOX
@@ -195,14 +195,14 @@ class ResultsWidget(QtWidgets.QWidget):
         self.decide_tracklet_button.clicked.connect(self.decide_tracklet)
         self.decide_tracklet_button.setDisabled(True)
 
-        self.decide_tracklet_action = QtWidgets.QAction('decide tracklet', self)
+        self.decide_tracklet_action = QtGui.QAction('decide tracklet', self)
         self.decide_tracklet_action.triggered.connect(self.decide_tracklet)
-        self.decide_tracklet_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_D))
+        self.decide_tracklet_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key.Key_D))
         self.addAction(self.decide_tracklet_action)
 
-        self.edit_tracklet_action = QtWidgets.QAction('edit tracklet', self)
+        self.edit_tracklet_action = QtGui.QAction('edit tracklet', self)
         self.edit_tracklet_action.triggered.connect(self.edit_tracklet)
-        self.edit_tracklet_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.Key_D))
+        self.edit_tracklet_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Modifier.SHIFT | QtCore.Qt.Key.Key_D))
         self.addAction(self.edit_tracklet_action)
 
         self.tracklet_end_button = QtWidgets.QPushButton('go to tracklet end')
@@ -211,42 +211,42 @@ class ResultsWidget(QtWidgets.QWidget):
         self.id_end_button = QtWidgets.QPushButton('go to id end')
         self.id_end_button.clicked.connect(lambda x: self.id_end())
 
-        self.tracklet_end_action = QtWidgets.QAction('tracklet end', self)
+        self.tracklet_end_action = QtGui.QAction('tracklet end', self)
         self.tracklet_end_action.triggered.connect(self.tracklet_end)
-        self.tracklet_end_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.Key_E))
+        self.tracklet_end_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Modifier.CTRL | QtCore.Qt.Key.Key_E))
         self.addAction(self.tracklet_end_action)
 
-        self.id_end_action = QtWidgets.QAction('id end', self)
+        self.id_end_action = QtGui.QAction('id end', self)
         self.id_end_action.triggered.connect(lambda x: self.id_end())
-        self.id_end_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.SHIFT + QtCore.Qt.Key_E))
+        self.id_end_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Modifier.CTRL | QtCore.Qt.Modifier.SHIFT | QtCore.Qt.Key.Key_E))
         self.addAction(self.id_end_action)
 
         self.tracklet_begin_button = QtWidgets.QPushButton('go to beginning')
         self.tracklet_begin_button.clicked.connect(self.tracklet_begin)
 
-        self.tracklet_begin_action = QtWidgets.QAction('tracklet begin', self)
+        self.tracklet_begin_action = QtGui.QAction('tracklet begin', self)
         self.tracklet_begin_action.triggered.connect(self.tracklet_begin)
-        self.tracklet_begin_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.Key_S))
+        self.tracklet_begin_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Modifier.CTRL | QtCore.Qt.Key.Key_S))
         self.addAction(self.tracklet_begin_action)
 
         self.id_begin_button = QtWidgets.QPushButton('go to id beginning')
         self.id_begin_button.clicked.connect(lambda x: self.id_end(False))
 
-        self.id_begin_action = QtWidgets.QAction('id begin', self)
+        self.id_begin_action = QtGui.QAction('id begin', self)
         self.id_begin_action.triggered.connect(lambda x: self.id_end(False))
-        self.id_begin_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.SHIFT + QtCore.Qt.Key_S))
+        self.id_begin_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Modifier.CTRL | QtCore.Qt.Modifier.SHIFT | QtCore.Qt.Key.Key_S))
         self.addAction(self.id_begin_action)
 
 
         # goto next / prev node (something like go to next interesting point)
-        self.next_graph_node_action = QtWidgets.QAction('next graph node', self)
+        self.next_graph_node_action = QtGui.QAction('next graph node', self)
         self.next_graph_node_action.triggered.connect(lambda x: self.goto_next_graph_node(frame=None))
-        self.next_graph_node_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.Key_N))
+        self.next_graph_node_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Modifier.CTRL | QtCore.Qt.Key.Key_N))
         self.addAction(self.next_graph_node_action)
 
-        self.prev_graph_node_action = QtWidgets.QAction('prev graph node', self)
+        self.prev_graph_node_action = QtGui.QAction('prev graph node', self)
         self.prev_graph_node_action.triggered.connect(lambda x: self.goto_prev_graph_node(frame=None))
-        self.prev_graph_node_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.Key_B))
+        self.prev_graph_node_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Modifier.CTRL | QtCore.Qt.Key.Key_B))
         self.addAction(self.prev_graph_node_action)
 
         self.split_tracklet_b = QtWidgets.QPushButton('split tracklet')
@@ -351,9 +351,9 @@ class ResultsWidget(QtWidgets.QWidget):
 
         self.video_layout.addWidget(self.video_player)
 
-        self.hide_visualisation_action = QtWidgets.QAction('hide visualisation', self)
+        self.hide_visualisation_action = QtGui.QAction('hide visualisation', self)
         self.hide_visualisation_action.triggered.connect(self.hide_visualisation)
-        self.hide_visualisation_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_H))
+        self.hide_visualisation_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key.Key_H))
         self.addAction(self.hide_visualisation_action)
 
         self.visu_controls_layout = FlowLayout()
@@ -392,9 +392,9 @@ class ResultsWidget(QtWidgets.QWidget):
         self.show_saturated_ch.stateChanged.connect(lambda x: self.redraw_video_player_visualisations())
         self.visu_controls_layout.addWidget(self.show_saturated_ch)
 
-        self.show_saturated_action = QtWidgets.QAction('show saturated', self)
+        self.show_saturated_action = QtGui.QAction('show saturated', self)
         self.show_saturated_action.triggered.connect(lambda x: self.show_saturated_ch.setChecked(not self.show_saturated_ch.isChecked()))
-        self.show_saturated_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.Key_S))
+        self.show_saturated_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Modifier.SHIFT | QtCore.Qt.Key.Key_S))
         self.addAction(self.show_saturated_action)
 
         self.show_id_bar = QtWidgets.QCheckBox('id bar')
@@ -408,34 +408,34 @@ class ResultsWidget(QtWidgets.QWidget):
         self.show_tracklet_class.stateChanged.connect(lambda x: self.redraw_video_player_visualisations())
         self.visu_controls_layout.addWidget(self.show_tracklet_class)
 
-        self.toggle_id_bar_action = QtWidgets.QAction('toggle id bar', self)
+        self.toggle_id_bar_action = QtGui.QAction('toggle id bar', self)
         self.toggle_id_bar_action.triggered.connect(lambda x: self.show_id_bar.setChecked(not self.show_id_bar.isChecked()))
-        self.toggle_id_bar_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.Key_I))
+        self.toggle_id_bar_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Modifier.SHIFT | QtCore.Qt.Key.Key_I))
         self.addAction(self.toggle_id_bar_action)
 
-        self.goto_frame_action = QtWidgets.QAction('go to frame', self)
+        self.goto_frame_action = QtGui.QAction('go to frame', self)
         self.goto_frame_action.triggered.connect(lambda x: self.video_player.frame_edit.setFocus())
-        self.goto_frame_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.Key_F))
+        self.goto_frame_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Modifier.CTRL | QtCore.Qt.Key.Key_F))
         self.addAction(self.goto_frame_action)
 
-        self.down_region_action = QtWidgets.QAction('down region', self)
+        self.down_region_action = QtGui.QAction('down region', self)
         self.down_region_action.triggered.connect(partial(self.__set_active_relative_tracklet, -1, True))
-        self.down_region_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.Key_Up))
+        self.down_region_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Modifier.CTRL | QtCore.Qt.Key.Key_Up))
         self.addAction(self.down_region_action)
 
-        self.up_region_action = QtWidgets.QAction('up region', self)
+        self.up_region_action = QtGui.QAction('up region', self)
         self.up_region_action.triggered.connect(partial(self.__set_active_relative_tracklet, 1, True))
-        self.up_region_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.Key_Down))
+        self.up_region_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Modifier.CTRL | QtCore.Qt.Key.Key_Down))
         self.addAction(self.up_region_action)
 
-        self.left_region_action = QtWidgets.QAction('left region', self)
+        self.left_region_action = QtGui.QAction('left region', self)
         self.left_region_action.triggered.connect(partial(self.__set_active_relative_tracklet, -1, False))
-        self.left_region_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.Key_Left))
+        self.left_region_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Modifier.CTRL | QtCore.Qt.Key.Key_Left))
         self.addAction(self.left_region_action)
 
-        self.right_region_action = QtWidgets.QAction('right region', self)
+        self.right_region_action = QtGui.QAction('right region', self)
         self.right_region_action.triggered.connect(partial(self.__set_active_relative_tracklet, 1, False))
-        self.right_region_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.Key_Right))
+        self.right_region_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Modifier.CTRL | QtCore.Qt.Key.Key_Right))
         self.addAction(self.right_region_action)
 
         self.chunks = []

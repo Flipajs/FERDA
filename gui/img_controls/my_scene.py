@@ -1,6 +1,6 @@
 __author__ = 'fnaiser'
 
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt6 import QtCore, QtGui, QtWidgets
 from gui.init.arena.arena_circle import ArenaCircle
 
 class MyScene(QtWidgets.QGraphicsScene):

@@ -6,7 +6,7 @@ from copy import deepcopy
 from functools import partial
 
 import numpy as np
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt6 import QtCore, QtGui, QtWidgets
 
 from .case_widget import CaseWidget
 from core.log import LogCategories, ActionNames
@@ -657,137 +657,137 @@ class ConfigurationsVisualizer(QtWidgets.QWidget):
         self.scenes_widget.layout().addWidget(w)
 
     def add_actions(self):
-        self.next_action = QtWidgets.QAction('next', self)
+        self.next_action = QtGui.QAction('next', self)
         self.next_action.triggered.connect(partial(self.next_case, True, True))
         self.next_action.setShortcut(S_.controls.next_case)
         self.addAction(self.next_action)
 
-        self.prev_action = QtWidgets.QAction('prev', self)
+        self.prev_action = QtGui.QAction('prev', self)
         self.prev_action.triggered.connect(self.prev_case)
         self.prev_action.setShortcut(S_.controls.prev_case)
         self.addAction(self.prev_action)
 
-        self.confirm_cc_action = QtWidgets.QAction('confirm', self)
+        self.confirm_cc_action = QtGui.QAction('confirm', self)
         self.confirm_cc_action.triggered.connect(self.confirm_cc)
         self.confirm_cc_action.setShortcut(S_.controls.confirm)
         self.addAction(self.confirm_cc_action)
 
-        self.partially_confirm_action = QtWidgets.QAction('partially confirm', self)
+        self.partially_confirm_action = QtGui.QAction('partially confirm', self)
         self.partially_confirm_action.triggered.connect(self.partially_confirm)
         self.partially_confirm_action.setShortcut(S_.controls.partially_confirm)
         self.addAction(self.partially_confirm_action)
 
-        self.path_confirm_action = QtWidgets.QAction('path confirm', self)
+        self.path_confirm_action = QtGui.QAction('path confirm', self)
         self.path_confirm_action.triggered.connect(self.path_confirm)
         self.path_confirm_action.setShortcut(S_.controls.confirm_path)
         self.addAction(self.path_confirm_action)
 
-        self.fitting_action = QtWidgets.QAction('fitting', self)
+        self.fitting_action = QtGui.QAction('fitting', self)
         self.fitting_action.triggered.connect(partial(self.fitting, False))
         self.fitting_action.setShortcut(S_.controls.fitting_from_left)
         self.addAction(self.fitting_action)
 
-        self.fitting_rev_action = QtWidgets.QAction('fitting rev', self)
+        self.fitting_rev_action = QtGui.QAction('fitting rev', self)
         self.fitting_rev_action.triggered.connect(partial(self.fitting, True))
         self.fitting_rev_action.setShortcut(S_.controls.fitting_from_right)
         self.addAction(self.fitting_rev_action)
 
-        self.undo_fitting_action = QtWidgets.QAction('fitting undo', self)
+        self.undo_fitting_action = QtGui.QAction('fitting undo', self)
         self.undo_fitting_action.triggered.connect(self.undo_fitting)
         self.undo_fitting_action.setShortcut(S_.controls.undo_fitting)
         self.addAction(self.undo_fitting_action)
 
-        self.undo_whole_fitting_action = QtWidgets.QAction('undo whole fitting', self)
+        self.undo_whole_fitting_action = QtGui.QAction('undo whole fitting', self)
         self.undo_whole_fitting_action.triggered.connect(self.undo_whole_fitting)
         self.undo_whole_fitting_action.setShortcut(S_.controls.undo_whole_fitting)
         self.addAction(self.undo_whole_fitting_action)
 
-        self.remove_region_action = QtWidgets.QAction('remove region', self)
+        self.remove_region_action = QtGui.QAction('remove region', self)
         self.remove_region_action.triggered.connect(self.remove_region)
         self.remove_region_action.setShortcut(S_.controls.remove_region)
         self.addAction(self.remove_region_action)
 
-        self.strong_remove_action = QtWidgets.QAction('strong remove', self)
+        self.strong_remove_action = QtGui.QAction('strong remove', self)
         self.strong_remove_action.triggered.connect(self.strong_remove_region)
         self.strong_remove_action.setShortcut(S_.controls.remove_tracklet)
         self.addAction(self.strong_remove_action)
 
-        self.join_regions_action = QtWidgets.QAction('join regions', self)
+        self.join_regions_action = QtGui.QAction('join regions', self)
         self.join_regions_action.triggered.connect(self.join_regions_pick_second)
         self.join_regions_action.setShortcut(S_.controls.join_regions)
         self.addAction(self.join_regions_action)
 
-        self.action0 = QtWidgets.QAction('0', self)
+        self.action0 = QtGui.QAction('0', self)
         self.action0.triggered.connect(partial(self.choose_node, 9))
-        self.action0.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_0))
+        self.action0.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key.Key_0))
         self.addAction(self.action0)
 
-        self.action1 = QtWidgets.QAction('1', self)
+        self.action1 = QtGui.QAction('1', self)
         self.action1.triggered.connect(partial(self.choose_node, 0))
-        self.action1.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_1))
+        self.action1.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key.Key_1))
         self.addAction(self.action1)
 
-        self.action2 = QtWidgets.QAction('2', self)
+        self.action2 = QtGui.QAction('2', self)
         self.action2.triggered.connect(partial(self.choose_node, 1))
-        self.action2.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_2))
+        self.action2.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key.Key_2))
         self.addAction(self.action2)
 
-        self.action3 = QtWidgets.QAction('3', self)
+        self.action3 = QtGui.QAction('3', self)
         self.action3.triggered.connect(partial(self.choose_node, 2))
-        self.action3.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_3))
+        self.action3.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key.Key_3))
         self.addAction(self.action3)
 
-        self.action4 = QtWidgets.QAction('4', self)
+        self.action4 = QtGui.QAction('4', self)
         self.action4.triggered.connect(partial(self.choose_node, 3))
-        self.action4.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_4))
+        self.action4.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key.Key_4))
         self.addAction(self.action4)
 
-        self.action5 = QtWidgets.QAction('5', self)
+        self.action5 = QtGui.QAction('5', self)
         self.action5.triggered.connect(partial(self.choose_node, 4))
-        self.action5.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_5))
+        self.action5.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key.Key_5))
         self.addAction(self.action5)
 
-        self.action6 = QtWidgets.QAction('6', self)
+        self.action6 = QtGui.QAction('6', self)
         self.action6.triggered.connect(partial(self.choose_node, 5))
-        self.action6.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_6))
+        self.action6.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key.Key_6))
         self.addAction(self.action6)
 
-        self.action7 = QtWidgets.QAction('7', self)
+        self.action7 = QtGui.QAction('7', self)
         self.action7.triggered.connect(partial(self.choose_node, 6))
-        self.action7.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_7))
+        self.action7.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key.Key_7))
         self.addAction(self.action7)
 
-        self.action8 = QtWidgets.QAction('8', self)
+        self.action8 = QtGui.QAction('8', self)
         self.action8.triggered.connect(partial(self.choose_node, 7))
-        self.action8.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_8))
+        self.action8.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key.Key_8))
         self.addAction(self.action8)
 
-        self.action9 = QtWidgets.QAction('9', self)
+        self.action9 = QtGui.QAction('9', self)
         self.action9.triggered.connect(partial(self.choose_node, 8))
-        self.action9.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_9))
+        self.action9.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key.Key_9))
         self.addAction(self.action9)
 
-        self.ignore_action = QtWidgets.QAction('ignore', self)
+        self.ignore_action = QtGui.QAction('ignore', self)
         self.ignore_action.triggered.connect(self.ignore_node)
         self.ignore_action.setShortcut(S_.controls.ignore_case)
         self.addAction(self.ignore_action)
 
-        self.new_region_t_action = QtWidgets.QAction('new region', self)
+        self.new_region_t_action = QtGui.QAction('new region', self)
         self.new_region_t_action.triggered.connect(partial(self.new_region, -1))
         self.new_region_t_action.setShortcut(S_.controls.new_region)
         self.addAction(self.new_region_t_action)
 
-        self.fitting_one_step_a = QtWidgets.QAction('fitting one step', self)
+        self.fitting_one_step_a = QtGui.QAction('fitting one step', self)
         self.fitting_one_step_a.triggered.connect(partial(self.fitting, False, True))
-        self.fitting_one_step_a.setShortcut(QtGui.QKeySequence(QtCore.Qt.SHIFT + QtCore.Qt.Key_F))
+        self.fitting_one_step_a.setShortcut(QtGui.QKeySequence(QtCore.Qt.Modifier.SHIFT | QtCore.Qt.Key.Key_F))
         self.addAction(self.fitting_one_step_a)
 
-        self.chunk_alpha_blending_action = QtWidgets.QAction('chunk alpha blending', self)
+        self.chunk_alpha_blending_action = QtGui.QAction('chunk alpha blending', self)
         self.chunk_alpha_blending_action.triggered.connect(self.chunk_alpha_blending)
         self.chunk_alpha_blending_action.setShortcut(S_.controls.chunk_alpha_blending)
         self.addAction(self.chunk_alpha_blending_action)
 
-        self.chunk_interpolation_fitting_action = QtWidgets.QAction('chunk interpolation fitting', self)
+        self.chunk_interpolation_fitting_action = QtGui.QAction('chunk interpolation fitting', self)
         self.chunk_interpolation_fitting_action.triggered.connect(self.chunk_interpolation_fitting)
         self.chunk_interpolation_fitting_action.setShortcut(S_.controls.chunk_interpolation_fitting)
         self.addAction(self.chunk_interpolation_fitting_action)

@@ -1,4 +1,4 @@
-from PyQt5 import QtGui, QtWidgets
+from PyQt6 import QtGui, QtWidgets
 
 from gui.img_grid.img_grid_widget import ImgGridWidget
 from gui.results.noise_filter_computer import NoiseFilterComputer

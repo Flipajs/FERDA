@@ -5,7 +5,7 @@ import pickle
 
 import cv2
 import numpy as np
-from PyQt5 import QtCore
+from PyQt6 import QtCore
 
 from .model import Model
 from core.bg_model.bg_model import BGModel

@@ -1,6 +1,6 @@
 __author__ = 'filip@naiser.cz'
 
-from PyQt5 import QtGui, QtWidgets
+from PyQt6 import QtGui, QtWidgets
 from numpy import arange, sin, pi, cos
 from .my_mpl_canvas import *
 import sys

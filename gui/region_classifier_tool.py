@@ -1,4 +1,4 @@
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt6 import QtCore, QtGui, QtWidgets
 import sys
 import core.region.clustering
 import numpy as np
@@ -62,53 +62,53 @@ class RegionClassifierTool(QtWidgets.QWizardPage):
         actions = [
             {'text': 'mark single-ID',
              'trigger': partial(self.move_selected_to, 'single'),
-             'shortcut': QtCore.Qt.SHIFT + QtCore.Qt.Key_S
+             'shortcut': QtCore.Qt.Modifier.SHIFT | QtCore.Qt.Key.Key_S
              },
             {'text': 'mark multi-ID',
              'trigger': partial(self.move_selected_to, 'multi'),
-             'shortcut': QtCore.Qt.SHIFT + QtCore.Qt.Key_M
+             'shortcut': QtCore.Qt.Modifier.SHIFT | QtCore.Qt.Key.Key_M
              },
             {'text': 'mark no-ID',
              'trigger': partial(self.move_selected_to, 'noise'),
-             'shortcut': QtCore.Qt.SHIFT + QtCore.Qt.Key_N
+             'shortcut': QtCore.Qt.Modifier.SHIFT | QtCore.Qt.Key.Key_N
              },
             {'text': 'mark part',
              'trigger': partial(self.move_selected_to, 'part'),
-             'shortcut': QtCore.Qt.SHIFT + QtCore.Qt.Key_P
+             'shortcut': QtCore.Qt.Modifier.SHIFT | QtCore.Qt.Key.Key_P
              },
             {'trigger': partial(self.move_selected_to, 'undecided'),
-             'shortcut': QtCore.Qt.SHIFT + QtCore.Qt.Key_U
+             'shortcut': QtCore.Qt.Modifier.SHIFT | QtCore.Qt.Key.Key_U
              },
 
             {'trigger': partial(self.select_all, 'single'),
-             'shortcut': QtCore.Qt.SHIFT + QtCore.Qt.CTRL + QtCore.Qt.Key_S
+             'shortcut': QtCore.Qt.Modifier.SHIFT | QtCore.Qt.Modifier.CTRL | QtCore.Qt.Key.Key_S
              },
             {'trigger': partial(self.select_all, 'multi'),
-             'shortcut': QtCore.Qt.SHIFT + QtCore.Qt.CTRL + QtCore.Qt.Key_M
+             'shortcut': QtCore.Qt.Modifier.SHIFT | QtCore.Qt.Modifier.CTRL | QtCore.Qt.Key.Key_M
              },
             {'trigger': partial(self.select_all, 'noise'),
-             'shortcut': QtCore.Qt.SHIFT + QtCore.Qt.CTRL + QtCore.Qt.Key_N
+             'shortcut': QtCore.Qt.Modifier.SHIFT | QtCore.Qt.Modifier.CTRL | QtCore.Qt.Key.Key_N
              },
             {'trigger': partial(self.select_all, 'part'),
-             'shortcut': QtCore.Qt.SHIFT + QtCore.Qt.CTRL + QtCore.Qt.Key_P
+             'shortcut': QtCore.Qt.Modifier.SHIFT | QtCore.Qt.Modifier.CTRL | QtCore.Qt.Key.Key_P
              },
 
             {'trigger': partial(self.select_until, 'single'),
-             'shortcut': QtCore.Qt.CTRL + QtCore.Qt.Key_S
+             'shortcut': QtCore.Qt.Modifier.CTRL | QtCore.Qt.Key.Key_S
              },
             {'trigger': partial(self.select_until, 'multi'),
-             'shortcut': QtCore.Qt.CTRL + QtCore.Qt.Key_M
+             'shortcut': QtCore.Qt.Modifier.CTRL | QtCore.Qt.Key.Key_M
              },
             {'trigger': partial(self.select_until, 'noise'),
-             'shortcut': QtCore.Qt.CTRL + QtCore.Qt.Key_N
+             'shortcut': QtCore.Qt.Modifier.CTRL | QtCore.Qt.Key.Key_N
              },
             {'trigger': partial(self.select_until, 'part'),
-             'shortcut': QtCore.Qt.CTRL + QtCore.Qt.Key_P
+             'shortcut': QtCore.Qt.Modifier.CTRL | QtCore.Qt.Key.Key_P
              },
         ]
 
         for a in actions:
-            action = QtWidgets.QAction(self)
+            action = QtGui.QAction(self)
             action.triggered.connect(a['trigger'])
             action.setShortcut(QtGui.QKeySequence(a['shortcut']))
             self.addAction(action)
@@ -256,7 +256,7 @@ class RegionClassifierTool(QtWidgets.QWizardPage):
                 self.grids[label].add_item(s)
 
     def make_item(self, im, item_id):
-        from PyQt5 import QtGui, QtWidgets
+        from PyQt6 import QtGui, QtWidgets
         from gui.gui_utils import SelectableQLabel
         from PIL import ImageQt
 

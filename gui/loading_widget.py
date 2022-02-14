@@ -1,5 +1,5 @@
 __author__ = 'fnaiser'
-from PyQt5 import QtGui, QtWidgets
+from PyQt6 import QtGui, QtWidgets
 
 
 class LoadingWidget(QtWidgets.QWidget):

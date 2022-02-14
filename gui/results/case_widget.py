@@ -4,7 +4,7 @@ from functools import partial
 
 import cv2
 import numpy as np
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt6 import QtCore, QtGui, QtWidgets
 from skimage.transform import rescale
 from skimage.transform import resize
 
@@ -99,51 +99,51 @@ class CaseWidget(QtWidgets.QWidget):
                 self.color_assignments[n2] = self.color_assignments[n1]
 
         self.pop_menu_node = QtWidgets.QMenu(self)
-        self.action_remove_node = QtWidgets.QAction('remove', self)
+        self.action_remove_node = QtGui.QAction('remove', self)
         self.action_remove_node.triggered.connect(self.remove_node_)
 
-        self.action_partially_confirm = QtWidgets.QAction('confirm this connection', self)
+        self.action_partially_confirm = QtGui.QAction('confirm this connection', self)
         self.action_partially_confirm.triggered.connect(self.parent.partially_confirm)
 
         # self.action_mark_merged = QtGui.QAction('merged', self)
         # self.action_mark_merged.triggered.connect(self.mark_merged)
 
-        self.new_region_t1 = QtWidgets.QAction('new region t1', self)
+        self.new_region_t1 = QtGui.QAction('new region t1', self)
         self.new_region_t1.triggered.connect(partial(self.parent.new_region, 0))
 
-        self.new_region_t2 = QtWidgets.QAction('new region t2', self)
+        self.new_region_t2 = QtGui.QAction('new region t2', self)
         self.new_region_t2.triggered.connect(partial(self.parent.new_region, 1))
 
-        self.connect_with = QtWidgets.QAction('connect with and confirm', self)
+        self.connect_with = QtGui.QAction('connect with and confirm', self)
         self.connect_with.triggered.connect(self.connect_with_)
 
-        self.join_with = QtWidgets.QAction('join with', self)
+        self.join_with = QtGui.QAction('join with', self)
         self.join_with.triggered.connect(self.join_with_)
 
-        self.get_info_action = QtWidgets.QAction('get info', self)
+        self.get_info_action = QtGui.QAction('get info', self)
         self.get_info_action.triggered.connect(self.get_info)
         self.get_info_action.setShortcut(S_.controls.get_info)
         self.addAction(self.get_info_action)
 
         # ARROW KEYS
-        self.row_up = QtWidgets.QAction('row up', self)
+        self.row_up = QtGui.QAction('row up', self)
         self.row_up.triggered.connect(partial(self.row_changed, -1))
-        self.row_up.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Up))
+        self.row_up.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key.Key_Up))
         self.addAction(self.row_up)
 
-        self.row_down = QtWidgets.QAction('row down', self)
+        self.row_down = QtGui.QAction('row down', self)
         self.row_down.triggered.connect(partial(self.row_changed, 1))
-        self.row_down.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Down))
+        self.row_down.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key.Key_Down))
         self.addAction(self.row_down)
 
-        self.col_left = QtWidgets.QAction('col left', self)
+        self.col_left = QtGui.QAction('col left', self)
         self.col_left.triggered.connect(partial(self.col_changed, -1))
-        self.col_left.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Left))
+        self.col_left.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key.Key_Left))
         self.addAction(self.col_left)
 
-        self.col_right = QtWidgets.QAction('col right', self)
+        self.col_right = QtGui.QAction('col right', self)
         self.col_right.triggered.connect(partial(self.col_changed, 1))
-        self.col_right.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Right))
+        self.col_right.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key.Key_Right))
         self.addAction(self.col_right)
 
         # self.hide_visualization_a = QtGui.QAction('hide visualization', self)

@@ -1,7 +1,7 @@
 import sys
 from .my_view import MyView
 from .my_scene import MyScene
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt6 import QtCore, QtGui, QtWidgets
 import numpy as np
 import cv2
 # warning: qimage2ndarray could get confused with multiple Qt versions installed (PyQt, PySide, ...) and end with
@@ -323,9 +323,9 @@ class Painter(QtWidgets.QWidget):
         self.layout().setAlignment(QtCore.Qt.AlignBottom)
 
         # UNDO key shortcut
-        self.action_undo = QtWidgets.QAction('undo', self)
+        self.action_undo = QtGui.QAction('undo', self)
         self.action_undo.triggered.connect(self.undo)
-        self.action_undo.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Z))
+        self.action_undo.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key.Key_Z))
         self.addAction(self.action_undo)
 
 

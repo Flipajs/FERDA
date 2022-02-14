@@ -2,7 +2,7 @@ __author__ = 'filip@naiser.cz'
 
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt6 import QtCore, QtGui, QtWidgets
 from numpy import arange, sin, pi, cos
 from mpl_toolkits.mplot3d import axes3d, Axes3D
 

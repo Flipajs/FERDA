@@ -6,7 +6,7 @@ __author__ = 'flipajs'
 import sys
 
 import numpy as np
-from PyQt5 import QtGui, QtWidgets
+from PyQt6 import QtGui, QtWidgets
 from skimage.transform import rescale
 
 from core.project.project import Project

@@ -1,6 +1,6 @@
 __author__ = 'fnaiser'
 
-from PyQt5 import QtCore, QtGui
+from PyQt6 import QtCore, QtGui
 
 #meaning of these parameters can be found in tooltips
 default_settings = {
@@ -12,11 +12,11 @@ default_settings = {
     'square_line_width': 5,
     'copy_square_color': QtGui.QColor("lime"),
     'position_square_color': QtGui.QColor("yellow"),
-    'open_image': QtGui.QKeySequence(QtCore.Qt.Key_O),
-    'save_image': QtGui.QKeySequence(QtCore.Qt.Key_S),
-    'fix_image': QtGui.QKeySequence(QtCore.Qt.Key_F),
+    'open_image': QtGui.QKeySequence(QtCore.Qt.Key.Key_O),
+    'save_image': QtGui.QKeySequence(QtCore.Qt.Key.Key_S),
+    'fix_image': QtGui.QKeySequence(QtCore.Qt.Key.Key_F),
     'settings': QtGui.QKeySequence(),
-    'cancel_fixing': QtGui.QKeySequence(QtCore.Qt.Key_Escape),
+    'cancel_fixing': QtGui.QKeySequence(QtCore.Qt.Key.Key_Escape),
 
     #MSER
     'mser_max_area': 100000,

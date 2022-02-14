@@ -1,9 +1,9 @@
 import threading
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt6 import QtCore, QtGui, QtWidgets
 import cv2, sys
 import time
-from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QApplication
+from PyQt6.QtCore import Qt
+from PyQt6.QtWidgets import QApplication
 import numpy as np
 
 from core.project.project import Project
@@ -49,10 +49,10 @@ class CropWidget(QtWidgets.QWidget):
         self.info_label.setStyleSheet(stylesheet)
         self.button_start = QtWidgets.QPushButton('Start (I)', self)
         self.button_start.clicked.connect(self.handle_start)
-        self.button_start.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_I))
+        self.button_start.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key.Key_I))
         self.button_stop = QtWidgets.QPushButton('Stop (O)', self)
         self.button_stop.clicked.connect(self.handle_stop)
-        self.button_stop.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_O))
+        self.button_stop.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key.Key_O))
         self._running = False
 
         self.info_widget.layout().addWidget(self.info_label)
@@ -65,19 +65,19 @@ class CropWidget(QtWidgets.QWidget):
         self.img_label.setAlignment(Qt.AlignCenter)
         self.layout().addWidget(self.img_label)
 
-        self.next_frame_action = QtWidgets.QAction('next_frame', self)
+        self.next_frame_action = QtGui.QAction('next_frame', self)
         self.next_frame_action.triggered.connect(self.next_frame)
-        self.next_frame_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Space))
+        self.next_frame_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key.Key_Space))
         self.addAction(self.next_frame_action)
 
-        self.change_step_action = QtWidgets.QAction('change_step', self)
+        self.change_step_action = QtGui.QAction('change_step', self)
         self.change_step_action.triggered.connect(self.change_step)
-        self.change_step_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_S))
+        self.change_step_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key.Key_S))
         self.addAction(self.change_step_action)
 
-        self.change_roi_action = QtWidgets.QAction('change_roi', self)
+        self.change_roi_action = QtGui.QAction('change_roi', self)
         self.change_roi_action.triggered.connect(self.change_roi)
-        self.change_roi_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_D))
+        self.change_roi_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key.Key_D))
         self.addAction(self.change_roi_action)
 
         self.chunk_generator = iter(self.project.chm.get_tracklets_in_interval(self.start_frame, self.end_frame))

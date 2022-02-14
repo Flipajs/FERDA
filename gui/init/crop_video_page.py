@@ -3,7 +3,7 @@ __author__ = 'flipajs'
 import math
 import sys
 
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt6 import QtCore, QtGui, QtWidgets
 
 from core.animal import colors_
 from core.project.project import Project

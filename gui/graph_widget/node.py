@@ -1,6 +1,6 @@
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt6 import QtCore, QtGui, QtWidgets
 import numpy as np
-from PyQt5.QtCore import Qt
+from PyQt6.QtCore import Qt
 
 from gui.graph_widget_loader import WIDTH, HEIGHT
 from gui.img_controls.gui_utils import cvimg2qtpixmap

@@ -17,7 +17,7 @@ import numpy as np
 from scipy.spatial.distance import cdist
 import time
 import scipy
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt6 import QtCore, QtGui, QtWidgets
 import sys
 from gui.arena.arena_editor import ArenaEditor
 import pickle as pickle

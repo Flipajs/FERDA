@@ -5,7 +5,7 @@ from functools import partial
 
 import cv2
 import numpy as np
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt6 import QtCore, QtGui, QtWidgets
 
 from gui.img_controls.my_scene import MyScene
 from gui.init.arena.arena_circle import ArenaCircle as Circle

@@ -2,7 +2,7 @@ import sys
 
 __author__ = 'filip@naiser.cz'
 
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt6 import QtCore, QtGui, QtWidgets
 from .collision_view import CollisionView
 import cv2
 import os
@@ -57,12 +57,12 @@ class CollisionEditor(QtWidgets.QMainWindow):
 
         self.setMenuBar(QtWidgets.QMenuBar())
 
-        self.draw_region_action = QtWidgets.QAction("Draw region", self.centralWidget())
-        self.settings_action = QtWidgets.QAction("Settings", self.centralWidget())
+        self.draw_region_action = QtGui.QAction("Draw region", self.centralWidget())
+        self.settings_action = QtGui.QAction("Settings", self.centralWidget())
         self.menuBar().addAction(self.draw_region_action)
         self.menuBar().addAction(self.settings_action)
 
-        self.cancel_action = QtWidgets.QAction("Cancel fixing", self.centralWidget())
+        self.cancel_action = QtGui.QAction("Cancel fixing", self.centralWidget())
         self.addAction(self.cancel_action)
 
         self.init_actions()
@@ -197,7 +197,7 @@ class CollisionEditor(QtWidgets.QMainWindow):
 
     def set_shortcuts(self):
         """Sets shortcuts for actions"""
-        self.draw_region_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_D))
+        self.draw_region_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key.Key_D))
 
     def init_actions(self):
         self.action_list.append(self.draw_region_action)

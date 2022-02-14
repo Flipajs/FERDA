@@ -1,8 +1,9 @@
-from PyQt5 import Qt, QtWidgets
+from PyQt6 import QtWidgets
+from PyQt6.QtCore import Qt
 
 __author__ = 'filip@naiser.cz'
 
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt6 import QtCore, QtGui, QtWidgets
 
 
 class MyView(QtWidgets.QGraphicsView, object):
@@ -18,7 +19,7 @@ class MyView(QtWidgets.QGraphicsView, object):
         self.start_pos = None
         self.mouse_pressed = False
         self.start_position = (0, 0)
-        self.setDragMode(QtWidgets.QGraphicsView.RubberBandDrag)
+        self.setDragMode(QtWidgets.QGraphicsView.DragMode.RubberBandDrag)
         self._isPanning = False
         self._mousePressed = False
         self._drag_pos = None

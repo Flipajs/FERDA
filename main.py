@@ -1,7 +1,7 @@
 import argparse
 import sys
 import time
-from PyQt5 import QtGui, QtWidgets
+from PyQt6 import QtGui, QtWidgets
 
 from core.project.project import Project
 from core.config import config

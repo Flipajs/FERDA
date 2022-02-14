@@ -1,5 +1,5 @@
-from PyQt5 import QtCore, QtWidgets
-from PyQt5 import QtGui, QtWidgets
+from PyQt6 import QtCore, QtWidgets
+from PyQt6 import QtGui, QtWidgets
 
 from core.graph.region_chunk import RegionChunk
 from gui.gui_utils import cvimg2qtpixmap
@@ -60,13 +60,13 @@ class TrackletViewer(QtWidgets.QWidget):
         self.single_b.clicked.connect(self.single_action)
         self.other_b.clicked.connect(self.other_action)
         self.save_b.clicked.connect(self.save_callback)
-        QtWidgets.QShortcut(QtGui.QKeySequence(QtCore.Qt.Key_N), self).activated.connect(self.next_action)
-        QtWidgets.QShortcut(QtGui.QKeySequence(QtCore.Qt.Key_P), self).activated.connect(self.prev_action)
-        # self.connect(QtGui.QShortcut(QtGui.QKeySequence(QtCore.Qt.Key_B), self), QtCore.SIGNAL('activated()'),
+        QtWidgets.QShortcut(QtGui.QKeySequence(QtCore.Qt.Key.Key_N), self).activated.connect(self.next_action)
+        QtWidgets.QShortcut(QtGui.QKeySequence(QtCore.Qt.Key.Key_P), self).activated.connect(self.prev_action)
+        # self.connect(QtGui.QShortcut(QtGui.QKeySequence(QtCore.Qt.Key.Key_B), self), QtCore.SIGNAL('activated()'),
         #              self.blob_action)
-        # self.connect(QtGui.QShortcut(QtGui.QKeySequence(QtCore.Qt.Key_S), self), QtCore.SIGNAL('activated()'),
+        # self.connect(QtGui.QShortcut(QtGui.QKeySequence(QtCore.Qt.Key.Key_S), self), QtCore.SIGNAL('activated()'),
         #              self.single_action)
-        # self.connect(QtGui.QShortcut(QtGui.QKeySequence(QtCore.Qt.Key_O), self), QtCore.SIGNAL('activated()'),
+        # self.connect(QtGui.QShortcut(QtGui.QKeySequence(QtCore.Qt.Key.Key_O), self), QtCore.SIGNAL('activated()'),
         #              self.other_action)
 
     def view_region(self):

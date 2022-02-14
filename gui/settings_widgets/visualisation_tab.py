@@ -1,6 +1,6 @@
 __author__ = 'naiser'
 
-from PyQt5 import QtGui, QtWidgets
+from PyQt6 import QtGui, QtWidgets
 
 from gui.settings import Settings as S_
 

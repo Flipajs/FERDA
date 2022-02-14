@@ -3,7 +3,7 @@ import sys
 import numpy as np
 import os
 import warnings
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt6 import QtCore, QtGui, QtWidgets
 
 from core.id_detection.learning_process import LearningProcess
 from core.project.project import Project
@@ -728,7 +728,7 @@ def draw_region(p, vm, v):
     return im
 
 def make_item(im, id_, HH, WW):
-    from PyQt5 import QtGui, QtWidgets
+    from PyQt6 import QtGui, QtWidgets
     from gui.gui_utils import SelectableQLabel
     from PIL import ImageQt
     im_ = np.zeros((max(im.shape[0], HH), max(im.shape[1], WW), 3), dtype=np.uint8)

@@ -1,6 +1,6 @@
 # source: https://gist.github.com/Cysu/7461066
 
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt6 import QtCore, QtGui, QtWidgets
 
 
 class FlowLayout(QtWidgets.QLayout):

@@ -1,8 +1,8 @@
 __author__ = 'filip@naiser.cz'
 
 from gui.img_controls.my_view import MyView
-from PyQt5.QtCore import *
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt6.QtCore import *
+from PyQt6 import QtCore, QtGui, QtWidgets
 
 
 class CollisionView(MyView):

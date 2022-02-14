@@ -1,5 +1,5 @@
 __author__ = 'filip@naiser.cz'
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt6 import QtCore, QtGui, QtWidgets
 
 class MyEllipse(QtWidgets.QGraphicsEllipseItem):
     def __init__(self, update_callback=None, radius=10.0):

@@ -4,7 +4,7 @@ import time
 
 import numpy as np
 from PIL import ImageQt
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt6 import QtCore, QtGui, QtWidgets
 
 from core.segmentation_helper import SegmentationHelper
 from core.project.project import Project

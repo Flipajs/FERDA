@@ -1,6 +1,6 @@
 __author__ = 'dita'
 
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt6 import QtCore, QtGui, QtWidgets
 import cv2
 import sys
 import math
@@ -672,9 +672,9 @@ class ArenaEditor(QtWidgets.QDialog):
         widget.layout().addWidget(self.slider)
 
         # UNDO key shortcut
-        self.action_undo = QtWidgets.QAction('undo', self)
+        self.action_undo = QtGui.QAction('undo', self)
         self.action_undo.triggered.connect(self.undo)
-        self.action_undo.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Z))
+        self.action_undo.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key.Key_Z))
         self.addAction(self.action_undo)
 
         self.undo_button = QtWidgets.QPushButton("Undo\n(key Z)")
@@ -682,9 +682,9 @@ class ArenaEditor(QtWidgets.QDialog):
         widget.layout().addWidget(self.undo_button)
 
         # DRAW button and key shortcut
-        self.action_paint_polygon = QtWidgets.QAction('paint_polygon', self)
+        self.action_paint_polygon = QtGui.QAction('paint_polygon', self)
         self.action_paint_polygon.triggered.connect(self.paint_polygon)
-        self.action_paint_polygon.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_D))
+        self.action_paint_polygon.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key.Key_D))
         self.addAction(self.action_paint_polygon)
 
         self.poly_button = QtWidgets.QPushButton("Draw polygons\n(key D)")
@@ -692,9 +692,9 @@ class ArenaEditor(QtWidgets.QDialog):
         widget.layout().addWidget(self.poly_button)
 
         # CLEAR button and key shortcut
-        self.action_clear = QtWidgets.QAction('clear', self)
+        self.action_clear = QtGui.QAction('clear', self)
         self.action_clear.triggered.connect(self.reset)
-        self.action_clear.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_C))
+        self.action_clear.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key.Key_C))
         self.addAction(self.action_clear)
 
         self.clear_button = QtWidgets.QPushButton("Clear paint area\n(key C)")

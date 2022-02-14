@@ -1,6 +1,6 @@
 import logging
-from PyQt5 import QtCore, QtWidgets
-from PyQt5 import QtGui, QtWidgets
+from PyQt6 import QtCore, QtWidgets
+from PyQt6 import QtGui, QtWidgets
 
 import sys
 

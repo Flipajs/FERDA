@@ -1,6 +1,6 @@
 import sys
 import cv2
-from PyQt5 import QtGui, QtWidgets
+from PyQt6 import QtGui, QtWidgets
 
 from core.graph.region_chunk import RegionChunk
 from core.project.project import Project

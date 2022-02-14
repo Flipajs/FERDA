@@ -1,6 +1,6 @@
 import sys
 import logging
-from PyQt5 import QtGui, QtWidgets
+from PyQt6 import QtGui, QtWidgets
 from collections import namedtuple
 from os.path import exists
 import matplotlib.pylab as plt

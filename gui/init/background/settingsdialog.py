@@ -1,17 +1,17 @@
-from PyQt5.QtGui import *
-from PyQt5.QtWidgets import *
-from PyQt5.QtCore import *
+from PyQt6.QtGui import *
+from PyQt6.QtWidgets import *
+from PyQt6.QtCore import *
 
 default_settings = {
     'blur_distance': 10,
     'square_line_width': 5,
     'copy_square_color': QColor("lime"),
     'position_square_color': QColor("yellow"),
-    'open_image': QKeySequence(Qt.Key_O),
-    'save_image': QKeySequence(Qt.Key_S),
-    'fix_image': QKeySequence(Qt.Key_F),
+    'open_image': QKeySequence(Qt.Key.Key_O),
+    'save_image': QKeySequence(Qt.Key.Key_S),
+    'fix_image': QKeySequence(Qt.Key.Key_F),
     'settings': QKeySequence(),
-    'cancel_fixing': QKeySequence(Qt.Key_Escape)
+    'cancel_fixing': QKeySequence(Qt.Key.Key_Escape)
 }
 
 

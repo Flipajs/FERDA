@@ -4,8 +4,8 @@ from utils.drawing.points import get_contour, draw_points_crop
 
 __author__ = 'fnaiser'
 
-from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtGui import QImage
+from PyQt6 import QtCore, QtGui, QtWidgets
+from PyQt6.QtGui import QImage
 from gui.settings_widgets.default import get_tooltip, get_default
 import numpy as np
 

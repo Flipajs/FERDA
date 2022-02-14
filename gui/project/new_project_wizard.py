@@ -1,4 +1,4 @@
-from PyQt5 import QtGui, QtWidgets
+from PyQt6 import QtGui, QtWidgets
 
 from core.project.project import Project
 from gui.init.create_project_wizard_page import CreateProjectPage

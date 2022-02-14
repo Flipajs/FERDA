@@ -1,5 +1,5 @@
 __author__ = 'filip@naiser.cz'
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt6 import QtCore, QtGui, QtWidgets
 
 class ArenaMark(QtWidgets.QGraphicsEllipseItem):
     def __init__(self, ellipse, update_labels=None, radius=5.0):

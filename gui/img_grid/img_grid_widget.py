@@ -1,4 +1,4 @@
-from PyQt5 import QtGui, QtWidgets
+from PyQt6 import QtGui, QtWidgets
 from gui.gui_utils import SelectableQLabel
 
 __author__ = 'fnaiser'

@@ -2,7 +2,7 @@ __author__ = 'filip@naiser.cz'
 import sys
 from random import randint
 
-from PyQt5 import QtGui, QtWidgets
+from PyQt6 import QtGui, QtWidgets
 from PIL import ImageQt
 from numpy import *
 import cv2

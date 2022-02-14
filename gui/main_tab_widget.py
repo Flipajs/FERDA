@@ -3,7 +3,7 @@ from collections import OrderedDict
 from functools import partial
 import os.path
 
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt6 import QtCore, QtGui, QtWidgets
 from gui.tracking_widget import TrackingWidget
 from gui.results.results_widget import ResultsWidget
 from gui.statistics.statistics_widget import StatisticsWidget
@@ -126,19 +126,19 @@ class MainTabWidget(QtWidgets.QWidget):
         self.tabs.currentChanged.connect(self.tab_changed)
         self.widgets['main'].project_ready.connect(self.update_project)
 
-        self.switch_to_tracking_window_action = QtWidgets.QAction('switch tab to tracking', self)
+        self.switch_to_tracking_window_action = QtGui.QAction('switch tab to tracking', self)
         self.switch_to_tracking_window_action.triggered.connect(partial(self.tabs.setCurrentIndex, 0))
-        self.switch_to_tracking_window_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_T))
+        self.switch_to_tracking_window_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key.Key_T))
         self.addAction(self.switch_to_tracking_window_action)
 
-        self.reload_id_data = QtWidgets.QAction('reload', self)
+        self.reload_id_data = QtGui.QAction('reload', self)
         self.reload_id_data.triggered.connect(self.reload_ids)
-        self.reload_id_data.setShortcut(QtGui.QKeySequence(QtCore.Qt.ShiftModifier + QtCore.Qt.Key_R))
+        self.reload_id_data.setShortcut(QtGui.QKeySequence("SHIFT+R"))
         self.addAction(self.reload_id_data)
 
-        self.update_undecided_a = QtWidgets.QAction('update undecided', self)
+        self.update_undecided_a = QtGui.QAction('update undecided', self)
         self.update_undecided_a.triggered.connect(self.learning_widget_update_undecided)
-        self.update_undecided_a.setShortcut(QtGui.QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.Key_U))
+        self.update_undecided_a.setShortcut(QtGui.QKeySequence("CTRL+U"))
         self.addAction(self.update_undecided_a)
 
     def update_project(self, project):

@@ -4,7 +4,7 @@ from gui.results.noise_filter_computer import NoiseFilterComputer
 from gui.gui_utils import get_img_qlabel
 from utils.video_manager import get_auto_video_manager
 import sys
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt6 import QtCore, QtGui, QtWidgets
 import numpy as np
 import pickle
 from functools import partial

@@ -1,6 +1,6 @@
 import numpy as np
 import cv2
-from PyQt5 import QtGui, QtWidgets
+from PyQt6 import QtGui, QtWidgets
 from gui.img_controls.gui_utils import cvimg2qtpixmap
 
 default_params = {'P_width': 20,

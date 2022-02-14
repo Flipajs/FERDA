@@ -1,9 +1,9 @@
 __author__ = 'filip@naiser.cz'
 
-from PyQt5.QtGui import *
-from PyQt5.QtWidgets import *
+from PyQt6.QtGui import *
+from PyQt6.QtWidgets import *
 import math
-from PyQt5 import QtCore
+from PyQt6 import QtCore
 
 # class QGraphicsItemEmitter(QtCore.QObject):
 #     clicked = QtCore.pyQtSignal(int)

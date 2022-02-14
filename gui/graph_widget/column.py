@@ -1,5 +1,5 @@
 import copy
-from PyQt5 import QtGui, QtWidgets
+from PyQt6 import QtGui, QtWidgets
 
 import numpy as np
 
