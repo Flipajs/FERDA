@@ -1,0 +1,29 @@
+fire
+h5py
+imageio
+# tensorflow
+matplotlib
+numpy
+opencv-python  # opencv 3.4.1 has issue "OpenCV Error: Assertion failed (chunk.m_size <= 0xFFFF)" https://github.com/opencv/opencv/issues/11126
+pandas  
+pillow
+pyqt6
+pyyaml
+scikit-image
+scikit-learn
+tqdm
+cachetools
+imutils
+intervals
+intervaltree
+joblib
+jsonpickle
+moviepy
+pulp
+pympler
+qimage2ndarray
+#  # results analysis in jupyter lab
+#  jupyterlab
+#  plotly
+#  cufflinks
+git+https://github.com/smidm/motutils

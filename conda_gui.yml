@@ -1,57 +1,22 @@
 # Conda environment file with direct project dependencies without secondary dependencies.
 # Won't probably work out of the box. First try the *_exported.yml version.
 #
-# create a new environment: conda env create -f conda_gui.yml
+# create a new environment:
+#   conda env create -f conda_gui.yml
+#
+#   or when specific python version is required:
+#
+#   conda create -n ferda_gui python=3.9  # need to be separated to multiple steps,
+#                                         # see https://github.com/conda/conda/issues/4756
+#   conda activate ferda_gui
+#   conda env update -f conda_gui.yml
+#
 name: ferda_gui
 channels: 
     - conda-forge
-    - ostrokach-forge  # graph-tool on linux
 dependencies:
-#   - clinicalgraphics::matplotlib  # clinicalgraphics provides matplotlib with pyqt4 dependency
-  - ffmpeg
-  # - ffmpeg=3.4.2=hf82bc7d_2  # this includes x264 codec
-  - fire
+#  - ffmpeg
   - graph-tool
-  - h5py
-  - imageio
-#  - keras
-  - matplotlib  # most of the matplotlib packages have pyqt5 dependency, this is causing problems
-  - mock
-  - numpy
-  - opencv=3.3  # opencv 3.4.1 has issue "OpenCV Error: Assertion failed (chunk.m_size <= 0xFFFF)" https://github.com/opencv/opencv/issues/11126
-  - pandas  
-  - pillow
   - pip
-  - pyqt=4
-  - python=3.6
-  - pyyaml
-  - scikit-image
-  - scikit-learn
-  - tqdm
   - pip:
-    # - https://storage.googleapis.com/tensorflow/linux/cpu/tensorflow-1.5.0-cp27-none-linux_x86_64.whl
-    - bottleneck
-    - cachetools
-    - imageio
-    - imutils
-    - intervals
-    - intervaltree
-    - joblib
-    - jsonpickle
-    - keras=2.2.5
-    - lazyme
-#    - matplotlib  # this was once a solution to the pyqt4 conflict
-    - motmetrics
-    - moviepy
-    - pulp
-    - pympler
-    - pyqtgraph
-#    - tensorflow-gpu
-    - qimage2ndarray
-    - xarray
-#  # results analysis in jupyter lab
-#    - jupyterlab
-#    - plotly
-#    - cufflinks
-
-
+    - -r requirements.txt
