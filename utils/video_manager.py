@@ -61,7 +61,8 @@ class VideoManager:
         self.position = -1
         self.crop_model = crop_model
 
-        self.init_video()
+        if self.start_t > 0:
+            self.capture.set(cv_compatibility.cv_CAP_PROP_POS_FRAMES, self.start_t)
 
     def inc_pos_(self, pos, volume=1):
         if pos + volume > self.buffer_length_ - 1:
@@ -117,10 +118,6 @@ class VideoManager:
         else:
             self.view_position_ = view_dec
             return self.buffer_[self.view_position_]
-
-    def init_video(self):
-        if self.start_t > 0:
-            self.capture.set(cv_compatibility.cv_CAP_PROP_POS_FRAMES, self.start_t)
 
     def seek_frame(self, frame_number):
         assert 0 <= frame_number < self.total_frame_count()

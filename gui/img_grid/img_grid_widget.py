@@ -24,7 +24,7 @@ class ImgGridWidget(QtWidgets.QWidget):
 
         self.setLayout(QtWidgets.QVBoxLayout())
         self.layout().setSpacing(0)
-        self.layout().setMargin(0)
+        self.layout().setContentsMargins(0, 0, 0, 0)
 
         self.layout().addWidget(self.grid_widget)
         if self.scrolling:
@@ -70,7 +70,7 @@ class ImgGridWidget(QtWidgets.QWidget):
         if append:
             self.items.append(item)
 
-        row = self.id / self.cols
+        row = self.id // self.cols
         col = self.id % self.cols
 
         self.grid.addWidget(self._widget(self.items[self.id]), row, col)

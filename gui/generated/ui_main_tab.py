@@ -74,5 +74,5 @@ if __name__ == "__main__":
     ui = Ui_MainWidget()
     ui.setupUi(MainWidget)
     MainWidget.show()
-    sys.exit(app.exec_())
+    sys.exit(app.exec())
 

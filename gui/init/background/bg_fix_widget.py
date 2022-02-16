@@ -170,7 +170,7 @@ class BgFixWidget(QtWidgets.QWidget):
 
     def show_settings(self):
         dialog = settingsdialog.SettingsDialog(self, actionlist=self.action_list)
-        dialog.exec_()
+        dialog.exec()
 
     def drag_ended(self, point_one, point_two):
         if self.copy_marker is None:

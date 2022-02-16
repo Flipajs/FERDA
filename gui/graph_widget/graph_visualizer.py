@@ -135,7 +135,7 @@ class GraphVisualizer(QtWidgets.QWidget):
         self.menu_edge.addAction(self.show_detail_menu_action)
         self.menu_edge.addAction(self.view_results_menu_action)
         self.view.setContextMenuPolicy(QtCore.Qt.ContextMenuPolicy.CustomContextMenu)
-        self.view.customContextMenuRequested[QPoint].connect(self.menu)
+        self.view.customContextMenuRequested[QtCore.QPoint].connect(self.menu)
 
         if len(self.loader.edges) + len(self.loader.regions) > 0:
             self.add_objects(self.loader.regions, self.loader.edges)
@@ -165,9 +165,9 @@ class GraphVisualizer(QtWidgets.QWidget):
         it = self.scene.itemAt(self.view.mapToScene(point))
         self.selected_in_menu = it
         if isinstance(it, Node):
-            self.menu_node.exec_(self.view.mapToGlobal(point))
+            self.menu_node.exec(self.view.mapToGlobal(point))
         elif isinstance(it, EdgeGraphical):
-            self.menu_edge.exec_(self.view.mapToGlobal(point))
+            self.menu_edge.exec(self.view.mapToGlobal(point))
 
     def show_chunk_pictures_label(self):
         chunk = self.selected_in_menu.core_obj

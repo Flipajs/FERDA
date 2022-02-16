@@ -105,6 +105,6 @@ if __name__ == '__main__':
     ex = EditTrackletAdvanced(tracklet, 6, confirmed)
     ex.showMaximized()
 
-    app.exec_()
+    app.exec()
     app.deleteLater()
     sys.exit()

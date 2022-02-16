@@ -97,7 +97,7 @@ class SettingsDialog(QDialog):
 
     def bind_new_key(self, item):
         dialog = KeyBindingDialog(self)
-        dialog.exec_()
+        dialog.exec()
         if dialog.Accepted:
             item.setText(dialog.shortcut.toString())
 

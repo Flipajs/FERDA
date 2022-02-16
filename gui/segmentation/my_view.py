@@ -14,7 +14,7 @@ class MyView(QtWidgets.QGraphicsView):
         self.scene = None
 
         self.matrix = QtGui.QTransform()
-        self.setMatrix(self.matrix)
+        self.setTransform(self.matrix)
 
     def mouseMoveEvent(self, e):
         super(MyView, self).mouseMoveEvent(e)

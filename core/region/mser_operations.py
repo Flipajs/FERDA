@@ -138,7 +138,7 @@ def is_child_of(child, parent, tolerance=0, tolerance_percents=0.1):
     ch_r = child.roi()
     p_r = parent.roi()
     if p_r.is_inside(ch_r.top_left_corner()) and p_r.is_inside(ch_r.bottom_right_corner(), tolerance=tolerance):
-        img = np.zeros((p_r.height(), p_r.width()), dtype=np.bool)
+        img = np.zeros((p_r.height(), p_r.width()), dtype=bool)
         offset = np.array([p_r.y(), p_r.x()])
         p_pts = parent.pts() - offset
         img[p_pts[:,0], p_pts[:,1]] = True

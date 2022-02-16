@@ -330,6 +330,6 @@ if __name__ == "__main__":
     ex = ImgSequenceWidget(vid, give_me_data)
     ex.visualize_new_data(10, 1, id_manager)
 
-    app.exec_()
+    app.exec()
     app.deleteLater()
     sys.exit()

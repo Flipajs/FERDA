@@ -30,7 +30,7 @@ from shapes.transformableregion import TransformableRegion
 from core.graph.region_chunk import RegionChunk
 from utils.img import safe_crop
 from utils.objectsarray import ObjectsArray
-from utils.gt.io import load_mot, results_to_mot, eval_mot, mot_in_roi
+from motutils.io import load_mot, results_to_mot, eval_mot, mot_in_roi
 from utils.shapes import Ellipse
 from utils.roi import ROI
 from utils.misc import makedirs
@@ -60,8 +60,8 @@ class InteractionDetector:
 #             'relu6': mobilenet.relu6,
             'relu6': ReLU(6.),
         }
-        self.config = yaml.load(open(join(model_dir, 'config.yaml')))
-        self.parameters = yaml.load(open(join(model_dir, 'parameters.yaml')))
+        self.config = yaml.safe_load(open(join(model_dir, 'config.yaml')))
+        self.parameters = yaml.safe_load(open(join(model_dir, 'parameters.yaml')))
         self.enable_template_tracking = False
         self.ti = TrainInteractions()  # TODO: remove dependency
         self.ti.parameters = self.parameters
@@ -848,7 +848,7 @@ def track_video(tracker_dir, project_dir, out_dir, forward=True):
         results[:, :, 0] += detector.project.video_crop_model['y1']
         results[:, :, 1] += detector.project.video_crop_model['x1']
 
-    from utils.gt.io import results_to_mot
+    from motutils.io import results_to_mot
     df = results_to_mot(results)
     df.to_csv(join(out_dir, 'results.txt'), header=False, index=False)
 

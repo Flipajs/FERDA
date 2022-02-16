@@ -539,7 +539,7 @@ def train(datadir, epochs=10, batch_size=128, continue_training=False):
         tr_y = hf['data'][:]
     with h5py.File(datadir + '/descriptor_cnn_labels_test.h5', 'r') as hf:
         te_y = hf['data'][:]
-    parameters = yaml.load(open(join(datadir, 'descriptor_cnn_params.yaml'), 'r'))
+    parameters = yaml.safe_load(open(join(datadir, 'descriptor_cnn_params.yaml'), 'r'))
     # # normalize..
     tr_pairs = tr_pairs.astype('float32')
     tr_pairs /= 255

@@ -104,7 +104,7 @@ def init():
             id = id + 1
 
     dial.showMaximized()
-    app.exec_()
+    app.exec()
     sys.exit()
 
 
@@ -209,5 +209,5 @@ if __name__ == '__main__':
             print(f, detected)
 
         dial.showMaximized()
-        app.exec_()
+        app.exec()
         sys.exit()

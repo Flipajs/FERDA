@@ -153,7 +153,7 @@ class Region(object):
         # do pts allocation if possible
         # for some reason, in rare circumstances area from MSER is wrong
         try:
-            pts = np.zeros((self.area(), 2), dtype=np.int)
+            pts = np.zeros((self.area(), 2), dtype=int)
 
             for row in data:
                 d = row['col2'] + 1 - row['col1']

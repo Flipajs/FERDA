@@ -6,6 +6,7 @@ import gui.gui_utils
 from gui.settings import Settings as S_
 from gui.generated.ui_create_project_page import Ui_createProjectPage
 from utils.video_manager import get_auto_video_manager
+from core.config import config
 
 
 class CreateProjectPage(QtWidgets.QWizardPage):
@@ -79,16 +80,14 @@ class CreateProjectPage(QtWidgets.QWizardPage):
 
     def validatePage(self):
         project = self.wizard().project
-        project.working_directory = str(self.field('project_folder').toString())
-        project.video_path = str(self.field('video_file').toString())
-        project.name = str(self.field('project_name').toString())
+        project.working_directory = self.field('project_folder')
+        project.video_path = self.field('video_file')
+        project.name = self.field('project_name')
         if not len(project.name):
             project.name = 'untitled'
-        project.description = str(self.field('project_description').toString())
+        project.description = self.field('project_description')
         project.date_created = time.time()
         project.date_last_modification = time.time()
-        # from utils.img_manager import ImgManager
-        # self.project.img_manager = ImgManager(self.project, max_size_mb=config['cache']['img_manager_size_MB'])
 
         if not self.check_project_folder():
             return False

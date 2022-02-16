@@ -264,5 +264,5 @@ if __name__ == '__main__':
     g.redraw()
     g.show()
 
-    app.exec_()
+    app.exec()
     cv2.waitKey(0)

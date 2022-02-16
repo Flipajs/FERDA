@@ -71,7 +71,7 @@ class AntBlobGtManager(object):
         tracklets = self.tracklet_types.get_unlabeled(self.project.chm.chunk_list())
         viewer = TrackletViewer(self.project, tracklets, self.set_label, self.save_and_exit)
         viewer.show()
-        app.exec_()
+        app.exec()
 
     def label_blobs(self):
         # then segment these tracklets
@@ -81,7 +81,7 @@ class AntBlobGtManager(object):
         widget = BlobWidget(self.project, filtered, self.examples_from_tracklet,
                             self.set_blobs, self.save_and_exit, self.ant_blobs.contains)
         widget.show()
-        app.exec_()
+        app.exec()
 
     def set_blobs(self, region_id, frame, tracklet_id, ants):
         logging.info("Saving region id {0} on frame {1} from tracklet {2}".format(region_id, frame, tracklet_id))

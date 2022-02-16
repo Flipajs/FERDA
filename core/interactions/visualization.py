@@ -170,7 +170,7 @@ def visualize_results(experiment_dir, data_dir, image_store='images.h5:test', n_
             os.path.exists(join(experiment_dir, 'config.yaml')):
         pred = pd.read_csv(join(experiment_dir, 'predictions.csv'))
         with open(join(experiment_dir, 'config.yaml'), 'r') as fr:
-            metadata = yaml.load(fr)
+            metadata = yaml.safe_load(fr)
         if n_objects is None:
             n_objects = metadata['num_objects']
         ti = train_interactions.TrainInteractions()

@@ -136,6 +136,6 @@ if __name__ == '__main__':
         # cv2.waitKey(0)
         plt.waitforbuttonpress(0.5)
 
-    app.exec_()
+    app.exec()
     app.deleteLater()
     sys.exit()

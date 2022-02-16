@@ -248,6 +248,6 @@ if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)
     widget = CropWidget(project, ft)
     widget.showMaximized()
-    app.exec_()
+    app.exec()
     cv2.waitKey(0)
 

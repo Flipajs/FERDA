@@ -85,12 +85,7 @@ class MSERTree(QtWidgets.QWidget):
                 print("match found, id: %s [%d, %d]" % (r.id_, pos_x, pos_y))
                 focus = QtCore.QPointF(pos_x, pos_y)
                 qt_points.append(it)
-
-
-
             tmp += 1
-
-
 
         qt_points[0], qt_points[3] = qt_points[3], qt_points[0]
         # TODO: z gui/view/graph_visualizer.py kolem line 60... vykresleni oblasti
@@ -198,6 +193,6 @@ if __name__ == "__main__":
     ex.showMaximized()
     ex.setFocus()
 
-    app.exec_()
+    app.exec()
     app.deleteLater()
     sys.exit()

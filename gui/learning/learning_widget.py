@@ -758,6 +758,6 @@ if __name__ == '__main__':
     ex = LearningWidget(project=p)
     ex.show()
 
-    app.exec_()
+    app.exec()
     app.deleteLater()
     sys.exit()

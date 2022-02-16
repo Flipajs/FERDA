@@ -105,6 +105,6 @@ if __name__ == '__main__':
 
     w.showMaximized()
 
-    app.exec_()
+    app.exec()
     app.deleteLater()
     sys.exit()

@@ -10,14 +10,13 @@ class BaseMarker(QtWidgets.QGraphicsEllipseItem, object):
     """
 
     def __init__(self, x, y, size, color, antId, changeHandler=None):
-        super(BaseMarker, self).__init__(x, y, size)
-        if size is not None: size.addItem(self)
+        super(BaseMarker, self).__init__(x, y, size, size)
         self.setFlag(QtWidgets.QGraphicsItem.GraphicsItemFlag.ItemIsMovable, True)
         self.setFlag(QtWidgets.QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, True)
         brush = QtGui.QBrush(QtCore.Qt.BrushStyle.SolidPattern)
         brush.setColor(color)
         self.setBrush(brush)
-        self.setFlag(self.ItemSendsGeometryChanges, True)
+        self.setFlag(self.GraphicsItemFlag.ItemSendsGeometryChanges, True)
 
         # antId is deprecated
         self.antId = antId

@@ -9,7 +9,7 @@ from pathlib import Path
 
 class Parameters(dict):
     def load(self, filename):
-        self.update(yaml.load(open(filename)))
+        self.update(yaml.safe_load(open(filename)))
 
     def save(self, filename):
         yaml.dump(dict(self), open(filename, 'w'))
@@ -119,7 +119,7 @@ class Experiment(object):
                 if ext == '.csv':
                     experiment.files[filename] = pd.read_csv(join(experiment.dir, filename))
                 elif ext == '.yaml':
-                    experiment.files[filename] = yaml.load(open(join(experiment.dir, filename)))
+                    experiment.files[filename] = yaml.safe_load(open(join(experiment.dir, filename)))
                 else:
                     experiment.files[filename] = open(join(experiment.dir, filename)).read()
             except IOError:

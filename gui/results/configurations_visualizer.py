@@ -153,7 +153,7 @@ class ConfigurationsVisualizer(QtWidgets.QWidget):
         self.d_.setFixedWidth(500)
         self.d_.setFixedHeight(500)
         self.d_.show()
-        self.d_.exec_()
+        self.d_.exec()
 
     def new_region_finished(self, confirmed, data):
         self.d_.close()

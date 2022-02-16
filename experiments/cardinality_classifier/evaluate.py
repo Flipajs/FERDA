@@ -1,5 +1,5 @@
 from core.project.project import Project
-from utils.gt.mot import Mot
+from motutils import Mot
 import tqdm
 
 

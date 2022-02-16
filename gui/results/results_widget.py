@@ -840,8 +840,7 @@ class ResultsWidget(QtWidgets.QWidget):
         else:
             rgba[pts_[:, 1], pts_[:, 0], :] = c[2], c[1], c[0], c[3]
 
-        item = ClickableQGraphicsPixmapItem(cvimg2qtpixmap(rgba), tracklet.id())
-        self._highlight_tracklet.addItem(item)
+        item = ClickableQGraphicsPixmapItem(cvimg2qtpixmap(rgba), tracklet.id(), self._highlight_tracklet)
         item.setPos(offset[1], offset[0])
         item.setZValue(0.6)
 

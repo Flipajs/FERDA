@@ -46,7 +46,7 @@ from core.interactions.visualization import save_prediction_img, save_img_with_o
 from core.interactions.io import read_gt
 from utils.img import safe_crop
 from utils.dataset_io import ImageIOFile, ImageIOHdf5, DataIOCSV, DataIOVot, DataIOCoco, Dataset
-from utils.gt.mot import Mot
+from motutils import Mot
 from utils.gt.mot_project import MotProjectMixin
 from utils.misc import makedirs
 

@@ -489,4 +489,4 @@ if __name__ == "__main__":
     gt = BlobWidget(project, chunks_with_clusters)
     gt.show()
 
-    app.exec_()
+    app.exec()

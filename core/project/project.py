@@ -16,6 +16,7 @@ from core.project.mser_parameters import MSERParameters
 from core.project.other_parameters import OtherParameters
 from core.project.solver_parameters import SolverParameters
 from core.classes_stats import ClassesStats
+from core.config import config
 from utils.misc import makedirs
 import jsonpickle
 import utils.load_jsonpickle  # do not remove, this sets up jsonpickle
@@ -47,7 +48,7 @@ class Project(object):
         self.next_processing_stage = 'segmentation'  # initialization, segmentation, assembly, cardinality_classification,
         # re_identification,
 
-        self.video_crop_model = None
+        self._video_crop_model = None
         # {'x1': ..., 'x2':..., 'y1':..., 'y2':...}
         # cropped image: img[cm['y1']:cm['y2'], cm['x1']:cm['x2']]
         self.stats = ClassesStats()  # TODO: review if needed
@@ -75,6 +76,27 @@ class Project(object):
 
         if project_directory is not None:
             self.load(project_directory, video_file)
+
+    @property
+    def video_crop_model(self):
+        return self._video_crop_model
+
+    @video_crop_model.setter
+    def video_crop_model(self, video_crop_model):
+        assert video_crop_model is None or \
+               ('x1' in video_crop_model and
+                'y1' in video_crop_model and
+                'x2' in video_crop_model and
+                'y2' in video_crop_model)
+        self._video_crop_model = video_crop_model
+        self.img_manager = ImgManager(self, max_size_mb=config['cache']['img_manager_size_MB'])
+
+    def set_video_trim(self, video_start_t, video_end_t):
+        assert video_start_t >= 0
+        assert video_end_t is None or video_end_t > video_start_t
+        self.video_start_t = video_start_t
+        self.video_end_t = video_end_t
+        self.img_manager = ImgManager(self, max_size_mb=config['cache']['img_manager_size_MB'])
 
     def reset_managers(self):
         self.rm = RegionManager()

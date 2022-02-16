@@ -11,7 +11,7 @@ from core.project.project import Project
 from gui.gui_utils import SelectableQLabel
 from gui.img_grid.img_grid_widget import ImgGridWidget
 from gui.segmentation.painter import Painter
-from gui.segmentation.painter import array2qimage
+from gui.img_controls.gui_utils import cvimg2qimage, cvimg2qtpixmap
 from utils.drawing.points import draw_points_crop, get_contour, draw_points_binary
 from utils.img import prepare_for_segmentation
 from utils.video_manager import get_auto_video_manager
@@ -214,7 +214,7 @@ class SetupMSERsWizardPage(QtWidgets.QWizardPage):
 
         import math
         from gui.img_controls import markers
-        radius = math.ceil((self.project.mser_parameters.max_area/np.pi)**0.5)
+        radius = int(math.ceil((self.project.mser_parameters.max_area/np.pi)**0.5))
 
         c = QtGui.QColor(167, 255, 36)
         it = markers.CenterMarker(0, 0, 2*radius, c, 0, None)
@@ -270,7 +270,7 @@ class SetupMSERsWizardPage(QtWidgets.QWizardPage):
 
         # convert `mser_vis` to 4 channel image and show it as overlay
         im = np.asarray(mser_vis[..., None]*self.color_mser, dtype=np.uint8)
-        qim = array2qimage(im)
+        qim = cvimg2qimage(im)
         self.painter.set_overlay2(qim)
         self.painter.set_overlay2_visible(self.check_mser.isChecked())
 
@@ -311,7 +311,7 @@ class SetupMSERsWizardPage(QtWidgets.QWizardPage):
             # show result as overlay
             if self.segmentation is not None:
                 im = np.asarray(self.segmentation[..., None]*self.color_prob, dtype=np.uint8)
-                qim = array2qimage(im)
+                qim = cvimg2qimage(im)
                 self.painter.set_overlay(qim)
             else:  # or hide it if input data was insufficient to create a result
                 self.painter.set_overlay(None)
@@ -365,8 +365,9 @@ class SetupMSERsWizardPage(QtWidgets.QWizardPage):
             cv2.putText(crop, str(r.min_intensity_)+' '+str(r.area())+' '+str(r.label_), (10, 10), cv2.FONT_HERSHEY_SCRIPT_SIMPLEX, 0.25, (255, 255, 255))
 
             # create qimage from crop_
-            img_q = ImageQt.QImage(crop.data, crop.shape[1], crop.shape[0], crop.shape[1] * 3, 13)
-            pix_map = QtGui.QPixmap.fromImage(img_q.rgbSwapped())
+            # img_q = ImageQt.QImage(crop.data, crop.shape[1], crop.shape[0], crop.shape[1] * 3, 13)
+            # pix_map = QtGui.QPixmap.fromImage(img_q.rgbSwapped())
+            pix_map = cvimg2qtpixmap(crop)
 
             # add crop_ to img grid
             item = SelectableQLabel(id=r_id)
@@ -797,6 +798,6 @@ if __name__ == "__main__":
     # im = cv2.imread('/Users/flipajs/Downloads/trhliny/1/DSC_0297.JPG')
     # ex.set_image(im)
 
-    app.exec_()
+    app.exec()
     app.deleteLater()
     sys.exit()

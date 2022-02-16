@@ -12,7 +12,7 @@ import numpy as np
 from core.id_detection.complete_set_matching import get_probability_that_prototypes_are_same_tracks
 import itertools
 import tqdm
-import utils.gt.mot as gt
+import motutils as gt
 import joblib
 
 

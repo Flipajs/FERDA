@@ -361,7 +361,7 @@ def get_color_samples_tool(vid, frames=None, wd_=''):
         ex.set_paint_mode()
         ex.slider.setValue(7)
 
-        app.exec_()
+        app.exec()
         mask = ex.merge_images()
         mask = QImageToCvMat(mask)
 

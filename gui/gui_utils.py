@@ -63,7 +63,7 @@ def set_input_field_bg_valid(input_widget, valid=True):
 
 
 def file_name_dialog(window, text='Select files', path='', filter_=''):
-    return str(QtWidgets.QFileDialog.getOpenFileName(window, text, path, filter=filter_))[0]
+    return QtWidgets.QFileDialog.getOpenFileName(window, text, path, filter=filter_)[0]
 
 
 def file_names_dialog(window, text='Select files', path='', filter_=''):

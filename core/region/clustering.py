@@ -32,7 +32,7 @@ class RegionSample(object):
     def __init__(self, region, frame_image=None):
         self.region = region
         self.label = None
-        self.confidence = None
+        self.confidence = -1
         self.widget = None
 
         self.features = self.compute_features(self.region)
@@ -84,14 +84,15 @@ class RegionCardinality:
         samples = get_random_segmented_regions(n_gather, project, progress_update_fun, get_diverse_samples=True)
         X = np.array([s.features for s in samples])
         self.scaler.fit(X)
-        X_norm = self.scaler.transform(X)
+        X_normalized = self.scaler.transform(X)
 
-        from sklearn.cluster.k_means_ import _k_init
-        X_norm_active = X_norm[:, self.active_features_mask]
-        X_selected = _k_init(X_norm_active, n_final,
-                             x_squared_norms=(X_norm_active ** 2).sum(axis=1),
-                             random_state=np.random.RandomState())
-        indices = [np.argmin(((X_norm_active - x) ** 2).sum(axis=1)) for x in X_selected]
+        from sklearn.cluster import kmeans_plusplus
+        X_normalized_active = X_normalized[:, self.active_features_mask]
+        X_selected, indices = kmeans_plusplus(
+            X_normalized_active,
+            n_final,
+            x_squared_norms=(X_normalized_active ** 2).sum(axis=1),
+            random_state=np.random.RandomState())
         self.scaler.fit(X[indices])
         return [samples[i] for i in indices]
 
@@ -115,8 +116,9 @@ class RegionCardinality:
         X_active = X[:, self.active_features_mask]
         y = self.classifier.predict(X_active)
         p = self.classifier.predict_proba(X_active)
-        for sample, label_id, class_probs in zip(samples, y, p):
-            sample.label = self.label_encoder.inverse_transform(label_id)
+        y_labels = self.label_encoder.inverse_transform(y)
+        for sample, label, label_id, class_probs in zip(samples, y_labels, y, p):
+            sample.label = label
             assert class_probs[label_id] == max(class_probs)
             sample.confidence = class_probs[label_id]
         return samples

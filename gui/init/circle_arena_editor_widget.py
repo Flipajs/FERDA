@@ -28,6 +28,7 @@ except NameError:
     # Python 3
     QString = str
 
+
 class CircleArenaEditorWidget(QtWidgets.QWizardPage):
     def __init__(self):
         super(CircleArenaEditorWidget, self).__init__()
@@ -82,7 +83,7 @@ class CircleArenaEditorWidget(QtWidgets.QWizardPage):
 
     def use_advanced_editor(self):
         self.advanced_editor = ArenaEditor(self.first_frame, self.project, finish_callback=self.advanced_editor_done)
-        self.advanced_editor.exec_()
+        self.advanced_editor.exec()
 
     def advanced_editor_done(self, arena_mask, occultation_mask):
         self.advanced_editor.hide()
@@ -159,8 +160,8 @@ class CircleArenaEditorWidget(QtWidgets.QWizardPage):
 
     def give_me_best_circle(self):
         gray = cv2.cvtColor(self.first_frame, cv2.COLOR_BGR2GRAY)
-        min_radius = min(self.first_frame.shape[0], self.first_frame.shape[1]) / 10
-        max_radius = min(self.first_frame.shape[0], self.first_frame.shape[1]) / 2
+        min_radius = int(round(min(self.first_frame.shape[0], self.first_frame.shape[1]) / 10))
+        max_radius = int(round(min(self.first_frame.shape[0], self.first_frame.shape[1]) / 2))
 
         canny_ = 100
         # 75% of min_radius points must vote
@@ -170,8 +171,16 @@ class CircleArenaEditorWidget(QtWidgets.QWizardPage):
             method = cv2.HOUGH_GRADIENT  # 3.x
         else:
             method = cv2.cv.CV_HOUGH_GRADIENT  # 2.x
-        circles = cv2.HoughCircles(gray, method, 2, 20,
-            param1=canny_,param2=param2_,minRadius=min_radius,maxRadius=max_radius)
+        circles = cv2.HoughCircles(
+            gray,
+            method,
+            2,
+            20,
+            param1=canny_,
+            param2=param2_,
+            minRadius=min_radius,
+            maxRadius=max_radius
+        )
 
         if circles is not None and len(circles) > 0:
             # as the circles are ordered by number of votes, choose the first one
@@ -195,19 +204,20 @@ class CircleArenaEditorWidget(QtWidgets.QWizardPage):
 
             im = self.video.next_frame()
 
-            video_crop_model = {
+            self.project.video_crop_model = {
                 'y1': int(max(0, floor(c[0] - r))),
                 'x1': int(max(0, floor(c[1] - r))),
                 'y2': int(min(im.shape[0], ceil(c[0] + r))),
                 'x2': int(min(im.shape[1], ceil(c[1] + r))),
             }
 
-            self.project.video_crop_model = video_crop_model
-
-            c = np.array([c[0] - video_crop_model['y1'], c[1] - video_crop_model['x1']])
-            self.project.arena_model = Circle(video_crop_model['y2'] - video_crop_model['y1'],
-                                              video_crop_model['x2'] - video_crop_model['x1'])
-            self.project.arena_model.set_circle(c, r)
+            c = np.array(
+                [c[0] - self.project.video_crop_model['y1'],
+                 c[1] - self.project.video_crop_model['x1']])
+            circular_arena = Circle(self.project.video_crop_model['y2'] - self.project.video_crop_model['y1'],
+                                    self.project.video_crop_model['x2'] - self.project.video_crop_model['x1'])
+            circular_arena.set_circle(c, r)
+            self.project.arena_model = circular_arena
 
     def finish(self):
         #TODO save values...

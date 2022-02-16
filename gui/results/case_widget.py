@@ -507,7 +507,7 @@ class CaseWidget(QtWidgets.QWidget):
 
         if isinstance(it, QtWidgets.QGraphicsPixmapItem):
             self.active_node = self.it_nodes[it]
-            self.pop_menu_node.exec_(self.v.mapToGlobal(point))
+            self.pop_menu_node.exec(self.v.mapToGlobal(point))
         else:
             self.active_node = None
 

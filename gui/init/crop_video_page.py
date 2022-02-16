@@ -53,17 +53,20 @@ class VideoSlider(QtWidgets.QSlider):
         self.usercontrolled = True
         opt = QtWidgets.QStyleOptionSlider()
         self.initStyleOption(opt)
-        sr = self.style().subControlRect(QtWidgets.QStyle.ComplexControl.CC_Slider, opt, QtWidgets.QStyle.SC_SliderHandle, self)
-
+        sr = self.style().subControlRect(
+            QtWidgets.QStyle.ComplexControl.CC_Slider,
+            opt,
+            QtWidgets.QStyle.SubControl.SC_SliderHandle,
+            self)
         if QMouseEvent.button() == QtCore.Qt.MouseButton.LeftButton and not sr.contains(QMouseEvent.pos()):
             if self.orientation() == QtCore.Qt.Orientation.Vertical:
-                newVal = self.minimum() + ((self.maximum() - self.minimum()) * (self.height()-QMouseEvent.y()))/self.height()
+                newVal = self.minimum() + ((self.maximum() - self.minimum()) * (self.height()-QMouseEvent.pos().y()))/self.height()
             else:
-                newVal = self.minimum() + (self.maximum() - self.minimum()) * QMouseEvent.x() / self.width()
+                newVal = self.minimum() + (self.maximum() - self.minimum()) * QMouseEvent.pos().x() / self.width()
             if self.invertedAppearance():
-                self.setValue(self.maximum() - newVal)
+                self.setValue(int(self.maximum() - newVal))
             else:
-                self.setValue(newVal)
+                self.setValue(int(newVal))
 
     def mouseReleaseEvent(self, QMouseEvent):
         self.usercontrolled = False
@@ -99,7 +102,7 @@ class CropVideoPage(QtWidgets.QWizardPage):
         self.start_frame = 0
         self.end_frame = 1
         self.timer = QtCore.QTimer(self)
-        self.timer.setInterval(1000 / self.frame_rate)
+        self.timer.setInterval(1000 // self.frame_rate)
         self.scene = QtWidgets.QGraphicsScene()
         self.pixMap = None
         self.pixMapItem = None
@@ -236,8 +239,7 @@ class CropVideoPage(QtWidgets.QWizardPage):
 
     def validatePage(self):
         # super(CropVideoPage, self).validatePage()
-        self.wizard().project.video_start_t = self.start_frame
-        self.wizard().project.video_end_t = self.end_frame
+        self.wizard().project.set_video_trim(self.start_frame, self.end_frame)
         return True
 
     def set_video(self, video_manager):
@@ -255,7 +257,7 @@ class CropVideoPage(QtWidgets.QWizardPage):
         self.pixMapItem = item
         self.update_frame_number()
 
-        self.speedSlider.setValue(self.video.fps())
+        self.speedSlider.setValue(int(self.video.fps()))
         self.speed_slider_changed()
 
         self.frameEditValidator.setRange(0, end_frame_raw)
@@ -277,7 +279,7 @@ class CropVideoPage(QtWidgets.QWizardPage):
     def speed_slider_changed(self):
         """Method invoked when value of slider controlling speed of video changed it's value"""
         self.frame_rate = self.speedSlider.value()
-        self.timer.setInterval(1000 / self.frame_rate)
+        self.timer.setInterval(1000 // self.frame_rate)
         self.fpsLabel.setText(str(self.frame_rate) + ' fps')
 
     def add_data(self, solver):
@@ -429,9 +431,9 @@ class CropVideoPage(QtWidgets.QWizardPage):
         self.width = self.videoSlider.width()
         self.ratio = self.width / float(self.video.total_frame_count())
 
-        self.first = self.ratio * self.start_frame
-        self.second = self.ratio * (self.video.total_frame_count() - self.end_frame)
-        self.middle = self.width - self.first - self.second
+        self.first = int(self.ratio * self.start_frame)
+        self.second = int(self.ratio * (self.video.total_frame_count() - self.end_frame))
+        self.middle = int(self.width - self.first - self.second)
 
         if self.start_frame > self.end_frame:
             self.end_frame = self.video.total_frame_count() - 1
@@ -487,10 +489,10 @@ if __name__ == "__main__":
     project = Project()
     project.load('/home/matej/prace/ferda/projects/1_initial_projects_180808_diverse/Cam1_clip (copy)')
 
-    ex = CropVideoWidget()
-    ex.set_video(get_auto_video_manager(project))
-    ex.showMaximized()
+    widget = CropVideoPage()
+    widget.set_video(get_auto_video_manager(project))
+    widget.showMaximized()
 
-    app.exec_()
+    app.exec()
     app.deleteLater()
     sys.exit()

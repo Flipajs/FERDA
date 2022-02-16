@@ -66,6 +66,6 @@ if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
     ex = PlotWidget()
 
-    app.exec_()
+    app.exec()
     app.deleteLater()
     sys.exit()

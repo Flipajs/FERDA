@@ -216,7 +216,7 @@ class CollisionEditor(QtWidgets.QMainWindow):
 
     def show_settings(self):
         dialog = settings_dialog.SettingsDialog(self, actionlist=self.action_list)
-        dialog.exec_()
+        dialog.exec()
 
     def drag_ended(self, point_one, point_two):
         if self.copy_marker is None:
@@ -368,7 +368,7 @@ def main():
     app = QtWidgets.QApplication(sys.argv)
     ex = CollisionEditor()
 
-    sys.exit(app.exec_())
+    sys.exit(app.exec())
 
 if __name__ == '__main__':
     main()

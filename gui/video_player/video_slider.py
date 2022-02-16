@@ -35,13 +35,19 @@ class VideoSlider(QtWidgets.QSlider):
         self.usercontrolled = True
         opt = QtWidgets.QStyleOptionSlider()
         self.initStyleOption(opt)
-        sr = self.style().subControlRect(QtWidgets.QStyle.ComplexControl.CC_Slider, opt, QtWidgets.QStyle.SC_SliderHandle, self)
+        sr = self.style().subControlRect(
+            QtWidgets.QStyle.ComplexControl.CC_Slider,
+            opt,
+            QtWidgets.QStyle.SubControl.SC_SliderHandle, self)
 
         if QMouseEvent.button() == QtCore.Qt.MouseButton.LeftButton and not sr.contains(QMouseEvent.pos()):
             if self.orientation() == QtCore.Qt.Orientation.Vertical:
-                newVal = self.minimum() + ((self.maximum() - self.minimum()) * (self.height()-QMouseEvent.y()))/self.height()
+                newVal = self.minimum() + \
+                         ((self.maximum() - self.minimum()) * (self.height()-QMouseEvent.pos().y()))/self.height()
             else:
-                newVal = self.minimum() + (self.maximum() - self.minimum()) * QMouseEvent.x() / self.width()
+                newVal = self.minimum() + \
+                         (self.maximum() -
+                          self.minimum()) * QMouseEvent.pos().x() / self.width()
             if self.invertedAppearance():
                 self.setValue(self.maximum() - newVal)
             else:

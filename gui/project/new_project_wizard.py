@@ -41,4 +41,4 @@ if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)
     wizard = NewProjectWizard()
     wizard.show()
-    sys.exit(app.exec_())
+    sys.exit(app.exec())

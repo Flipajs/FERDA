@@ -2,6 +2,8 @@ from PyQt6 import QtCore, QtGui, QtWidgets
 import sys
 import core.region.clustering
 import numpy as np
+
+from gui.img_controls.gui_utils import cvimg2qtpixmap
 from gui.img_grid.img_grid_widget import ImgGridWidget
 from functools import partial
 from core.config import config
@@ -262,14 +264,10 @@ class RegionClassifierTool(QtWidgets.QWizardPage):
 
         im_item = np.zeros((max(im.shape[0], self.GRID_ITEM_WH[1]), max(im.shape[1], self.GRID_ITEM_WH[0]), 3), dtype=np.uint8)
         im_item[:im.shape[0], :im.shape[1], :] = im
-
-        img_q = ImageQt.QImage(im_item.data, im_item.shape[1], im_item.shape[0], im_item.shape[1] * 3, 13)
-        pix_map = QtGui.QPixmap.fromImage(img_q.rgbSwapped())
-
         item = SelectableQLabel(id=item_id)
         item.setScaledContents(True)
         item.setFixedSize(self.GRID_ITEM_WH[0], self.GRID_ITEM_WH[1])
-        item.setPixmap(pix_map)
+        item.setPixmap(cvimg2qtpixmap(im_item))
         return item
 
 
@@ -287,5 +285,5 @@ if __name__ == '__main__':
     ex = RegionClassifierTool(p)
     ex.raise_()
     ex.activateWindow()
-    app.exec_()
+    app.exec()
     app.deleteLater()

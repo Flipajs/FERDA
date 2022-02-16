@@ -576,7 +576,7 @@ class TrainInteractions:
             m = self.model_6conv_3dense()
             warnings.warn('Stored model not found, initializing model using model_6conv_3dense().')
         m.load_weights(join(model_dir, 'weights.h5'))
-        model_metadata = yaml.load(open(join(model_dir, 'config.yaml')))
+        model_metadata = yaml.safe_load(open(join(model_dir, 'config.yaml')))
         self.PREDICTED_PROPERTIES = model_metadata['properties']
         self.array = ObjectsArray(self.PREDICTED_PROPERTIES, model_metadata['num_objects'])
 
@@ -679,7 +679,7 @@ parameters = {'epochs': 150,
         callbacks = None
 
         root_experiment = Experiment.create(parameters.get('name', None), params=parameters,
-                                            config=yaml.load(open('interactions_config.yaml')),
+                                            config=yaml.safe_load(open('interactions_config.yaml')),
                                             tensorboard=True)
         root_experiment.save_params()
         for experiment in root_experiment:

@@ -1,12 +1,10 @@
 import sys
-from .my_view import MyView
-from .my_scene import MyScene
-from PyQt6 import QtCore, QtGui, QtWidgets
 import numpy as np
 import cv2
-# warning: qimage2ndarray could get confused with multiple Qt versions installed (PyQt, PySide, ...) and end with
-# AttributeError: 'module' object has no attribute 'QImage'
-from qimage2ndarray import array2qimage
+from PyQt6 import QtCore, QtGui, QtWidgets
+from .my_view import MyView
+from .my_scene import MyScene
+from gui.img_controls.gui_utils import cvimg2qimage
 
 
 __author__ = 'dita'
@@ -74,7 +72,7 @@ class Painter(QtWidgets.QWidget):
                 color[0] = np.zeros((self.h, self.w))
 
     def set_image(self, image):
-        self.background = array2qimage(bgr2rgb(image))
+        self.background = cvimg2qimage(image)
         if self.paint_pixmap:
             self.scene.removeItem(self.paint_pixmap)
         self.paint_pixmap = self.scene.addPixmap(QtGui.QPixmap.fromImage(self.background))
@@ -366,8 +364,7 @@ def mask2qimage(mask, color):
     # create a RGBA image from mask and color data
     transposed = mask[..., None]*color
     # convert to Qt compatible qimage
-    qimg = array2qimage(transposed)
-    return qimg
+    return cvimg2qimage(transposed)
 
 
 if __name__ == "__main__":
@@ -382,6 +379,6 @@ if __name__ == "__main__":
     ex.showMaximized()
     ex.setFocus()
 
-    app.exec_()
+    app.exec()
     app.deleteLater()
     sys.exit()

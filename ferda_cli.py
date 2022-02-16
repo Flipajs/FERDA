@@ -21,7 +21,7 @@ import shutil
 from collections import defaultdict
 import webbrowser
 from utils.experiment import Experiment
-from utils.gt.io import results_to_mot, metrics_higher_is_better, metrics_lower_is_better, eval_and_save
+from motutils.io import results_to_mot, metrics_higher_is_better, metrics_lower_is_better, eval_and_save
 import sys
 from core.config import config
 from warnings import warn
@@ -31,7 +31,7 @@ import pandas as pd
 def setup_logging():
     logger_config_file = 'logging_conf.yaml'
     if os.path.isfile(logger_config_file):
-        log_conf = yaml.load(open(logger_config_file, 'r'))
+        log_conf = yaml.safe_load(open(logger_config_file, 'r'))
         logging.config.dictConfig(log_conf)
     else:
         print('logger configuration file {} not found, using default settings'.format(logger_config_file))
@@ -95,7 +95,7 @@ def run_tracking(project, force_recompute=False, reid_model_weights_path=None, g
             train_siamese_contrastive_lost.train(reid_dir)
         reid_params_path = join(reid_dir, 'parameters.yaml')
         if os.path.exists(reid_params_path):
-            reid_params = yaml.load(open(reid_params_path, 'r'))
+            reid_params = yaml.safe_load(open(reid_params_path, 'r'))
         else:
             reid_params = None
         from core.reidentification.siamese_descriptor import compute_descriptors
@@ -213,7 +213,7 @@ def run_visualization(experiment_names, all_experiments, gt_file, in_video_file,
     :param in_video_file: input video filename
     :param out_video_file: output visualization filename
     """
-    from utils.gt.io import visualize_mot, load_mot
+    from motutils import visualize_mot, load_mot
     df_mots = []
     names = []
     # fix for missing exp_name keys
@@ -279,10 +279,10 @@ def load_experiments(experiments_dir, evaluation_required=False, trajectories_re
 
         if 'experiment.yaml' in filenames:
             with open(join(directory, 'experiment.yaml'), 'r') as fr:
-                metadata = yaml.load(fr)
+                metadata = yaml.safe_load(fr)
         elif 'parameters.yaml' in filenames:
             with open(join(directory, 'parameters.yaml'), 'r') as fr:
-                metadata = yaml.load(fr)
+                metadata = yaml.safe_load(fr)
         else:
             metadata = {}
 
@@ -370,8 +370,11 @@ def fix_randomness():
     np.random.seed(seed_value)
 
     # 4. Set `tensorflow` pseudo-random generator at a fixed value
-    import tensorflow as tf
-    tf.random.set_seed(seed_value)
+    try:
+        import tensorflow as tf
+        tf.random.set_seed(seed_value)
+    except ModuleNotFoundError:
+        pass
 
     # # 5. Configure a new global `tensorflow` session
     # from keras import backend as K
@@ -415,7 +418,7 @@ if __name__ == '__main__':
 
     if args.run_experiments_yaml:
         with open(args.run_experiments_yaml, 'r') as fr:
-            experiments_config = yaml.load(fr)
+            experiments_config = yaml.safe_load(fr)
         if args.experiment_name:
             experiments_config['experiment_name'] = args.experiment_name
         datasets = experiments_config['datasets']
@@ -430,7 +433,7 @@ if __name__ == '__main__':
 
     if args.run_visualizations_yaml:
         with open(args.run_visualizations_yaml, 'r') as fr:
-            experiments_config = yaml.load(fr)
+            experiments_config = yaml.safe_load(fr)
         for dataset_name, dataset in list(experiments_config['datasets'].items()):
             if 'visualize_experiments' in dataset:
                 print(dataset_name)
@@ -443,7 +446,7 @@ if __name__ == '__main__':
 
     if args.run_evaluation_yaml:
         with open(args.run_evaluation_yaml, 'r') as fr:
-            experiments_config = yaml.load(fr)
+            experiments_config = yaml.safe_load(fr)
         for dataset_name, dataset in list(experiments_config['datasets'].items()):
             print('\n{}\n'.format(dataset_name))
             experiments = load_experiments(join(experiments_config['dir'], dataset_name))
@@ -459,7 +462,7 @@ if __name__ == '__main__':
 
     if args.run_benchmarking_yaml:
         with open(args.run_benchmarking_yaml, 'r') as fr:
-            experiments_config = yaml.load(fr)
+            experiments_config = yaml.safe_load(fr)
         datasets_evaluations = load_evaluations(list(experiments_config['datasets'].keys()), experiments_config['dir'])
         for dataset, evaluations in list(datasets_evaluations.items()):
             print('\n\n{} (higher is better)'.format(dataset))

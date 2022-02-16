@@ -96,7 +96,7 @@ class RegionManager(UserList):
         self.regions_df = self.get_regions_df()
         if len(self.data) > self.region_pts_h5_dataset.shape[0]:
             self.__resize_h5(int(len(self.data) * 1.2))
-        for i, r in enumerate(tqdm.tqdm(self.data, desc='converting Regions to RegionExtStorage')):
+        for i, r in enumerate(self.data):
             if r is not None and not isinstance(r, RegionExtStorage):
                 assert isinstance(r, Region)
                 assert r.id() == i

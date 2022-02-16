@@ -146,7 +146,7 @@ if __name__ == '__main__':
     ex.update(100)
     ex.show()
 
-    app.exec_()
+    app.exec()
     app.deleteLater()
     sys.exit()
 

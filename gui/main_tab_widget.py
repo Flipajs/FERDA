@@ -32,12 +32,12 @@ class LandingTab(QtWidgets.QWidget):
 
     def show_new_project_wizard(self):
         wizard = NewProjectWizard(self)
-        if wizard.exec_() == QtWidgets.QDialog.DialogCode.Accepted:
+        if wizard.exec() == QtWidgets.QDialog.DialogCode.Accepted:
             self.project_ready.emit(wizard.project)
 
     def show_settings_dialog(self):
         dialog = SettingsDialog(self)
-        dialog.exec_()
+        dialog.exec()
 
     def load_project(self, project_dir=None):
         if project_dir is None:
