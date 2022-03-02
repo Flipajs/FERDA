@@ -66,7 +66,7 @@ class ResultsWidget(QtWidgets.QWidget):
         self.pixMap = None
         self.pixMapItem = None
 
-        self.visualize_contours_without_id = True
+        self.visualize_contours_without_id = False
 
         # used when save GT is called
         self._gt_markers = {}
@@ -81,19 +81,19 @@ class ResultsWidget(QtWidgets.QWidget):
         self.setLayout(self.hbox)
         self.splitter = QtWidgets.QSplitter()
 
-        self.left_w = QtWidgets.QWidget()
-        self.left_w.setMaximumWidth(250)
-        self.left_vbox = QtWidgets.QVBoxLayout()
-        self.left_vbox.setContentsMargins(0, 0, 0, 0)
-        self.left_w.setLayout(self.left_vbox)
+        self.sidebar_widget = QtWidgets.QWidget()
+        self.sidebar_widget.setSizePolicy(QtWidgets.QSizePolicy.Policy.Fixed,
+                                          QtWidgets.QSizePolicy.Policy.Fixed)
+        self.sidebar_layout = QtWidgets.QVBoxLayout()
+        self.sidebar_widget.setLayout(self.sidebar_layout)
 
         self.save_button = QtWidgets.QPushButton('save project')
         self.save_button.clicked.connect(lambda x: self.project.save())
-        self.left_vbox.addWidget(self.save_button)
+        self.sidebar_layout.addWidget(self.save_button)
 
         self.set_colors_b = QtWidgets.QPushButton('set ID colors')
         self.set_colors_b.clicked.connect(self.show_color_settings)
-        self.left_vbox.addWidget(self.set_colors_b)
+        self.sidebar_layout.addWidget(self.set_colors_b)
 
         if self.show_identities:
             self.scroll_ = QtWidgets.QScrollArea()
@@ -103,13 +103,15 @@ class ResultsWidget(QtWidgets.QWidget):
             self.identities_widget.setMinimumWidth(200)
             self.scroll_.setWidget(self.identities_widget)
 
-            self.left_vbox.addWidget(self.scroll_)
+            self.sidebar_layout.addWidget(self.scroll_)
 
-        self.l_scroll_ = QtWidgets.QScrollArea()
-        self.l_scroll_.setWidgetResizable(True)
-        self.l_scroll_.setWidget(self.left_w)
+        self.sidebar_scrollarea = QtWidgets.QScrollArea()
+        self.sidebar_scrollarea.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.sidebar_scrollarea.setWidgetResizable(True)
+        self.sidebar_scrollarea.setWidget(self.sidebar_widget)
 
-        self.splitter.addWidget(self.l_scroll_)
+        # self.splitter.addWidget(self.sidebar_widget)
+        self.splitter.addWidget(self.sidebar_scrollarea)
 
         # GT Box
         self.gt_box = QtWidgets.QGroupBox('Ground Truth')
@@ -265,7 +267,7 @@ class ResultsWidget(QtWidgets.QWidget):
         self.tracklet_box.layout().addWidget(self.id_end_button)
         self.tracklet_box.layout().addWidget(self.split_tracklet_b)
 
-        self.left_vbox.addWidget(self.tracklet_box)
+        self.sidebar_layout.addWidget(self.tracklet_box)
         self.info_l = QtWidgets.QLabel('info')
         self.tracklet_box.layout().addWidget(self.info_l)
 
@@ -333,8 +335,8 @@ class ResultsWidget(QtWidgets.QWidget):
         self.debug_box.layout().addWidget(self.export_video_b)
         self.debug_box.layout().addWidget(self.update_N_sets_b)
 
-        self.left_vbox.addWidget(self.debug_box)
-        self.left_vbox.addWidget(self.gt_box)
+        self.sidebar_layout.addWidget(self.debug_box)
+        self.sidebar_layout.addWidget(self.gt_box)
 
         # TODO: show list of tracklets instead of QLine edit...
         # TODO: show range on frame time line
@@ -356,7 +358,7 @@ class ResultsWidget(QtWidgets.QWidget):
         self.hide_visualisation_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key.Key_H))
         self.addAction(self.hide_visualisation_action)
 
-        self.visu_controls_layout = FlowLayout()
+        self.visu_controls_layout = QtWidgets.QHBoxLayout()  # FlowLayout()
         self.video_layout.addLayout(self.visu_controls_layout)
 
         self.show_filled_ch = QtWidgets.QCheckBox('filled')
@@ -459,8 +461,6 @@ class ResultsWidget(QtWidgets.QWidget):
 
         self.alpha_contour = 240
         self.alpha_filled = 120
-
-        self.splitter.setSizes([270, 1500])
 
         self.old_crops = [None] * len(self.project.animals)
 

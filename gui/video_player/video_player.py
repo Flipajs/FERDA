@@ -49,7 +49,7 @@ class VideoPlayer(QtWidgets.QWidget):
         self._video_controls()
         self._add_actions()
 
-        next(self)
+        next(self)  # what the hell is this?
         self.updateGeometry()
 
     def set_frame_change_callback(self, frame_change_callback):
@@ -64,18 +64,14 @@ class VideoPlayer(QtWidgets.QWidget):
         self.video_control_widget = QtWidgets.QWidget()
         self.video_control_layout = QtWidgets.QVBoxLayout()
         self.video_control_widget.setLayout(self.video_control_layout)
-        self.video_control_widget.setMaximumHeight(70)
-        self.video_control_widget.setContentsMargins(0, 0, 0, 0)
 
         self.video_control_buttons_widget = QtWidgets.QWidget()
         self.video_control_buttons_layout = QtWidgets.QHBoxLayout()
-        self.video_control_buttons_layout.setContentsMargins(0, 0, 0, 0)
         self.video_control_buttons_widget.setLayout(self.video_control_buttons_layout)
 
         self.video_slider = VideoSlider()
         self.video_slider.setOrientation(QtCore.Qt.Orientation.Horizontal)
         self.video_slider.setFocusPolicy(QtCore.Qt.FocusPolicy.NoFocus)
-        self.video_slider.setMaximumHeight(15)
         self.video_slider.setMaximum(self._vm.total_frame_count())
 
         self.video_control_layout.addWidget(self.video_slider)
@@ -96,7 +92,6 @@ class VideoPlayer(QtWidgets.QWidget):
         self.forward.setShortcut(S_.controls.video_next)
         self.frame_edit = SelectAllLineEdit()
         self.frame_edit.returnPressed.connect(self.goto)
-        self.frame_edit.setFixedHeight(30)
 
         self.fpsLabel = QtWidgets.QLabel()
         self.fpsLabel.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight)

@@ -177,7 +177,6 @@ class SelectAllLineEdit(QtWidgets.QLineEdit):
     def __init__(self, parent=None):
         super(SelectAllLineEdit, self).__init__(parent)
         self.readyToEdit = True
-        self.setFixedHeight(15)
 
     def mousePressEvent(self, e, Parent=None):
         super(SelectAllLineEdit, self).mousePressEvent(e) #required to deselect on 2e click
