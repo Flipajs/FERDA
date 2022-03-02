@@ -1,19 +1,11 @@
 __author__ = 'filip@naiser.cz'
 from PyQt6 import QtCore, QtGui, QtWidgets
-from PyQt6.QtGui import QImage
 import math
-import numpy as np
+import qimage2ndarray
 
 
 def cvimg2qimage(img):
-    assert img.ndim == 3
-    img_rgb = np.transpose(img, (1, 0, 2))
-    if img.shape[2] == 3:
-        return QImage(img_rgb.copy(), img_rgb.shape[1], img_rgb.shape[0], QImage.Format.Format_RGB888)
-    elif img.shape[2] == 4:
-        return QImage(img_rgb.copy(), img_rgb.shape[1], img_rgb.shape[0], QImage.Format.Format_RGBA8888)
-    else:
-        assert False
+    return qimage2ndarray.array2qimage(img)
 
 
 def cvimg2qtpixmap(img):

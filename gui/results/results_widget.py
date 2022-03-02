@@ -825,8 +825,6 @@ class ResultsWidget(QtWidgets.QWidget):
             c = self.get_tracklet_class_color(tracklet)
             c = (c[0], c[1], c[2], 255)
 
-        rgba = np.zeros((roi.width(), roi.height(), 4), dtype=np.uint8)
-
         if self.visualize_contours_without_id:
             step = 1
             c = [255, 255, 255, 255]
@@ -835,12 +833,15 @@ class ResultsWidget(QtWidgets.QWidget):
 
         # 2 1 0 BGR vs RGB...
         # this if might help a little bit with performance...
+        rgba = np.zeros((roi.width(), roi.height(), 4), dtype=np.uint8)
         if step > 1:
             rgba[pts_[::step, 1], pts_[::step, 0], :] = c[2], c[1], c[0], c[3]
         else:
             rgba[pts_[:, 1], pts_[:, 0], :] = c[2], c[1], c[0], c[3]
 
-        item = ClickableQGraphicsPixmapItem(cvimg2qtpixmap(rgba), tracklet.id(), self._highlight_tracklet)
+        item = ClickableQGraphicsPixmapItem(cvimg2qtpixmap(rgba.transpose((1, 0, 2))),
+                                            tracklet.id(),
+                                            self._highlight_tracklet)
         item.setPos(offset[1], offset[0])
         item.setZValue(0.6)
 
