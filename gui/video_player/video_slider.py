@@ -49,9 +49,9 @@ class VideoSlider(QtWidgets.QSlider):
                          (self.maximum() -
                           self.minimum()) * QMouseEvent.pos().x() / self.width()
             if self.invertedAppearance():
-                self.setValue(self.maximum() - newVal)
+                self.setValue(int(self.maximum() - newVal))
             else:
-                self.setValue(newVal)
+                self.setValue(int(newVal))
 
     def mouseReleaseEvent(self, QMouseEvent):
         self.usercontrolled = False

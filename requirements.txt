@@ -21,7 +21,7 @@ jsonpickle
 moviepy
 pulp
 pympler
-qimage2ndarray
+git+https://github.com/smidm/qimage2ndarray  # support for PyQt6  
 #  # results analysis in jupyter lab
 #  jupyterlab
 #  plotly

@@ -174,6 +174,13 @@ class RegionClassifierTool(QtWidgets.QWizardPage):
         self.gather_samples_thread.finished.connect(self.gather_samples_finished)
         self.gather_samples_thread.start()
 
+        # # alternative to the above code running in the main thread for easier debugging
+        # samples = self.clustering.gather_diverse_samples(
+        #     config['region_classifier']['samples_preselection_num'],
+        #     config['region_classifier']['samples_num'],
+        #     self.wizard().project,
+        # )
+
     def validatePage(self):
         self.wizard().project.region_cardinality_classifier = self.clustering
         self.wizard().project.save()

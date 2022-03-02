@@ -71,7 +71,11 @@ class Solver:
         """
         edges = []
 
-        for v in tqdm(self.project.gm.g.vertices(), desc='solver.one2one', total=self.project.gm.g.num_vertices(), leave=False):
+        for v in tqdm(self.project.gm.g.vertices(),
+                      desc='solver.one2one',
+                      total=self.project.gm.g.num_vertices(),
+                      leave=False
+                      ):
             if self.project.gm.is_vertex_in_path_subgraph(v):
                 e = self.project.gm.out_e(v)
 

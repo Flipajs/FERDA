@@ -20,6 +20,8 @@ def graph_assembly(project):
     # TODO: add to settings
 
     project.reset_managers()  # clean-up possible previously computed data
+
+    # load extracted regions
     parts_path = join(project.working_directory, 'temp')
     n_parts = get_parts_num(parts_path)
     for rm in [RegionManager.from_dir(join(parts_path, str(i))) for i in range(n_parts)]:
@@ -27,6 +29,8 @@ def graph_assembly(project):
         rm.close()  # otherwise the shutil.rmtree(parts_path) fails on NFS while the regions.h5 maybe still open
         # TODO: possibly close / open to unload already written data from memory
     logger.debug(project.rm.regions_df.describe())
+
+    # add regions to a graph, connect spatially close regions in neighboring frames
     for frame, df_frame in tqdm(project.rm.regions_df.set_index('frame_').groupby(level=0), desc='creating graph'):
         regions = [project.rm[i] for i in df_frame['id_'].values]
         project.gm.add_regions_in_t(regions, frame)
@@ -34,6 +38,7 @@ def graph_assembly(project):
     #     for rid in rids:
     #         assert project.gm.region(rid).frame() == frame
     project.gm.project = project  # workaround, to be refactored
+
     project.solver.create_tracklets()
     _, conflicts = project.chm.get_conflicts(len(project.animals), verbose=True)
     del project.gm.project

@@ -14,18 +14,15 @@ Setup Conda environment with GUI support:
 
 `$ conda env create -f conda_gui_exported.yml` or tune `conda_gui.yml`
 
-Setup Conda environment for batch processing (without pyqt4):
+Setup Conda environment for batch processing (without pyqt):
 
 `$ conda env create -f conda_cli_exported.yml` or tune `conda_cli.yml`
 
 ### Manual
 
-**This section is outdated.**
-
-* python 3.6
-* [opencv](http://opencv.org) for python (pycv) builded with FFMPEG support (2.4.12)
-* [PyQt4](https://www.riverbankcomputing.com/software/pyqt/download)
-* [graph-tool](https://pypi.python.org/pypi/graph-tool) (2.26)
+requires:
+* python > 3.6
+* [graph-tool](https://pypi.python.org/pypi/graph-tool)
 
 `$ pip install -r requirements.txt`
 
@@ -138,7 +135,7 @@ Run unit tests:
 ## Team
 
 * author: Filip Naiser, CTU Prague <mailto:filip@naiser.cz>
-* author: Matěj Šmíd, CTU Prague <mailto:smidm@cmp.felk.cvut.cz>
+* author: Matěj Šmíd, CTU Prague <mailto:smidm@fel.cvut.cz>
 * collaborator: Barbara Casillas Perez, Cremer Group IST Austria 
 * supervisor: Prof. Jiří Matas, CTU Prague
 
