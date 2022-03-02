@@ -100,11 +100,11 @@ class EdgeGraphical(QtWidgets.QGraphicsLineItem):
 
     def paint(self, painter, style_option_graphics_item, widget=None):
         if self.clipped:
-            pen = QtGui.QPen(self.color, LINE_WIDTH, Qt.PenStyle.SolidLine, Qt.PenCapStyle.SquareCap, Qt.HighDpiScaleFactorRoundingPolicy.RoundJoin)
+            pen = QtGui.QPen(self.color, LINE_WIDTH, Qt.PenStyle.SolidLine, Qt.PenCapStyle.SquareCap, Qt.PenJoinStyle.RoundJoin)
             painter.setPen(pen)
             painter.drawLine(self.parent_line)
         elif self.isSelected():
-            pen = QtGui.QPen(Qt.GlobalColor.black, SELECTION_LINE_WIDTH, Qt.PenStyle.DashLine, Qt.PenCapStyle.SquareCap, Qt.HighDpiScaleFactorRoundingPolicy.RoundJoin)
+            pen = QtGui.QPen(Qt.GlobalColor.black, SELECTION_LINE_WIDTH, Qt.PenStyle.DashLine, Qt.PenCapStyle.SquareCap, Qt.PenJoinStyle.RoundJoin)
             painter.setPen(pen)
             painter.drawPolygon(self.selection_polygon)
 
@@ -161,7 +161,7 @@ class LineGraphical(EdgeGraphical):
         # opacity = 100 + 155 * abs(self.graph_line.sureness)
         opacity = 255
 
-        pen = QtGui.QPen(QtGui.QColor(red, green, 0, opacity), LINE_WIDTH, Qt.PenStyle.DashLine, Qt.PenCapStyle.SquareCap, Qt.HighDpiScaleFactorRoundingPolicy.RoundJoin)
+        pen = QtGui.QPen(QtGui.QColor(red, green, 0, opacity), LINE_WIDTH, Qt.PenStyle.DashLine, Qt.PenCapStyle.SquareCap, Qt.PenJoinStyle.RoundJoin)
         painter.setPen(pen)
         painter.drawLine(self.parent_line)
 
@@ -172,7 +172,12 @@ class PartialGraphical(EdgeGraphical):
 
     def paint(self, painter, style_option_graphics_item, widget=None):
         opacity = 100 + 155 * abs(self.graph_line.sureness)
-        pen = QtGui.QPen(QtGui.QColor(255, 0, 0, opacity), LINE_WIDTH, Qt.PenStyle.DotLine, Qt.PenCapStyle.SquareCap, Qt.HighDpiScaleFactorRoundingPolicy.RoundJoin)
+        pen = QtGui.QPen(QtGui.QColor(255, 0, 0, opacity),
+                         LINE_WIDTH,
+                         Qt.PenStyle.DotLine,
+                         Qt.PenCapStyle.SquareCap,
+                         Qt.PenJoinStyle.RoundJoin
+                         )
         painter.setPen(pen)
         painter.drawLine(self.parent_line)
 
@@ -200,19 +205,23 @@ class ChunkGraphical(EdgeGraphical):
         super(ChunkGraphical, self).__init__(self.parent_line, graph_line, scene, color)
 
     def paint(self, painter, style_option_graphics_item, widget=None):
-        pen = QtGui.QPen(self.color, LINE_WIDTH, Qt.PenStyle.SolidLine, Qt.PenCapStyle.SquareCap, Qt.HighDpiScaleFactorRoundingPolicy.RoundJoin)
+        pen = QtGui.QPen(self.color,
+                         LINE_WIDTH,
+                         Qt.PenStyle.SolidLine,
+                         Qt.PenCapStyle.SquareCap,
+                         Qt.PenJoinStyle.RoundJoin)
 
         painter.setPen(pen)
         painter.drawLine(self.parent_line_1)
         painter.drawLine(self.parent_line_2)
 
         if self.clipped:
-            pen = QtGui.QPen(self.color, LINE_WIDTH, Qt.PenStyle.SolidLine, Qt.PenCapStyle.SquareCap, Qt.HighDpiScaleFactorRoundingPolicy.RoundJoin)
+            pen = QtGui.QPen(self.color, LINE_WIDTH, Qt.PenStyle.SolidLine, Qt.PenCapStyle.SquareCap, Qt.PenJoinStyle.RoundJoin)
             painter.setPen(pen)
             painter.drawLine(self.parent_line_1)
             painter.drawLine(self.parent_line_2)
         elif self.isSelected():
-            pen = QtGui.QPen(Qt.GlobalColor.black, SELECTION_LINE_WIDTH, Qt.PenStyle.DashLine, Qt.PenCapStyle.SquareCap, Qt.HighDpiScaleFactorRoundingPolicy.RoundJoin)
+            pen = QtGui.QPen(Qt.GlobalColor.black, SELECTION_LINE_WIDTH, Qt.PenStyle.DashLine, Qt.PenCapStyle.SquareCap, Qt.PenJoinStyle.RoundJoin)
             painter.setPen(pen)
             painter.drawPolygon(self.selection_polygon)
 

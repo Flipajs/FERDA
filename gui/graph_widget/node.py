@@ -133,11 +133,11 @@ class Node(QtWidgets.QGraphicsPixmapItem):
     def paint(self, painter, style_option_graphics_item, widget=None):
         # self.parent_pixmap.paint(painter, style_option_graphics_item, None)
         if self.clipped:
-            pen = QtGui.QPen(self.color, SELECTION_LINE_WIDTH * 1.5, Qt.PenStyle.SolidLine, Qt.PenCapStyle.SquareCap, Qt.HighDpiScaleFactorRoundingPolicy.RoundJoin)
+            pen = QtGui.QPen(self.color, SELECTION_LINE_WIDTH * 1.5, Qt.PenStyle.SolidLine, Qt.PenCapStyle.SquareCap, Qt.PenJoinStyle.RoundJoin)
         elif self.isSelected():
-            pen = QtGui.QPen(Qt.GlobalColor.black, SELECTION_LINE_WIDTH, Qt.PenStyle.DashLine, Qt.PenCapStyle.SquareCap, Qt.HighDpiScaleFactorRoundingPolicy.RoundJoin)
+            pen = QtGui.QPen(Qt.GlobalColor.black, SELECTION_LINE_WIDTH, Qt.PenStyle.DashLine, Qt.PenCapStyle.SquareCap, Qt.PenJoinStyle.RoundJoin)
         else:
-            pen = QtGui.QPen(Qt.GlobalColor.white, SELECTION_LINE_WIDTH, Qt.PenStyle.SolidLine, Qt.PenCapStyle.SquareCap, Qt.HighDpiScaleFactorRoundingPolicy.RoundJoin)
+            pen = QtGui.QPen(Qt.GlobalColor.white, SELECTION_LINE_WIDTH, Qt.PenStyle.SolidLine, Qt.PenCapStyle.SquareCap, Qt.PenJoinStyle.RoundJoin)
 
         painter.setPen(pen)
         painter.drawPolygon(self.selection_polygon)
@@ -186,7 +186,7 @@ class TextInfoItem(QtWidgets.QGraphicsItem):
         self.color = color
 
     def paint(self, painter, item, widget):
-        self.rect.setPen(QtGui.QPen(self.node.color, SELECTION_LINE_WIDTH * 1.5, Qt.PenStyle.DashLine, Qt.PenCapStyle.SquareCap, Qt.HighDpiScaleFactorRoundingPolicy.RoundJoin))
+        self.rect.setPen(QtGui.QPen(self.node.color, SELECTION_LINE_WIDTH * 1.5, Qt.PenStyle.DashLine, Qt.PenCapStyle.SquareCap, Qt.PenJoinStyle.RoundJoin))
         self.rect.setBrush(QtGui.QBrush(self.node.color))
         self.rect.paint(painter, item, widget)
 
@@ -233,7 +233,7 @@ class ConnectingLine(QtWidgets.QGraphicsLineItem):
         self.color = color
         
     def paint(self, painter, item, widget=None):
-        pen = QtGui.QPen(self.color, SELECTION_LINE_WIDTH, Qt.PenStyle.SolidLine, Qt.PenCapStyle.SquareCap, Qt.HighDpiScaleFactorRoundingPolicy.RoundJoin)
+        pen = QtGui.QPen(self.color, SELECTION_LINE_WIDTH, Qt.PenStyle.SolidLine, Qt.PenCapStyle.SquareCap, Qt.PenJoinStyle.RoundJoin)
         painter.setPen(pen)
         painter.drawLine(self.line())
 

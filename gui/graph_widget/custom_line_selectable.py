@@ -22,11 +22,11 @@ class Custom_Line_Selectable(QtWidgets.QGraphicsLineItem):
 
     def paint(self, QPainter, QStyleOptionGraphicsItem, QWidget_widget=None):
         if self.style == 'default':
-            pen = QtGui.QPen(Qt.GlobalColor.darkGray, LINE_WIDTH, Qt.PenStyle.SolidLine, Qt.PenCapStyle.SquareCap, Qt.HighDpiScaleFactorRoundingPolicy.RoundJoin)
+            pen = QtGui.QPen(Qt.GlobalColor.darkGray, LINE_WIDTH, Qt.PenStyle.SolidLine, Qt.PenCapStyle.SquareCap, Qt.PenJoinStyle.RoundJoin)
             QPainter.setPen(pen)
             QPainter.drawLine(self.parent_line)
             if self.isSelected():
-                pen = QtGui.QPen(Qt.GlobalColor.black, SELECTION_OFFSET, Qt.PenStyle.DashLine, Qt.PenCapStyle.SquareCap, Qt.HighDpiScaleFactorRoundingPolicy.RoundJoin)
+                pen = QtGui.QPen(Qt.GlobalColor.black, SELECTION_OFFSET, Qt.PenStyle.DashLine, Qt.PenCapStyle.SquareCap, Qt.PenJoinStyle.RoundJoin)
                 QPainter.setPen(pen)
                 QPainter.drawPolygon(self.selection_polygon)
 
@@ -34,11 +34,11 @@ class Custom_Line_Selectable(QtWidgets.QGraphicsLineItem):
             pen = QtGui.QPen(QtCore.Qt.PenStyle.DotLine)
             pen.setColor(QtGui.QColor(255, 0, 0, 0x78))
             pen.setWidth(2)
-            # pen = QtGui.QPen(Qt.GlobalColor.darkGray, LINE_WIDTH, Qt.PenStyle.SolidLine, Qt.PenCapStyle.SquareCap, Qt.HighDpiScaleFactorRoundingPolicy.RoundJoin)
+            # pen = QtGui.QPen(Qt.GlobalColor.darkGray, LINE_WIDTH, Qt.PenStyle.SolidLine, Qt.PenCapStyle.SquareCap, Qt.PenJoinStyle.RoundJoin)
             QPainter.setPen(pen)
             QPainter.drawLine(self.parent_line)
             if self.isSelected():
-                pen = QtGui.QPen(Qt.GlobalColor.black, SELECTION_OFFSET, Qt.PenStyle.DashLine, Qt.PenCapStyle.SquareCap, Qt.HighDpiScaleFactorRoundingPolicy.RoundJoin)
+                pen = QtGui.QPen(Qt.GlobalColor.black, SELECTION_OFFSET, Qt.PenStyle.DashLine, Qt.PenCapStyle.SquareCap, Qt.PenJoinStyle.RoundJoin)
                 QPainter.setPen(pen)
                 QPainter.drawPolygon(self.selection_polygon)
 
